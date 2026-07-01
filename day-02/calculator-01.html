@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>calculator</title>
+    <style>
+        body{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #e0e0e0;
+        }
+        main{
+            width: 320px; 
+            background-color: #1e1e2e;
+            border-radius: 16px;
+            height: fit-content;
+            margin: 40px auto;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(5, 60px);
+            gap: 8px;
+            background-color: transparent;
+            padding: 5px;
+        }
+        .container div {
+            background-color: #6b7b92;
+            border-radius: 8px;
+            font-size: 22px;
+            text-align: center;
+            color: white;
+            line-height: 60px;    
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.1s, transform 0.1s;
+        }
+        .container div:hover  { background-color: #8799b3; }        
+        .container div:active { background-color: #8ea5c5; }
+        #input{
+            width: 100%;
+            background-color: #112;
+            color: white;
+            text-align: right;
+            padding: 16px;
+            font-family: monospace;
+            font-size: 30px;
+            margin-bottom: 12px;
+            min-height: 65px;
+            box-sizing: border-box;
+            word-break: break-all;
+            border-radius: 12px; 
+
+        }
+        .op{
+            background-color: #4c326b !important;
+        }
+        .op:hover  { background-color: #6d469c !important; }
+        .ac{
+            background-color: #41055d !important;
+        }
+        .ac:hover{
+            background-color: #67198b !important;
+        }
+        .eq{
+            background-color: #ed5cdc !important;
+        }
+        .eq:hover{
+            background-color: #d974cd !important;
+        }
+        
+    </style>
+</head>
+<body>
+    <main>
+        <div id="input">
+            |
+        </div>
+        <div class="container">
+            <div onclick="ac()" class="ac">AC</div>
+            <div onclick="parenthesis()" class="op">( )</div>
+            <div onclick="operator('%')" class="op">%</div>
+            <div onclick="operator('/')" class="op">÷</div>
+            <div onclick="numButton(7)">7</div>
+            <div onclick="numButton(8)">8</div>
+            <div onclick="numButton(9)">9</div>
+            <div onclick="operator('*')" class="op">x</div>
+            <div onclick="numButton(4)">4</div>
+            <div onclick="numButton(5)">5</div>
+            <div onclick="numButton(6)">6</div>
+            <div onclick="operator('-')" class="op">-</div>
+            <div onclick="numButton(1)" >1</div>
+            <div onclick="numButton(2)">2</div>
+            <div onclick="numButton(3)">3</div>
+            <div onclick="operator('+')" class="op">+</div>
+            <div onclick="numButton(0)">0</div>
+            <div onclick="addDot()">.</div>
+            <div onclick="backSpace()">⌫</div>
+            <div onclick="calculate()" class="eq">=</div>
+        </div>
+    </main>
+    <script>
+        let display = document.getElementById('input');
+        let exp = ''; // Expression string to hold the current input
+        
+        function updateDisplay(value){
+            display.textContent = value || '|'; // Show '|' when the display is empty and update the display with the current expression
+        }
+
+        // Clear the expression and update the display
+        function ac(){
+            exp = ''; 
+            updateDisplay(exp);
+        }
+
+        // Append the number to the expression and update the display
+        function numButton(num){ 
+            exp += num;
+            updateDisplay(exp);
+        }
+
+        // Append the operator to the expression and update the display
+        function operator(op){ 
+
+            if (!exp && op !== '-') return;  //Return if the expression is empty and the operator is not a minus sign
+
+            const lastChar = exp.slice(-1);
+            if (['+', '-', '*', '%', '/'].includes(lastChar)){
+                exp = exp.slice(0,-1);
+            }
+            exp += op;
+            updateDisplay(exp);
+        }
+
+        // Append decimal point to the expression and update the display
+        function addDot(){
+            if(exp === '') { // If the expression is empty, start with '0.'
+                exp += '0.';
+                updateDisplay(exp);
+                return;
+            }
+            const parts = exp.split(/[\+\-\*\/]/);
+            const lastPart = parts[parts.length - 1];
+            if(lastPart.includes('.')) return;
+            exp += '.'
+            updateDisplay(exp);
+        }
+
+        // Toggle parentheses in the expression and update the display
+        function parenthesis(){
+            const openCount  = (exp.match(/\(/g) || []).length;
+            const closeCount = (exp.match(/\)/g) || []).length;
+            if(openCount == closeCount){
+                exp += '(';
+            }
+            else{
+                exp += ')';
+            }
+            updateDisplay(exp);
+        }
+
+        // Remove the last character from the expression and update the display
+        function backSpace(){
+            exp = exp.slice(0,-1);
+            updateDisplay(exp)
+        }
+        
+        // Evaluate the expression and update the display
+        function calculate(){
+            try {
+                if (!exp) return
+                let result = eval(exp) // Evaluate the expression using eval which is a built-in JavaScript function that evaluates a string as code
+                if (!isFinite(result)) {
+                    updateDisplay("Error")
+                    exp = ''
+                    return
+                }
+                result = parseFloat(result.toFixed(10))
+                exp = String(result)
+                updateDisplay(exp)
+            } catch(e) {
+                updateDisplay("Error")
+                exp = ''
+            }
+        }
+
+    </script>
+</body>
+</html>
