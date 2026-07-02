@@ -197,23 +197,32 @@
         }
 
         // Tokenize the expression into numbers and operators
-        function tokenize(exp) {
+       function tokenize(exp) {
             const tokens = []
             let num = ''
             
-            for (let char of exp) {
+            for (let i = 0; i < exp.length; i++) {
+                const char = exp[i]
+                
                 if ('0123456789.'.includes(char)) {
                     num += char
+                    
                 } else if ('+-*/%()'.includes(char)) {
-                    if (num) {
-                        tokens.push({ type: 'number', value: parseFloat(num) })
-                        num = ''
+                    
+                    const isNegativeSign = char === '-' && num === '' &&  (tokens.length === 0 || tokens[tokens.length - 1].type === 'operator')
+                    
+                    if (isNegativeSign) {
+                        num += '-'  // attach to the number being built
+                    } else {
+                        if (num) {
+                            tokens.push({ type: 'number', value: parseFloat(num) })
+                            num = ''
+                        }
+                        tokens.push({ type: 'operator', value: char })
                     }
-                    tokens.push({ type: 'operator', value: char })
                 }
             }
             if (num) tokens.push({ type: 'number', value: parseFloat(num) })
-            
             return tokens
         }
         
@@ -238,7 +247,7 @@
             }
 
             // Second pass — handle + - (lower precedence)
-            let result = tokens[0].value
+            let result = tokens[0].value 
             i = 1
             while (i < tokens.length) {
                 const op    = tokens[i].value
