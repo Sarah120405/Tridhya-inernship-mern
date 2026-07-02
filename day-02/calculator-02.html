@@ -1,3 +1,15 @@
+
+<!-- 1. I am creating an expression (exp) by appending values to it based on clicked buttons here closures are being used
+        as the exp variable is declared in the parent function and is being used in the child functions.
+     2. I am displaying the expression in the input field
+     3. When the user clicks "=" calculate function is called which is impure function having side effects of 
+        modifying the exp variable and updating the display following steps are performed in the calculate function: 
+        1 = resolving parentheses 
+        2 = tokenizing the expression to seperate numbers and operators in stack/array which is a pure function 
+            and does not have any side effects
+        3 = evaluating it based on operator precedence where presedence is decided by regex matching
+-->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
