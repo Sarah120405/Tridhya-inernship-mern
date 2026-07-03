@@ -10,6 +10,16 @@ const categoryFilterChange = document.getElementById("categoryFilter");
 const hardCover = document.getElementById("hardCover");
 const paperback = document.getElementById("paperback");
 const eBook = document.getElementById("e-book");
+const searchFilter = document.getElementById("searchFilter");
+const modalOverlay = document.getElementById("modalOverlay");
+const modalTitle = document.getElementById("modalTitle");
+const modalImage = document.getElementById("modalImage");
+const modalCategory = document.getElementById("modalCategory");
+const modalFormat = document.getElementById("modalFormat");
+const modalPages = document.getElementById("modalPages");
+const modalPrice = document.getElementById("modalPrice");
+const modalRating = document.getElementById("modalRating");
+const closeModal = document.getElementById("closeModal");
 
 const clearFilters = document.getElementById("clearFilters");
 const applyFilters = document.getElementById("applyFilters");
@@ -127,53 +137,6 @@ function dataDetails(data) {
     currentDetails.textContent = `Showing ${data.length} books · Total value ₹${totalPrice} · Avg price ₹${avgPrice}`;
 }
 
-/* function formatFilter(format){
-    // accept either a single format string or an array of formats
-    if (!format) return books;
-    if (Array.isArray(format)) {
-        return books.filter((book) => format.includes(book.format));
-    }
-    return books.filter((book) => book.format === format);
-} */
-
-/* function applyFormatFilters() {
-    const selected = [];
-    if (eBook && eBook.checked) selected.push('E-book');
-    if (paperback && paperback.checked) selected.push('Paperback');
-    if (hardCover && hardCover.checked) selected.push('Hard Cover');
-
-    const results = selected.length ? formatFilter(selected) : books;
-    displayBooks(results);
-}
-
-// wire checkbox change events (defensive: elements may be null)
-if (eBook) eBook.addEventListener('change', applyFormatFilters);
-if (paperback) paperback.addEventListener('change', applyFormatFilters);
-if (hardCover) hardCover.addEventListener('change', applyFormatFilters); */
-
-/* function priceFilter(price){
-    // treat price as maximum value for filter
-    const max = Number(price);
-    const book = books.filter((book) => Number(book.price) <= max);
-    return book
-} */
-
-/* function pagesFilter(pages){
-    if(pages === "Quick Reads"){
-        const book = books.filter((book) => book.pages <= 300)
-        return book
-    }
-    else if(pages === "Standard Reads"){
-        const book = books.filter((book) => book.pages > 300 && book.pages <= 550)
-        return book
-    }
-    else if(pages === "Epic Reads"){
-        const book = books.filter((book) => book.pages > 500 && book.pages <= 700)
-        return book
-    }
-}
- */
-
 function applyAllFilters(){
 
     let result = books;
@@ -256,38 +219,19 @@ modalOverlay.addEventListener("click", (event) => {
         closeBookModal();
     }
 });
+
+searchFilter.addEventListener('change', () => {
+    const query = searchFilter.value.trim().toLowerCase();
+    const results = books.filter((book) => book.title.toLowerCase().includes(query));
+    displayBooks(results);
+    dataDetails(results);
+});
  
-// Every control triggers the same combined filter function
+// Every control triggers the applyAllFilters function
 [categoryFilterChange, priceFilterChange, pagesFilterChange, eBook, paperback, hardCover]
   .forEach(el => el.addEventListener('change', () => displayBooks(applyAllFilters())));
-/* categoryFilterChange.addEventListener('change', () => {
-    displayBooks(applyAllFilters());
-});
- 
-priceFilterChange.addEventListener('change', () => {
-    displayBooks(applyAllFilters());
-});
- 
-pagesFilterChange.addEventListener('change', () => {
-    displayBooks(applyAllFilters());
-});
- 
-eBook.addEventListener('change', () => {
-    displayBooks(applyAllFilters());
-});
- 
-paperback.addEventListener('change', () => {
-    displayBooks(applyAllFilters());
-});
- 
-hardCover.addEventListener('change', () => {
-    displayBooks(applyAllFilters());
-});
- 
-applyFilters.addEventListener('click', () => {
-    displayBooks(applyAllFilters());
-});
- */ 
+
+//Clear Filter event listner
 clearFilters.addEventListener('click', () => {
     categoryFilterChange.value = "All Categories";
     priceFilterChange.value = priceFilterChange.max;
@@ -299,6 +243,6 @@ clearFilters.addEventListener('click', () => {
     dataDetails(books);
 });
 // Initial render
-displayBooks();
-dataDetails(books);
+displayBooks(applyAllFilters());
+dataDetails(applyAllFilters());
 
