@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inkverse Publishing - Published Books</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Lora:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="./productFiltering.css" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div>
+            <h1>Published Books</h1>
+            <p>Discover stories crafted by talented authors.</p>
+        </div>
+        <input type="text" placeholder="Search books...">
+    </header>
+
+    <div id="current-details"></div>
+    <main>
+        <section id="product-grid"> 
+        </section>
+
+        <aside>
+            <h3>Filter Books</h3>
+
+            <div class="group">
+                <label>Category</label>
+                <select id="categoryFilter">
+                    <option value="All Categories">All Categories</option>
+                    <option value="Fantasy">Fantasy</option>
+                    <option value="Sci‑Fi">Sci‑Fi</option>
+                    <option value="Historical">Historical</option>
+                    <option value="Romance">Romance</option>
+                </select>
+            </div>
+
+            <div class="group">
+                <label>Price Range</label>
+                <input type="range" min="0" value="700" max="700" id="priceFilter">
+            </div>
+
+            <div class="group">
+                <label>Pages</label>
+                <select id="pagesFilter">
+                    <option value="Beginner">Beginner</option>
+                    <option value="Quick Reads">Quick Reads</option>
+                    <option value="Standard Reads">Standard Reads</option>
+                    <option value="Epic Reads">Epic Reads</option>
+                </select>
+            </div>
+
+            <div class="group">
+                <label>Format</label>
+                <div>
+                    <input type="checkbox" id="e-book" value="E-Book"> E‑Book
+                </div>
+                <div>
+                    <input type="checkbox" id="paperback" value="Paperback"> Paperback
+                </div>
+                <div>
+                    <input type="checkbox" id="hardCover" value="Hard Cover"> Hardcover
+                </div>
+            </div>
+
+            <button class="primary" style="width: 100%; margin-bottom: 10px;" id="applyFilters">
+                Apply Filters
+            </button>
+            <button class="secondary" id="clearFilters" style="width: 100%;">
+                Clear Filters
+            </button>
+        </aside>
+    </main>
+
+    <div class="modal-overlay hidden" id="modalOverlay">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+            <div class="modal-body">
+                <img id="modalImage" src="" alt="Book cover">
+                <div class="modal-details">
+                    <div>
+                        <h2 id="modalTitle">Book Details</h2>
+                        <p id="modalCategory" class="label"></p>
+                    </div>
+                    <div class="modal-info">
+                        <div>
+                            <span class="label">Format</span>
+                            <p id="modalFormat"></p>
+                        </div>
+                        <div>
+                            <span class="label">Pages</span>
+                            <p id="modalPages"></p>
+                        </div>
+                    </div>
+                    <div class="modal-info">
+                        <div>
+                            <span class="label">Price</span>
+                            <p id="modalPrice"></p>
+                        </div>
+                        <div>
+                            <span class="label">Rating</span>
+                            <p id="modalRating"></p>
+                        </div>
+                    </div>
+                    <div class="modal-info">
+                        <button>Add to Cart</button>
+                         <button class="secondary modal-close" id="closeModal" type="button">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="./productFiltering.js"></script>
+</body>
+</html>
