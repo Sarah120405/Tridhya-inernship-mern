@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Counter & Caching</title>
+    <style>
+        body { 
+            padding: 24px; 
+            background: #f4f7fb; 
+        }
+
+        .section { 
+            background: white; 
+            border-radius: 12px; 
+            padding: 20px; 
+            margin-bottom: 20px; 
+        }
+
+        h2 { margin: 0 0 16px; }
+
+        .controls { 
+            display: flex; 
+            gap: 10px; 
+            margin-bottom: 12px; 
+        }
+        button { 
+            padding: 8px 16px; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            background: #2563eb; 
+            color: white; 
+            font-weight: 600; 
+        }
+
+        .display { 
+            font-size: 48px; 
+            font-weight: 700; 
+            color: #2563eb;
+            text-align: center; 
+            padding: 16px; 
+        }
+
+        .cache-result { 
+            background: #f0fdf4; 
+            border: 1px solid #bbf7d0;
+            border-radius: 8px; 
+            padding: 12px; 
+            margin-top: 12px; 
+            font-family: monospace; 
+        }
+        
+        input { 
+            padding: 8px 12px; 
+            border: 1px solid #e5e7eb; 
+            border-radius: 8px; 
+            width: 80px; 
+        }
+    </style>
+</head>
+<body>
+    <div class="section">
+        <h2>Counter (Closure)</h2>
+        <div class="display" id="counterDisplay">0</div>
+        <div class="controls">
+            <button onclick="handleDecrement()">− Decrement</button>
+            <button onclick="handleReset()">Reset</button>
+            <button onclick="handleIncrement()">+ Increment</button>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Caching Demo</h2>
+        <div class="controls">
+            <input type="number" id="cacheInput" placeholder="Enter n" />
+            <button onclick="handleMemoize()">Calculate sq(n)</button>
+            <button onclick="clearLog()">Clear log</button>
+        </div>
+        <div id="cacheLog"></div>
+    </div>
+
+    <script>
+        // Counter to demonstrate closures
+        function createCounter() {
+            let count = 0
+            return {
+                increment() { 
+                    return ++count 
+                },
+                decrement() { 
+                    return --count 
+                },
+                reset() { 
+                    count = 0; 
+                    return count 
+                },
+                getCount() {  // getCount method creates a reference of count and keep it alive even when outer function has completed
+                    return count }
+            }
+        }
+
+        const counter = createCounter() // because of refrence count keeps incrementing 
+        const display = document.getElementById("counterDisplay")
+        const counterLog = document.getElementById("counterLog")
+
+        function handleIncrement() {
+            display.textContent = counter.increment()
+        }
+        function handleDecrement() {
+            display.textContent = counter.decrement()
+        }
+        function handleReset() {
+            display.textContent = counter.reset()
+        }
+
+        // Memoization
+        function memoize(fn) {
+            const cache = {}
+            
+            return function(...args) { 
+
+                const key = JSON.stringify(args) // key is converted into string for storing and comparison
+
+                if (cache[key] !== undefined) { // If present in cache simply display 
+
+                    return { 
+                        result: cache[key], 
+                        fromCache: true 
+                    }
+                }
+                const result = fn(...args)
+                console.log(result);
+                cache[key] = result
+                return { 
+                    result, 
+                    fromCache: false 
+                }
+            }
+        }
+
+        const cacheLog = document.getElementById("cacheLog")
+        //This function stores the inner function of memoize so even after memoize has executed cache = {} is still accessible
+        const memoizedSquare = memoize((n) => n * n) 
+
+        function handleMemoize() {
+            const n = Number(document.getElementById("cacheInput").value)
+            if (!n) return
+            const { result, fromCache } = memoizedSquare(n)
+
+            const entry = document.createElement("div")
+            entry.className = "cache-result"
+            entry.innerHTML = `<strong>${n}² = ${result}</strong> — ${fromCache ? "from cache (no computation)" : "computed and cached"}`
+            cacheLog.prepend(entry)
+        }
+
+        function clearLog() {
+            cacheLog.innerHTML = ''
+        }
+    </script>
+</body>
+</html>
