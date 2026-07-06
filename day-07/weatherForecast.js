@@ -9,6 +9,8 @@ const date = document.getElementById("date")
 const time = document.getElementById("time");
 const searchBtn = document.getElementById('search-btn')
 const searchInput = document.getElementById("search-input")
+const loading = document.getElementById("loading");
+const error = document.getElementById("error");
 
 const WEATHER_BASE = "https://api.open-meteo.com/v1"
 const GEO_BASE = "https://geocoding-api.open-meteo.com/v1"
@@ -43,6 +45,21 @@ function formatLocalDateTime(isoLocalString) {
     return { dateText, timeText };
 }
  
+function showLoading() {
+    loading.style.display = "block";
+    error.style.display = "none";
+    searchBtn.disabled = true;
+}
+
+function hideLoading() {
+    loading.style.display = "none";
+    searchBtn.disabled = false;
+}
+
+function showError(message) {
+    error.textContent = message;
+    error.style.display = "block";
+}
 
 async function getCityCoordinates(cityName) {
     
@@ -106,14 +123,21 @@ async function getAirQuality(lat, lon) {
 }
 
 async function weatherData(cityName) {
-    const { lat, lon, name, country } = await getCityCoordinates(cityName)
-    const air = await getAirQuality(lat, lon )
-    const weather = await getWeather(lat, lon)
-    /* console.log(`Weather for ${name}, ${country}:`)
-    console.log(weather) */
-    displayData(weather, air);
-    // console.log(weather);
-    
+    try {
+        showLoading();
+
+        const { lat, lon } = await getCityCoordinates(cityName);
+
+        const air = await getAirQuality(lat, lon);
+        const weather = await getWeather(lat, lon);
+
+        displayData(weather, air);
+
+    } catch (err) {
+        showError(err.message);
+    } finally {
+        hideLoading();
+    }
 }
 
 function handleSearch() {
