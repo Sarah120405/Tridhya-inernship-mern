@@ -1,0 +1,226 @@
+<style>
+    /* Import a modern font */
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+    @media (max-width: 360px) {
+        .temp { font-size: 56px; }
+        #details { gap: 16px; padding: 16px; }
+        .detail-item p:first-child { font-size: 14px; }
+    }
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: 'Poppins', sans-serif; /* Cleaner, modern font */
+    }
+    body{
+        display: flex;
+        justify-content: center;
+        min-height: 100vh;
+    }
+    main {
+        background-image: url('./assets/backgound-image.jpg');
+        background-repeat: no-repeat;
+        background-size: cover;
+        width: 400px;
+        max-width: 400px;
+        min-height: 700px;
+        overflow: hidden;
+        padding-bottom: 20px;
+    }
+
+    #search {
+        display: flex;
+        padding: 20px 4vw;
+    }
+
+    .search-container {
+        display: flex;
+        flex: 1;
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        overflow: hidden;
+    }
+
+    #search-input {
+        flex: 1;
+        padding: 12px 16px;
+        background: transparent;
+        border: none;
+        color: white;
+        outline: none;
+    }
+
+    #search-input::placeholder { color: rgba(255, 255, 255, 0.8); }
+
+    #search-btn {
+        padding: 0 20px;
+        border: none;
+        background: white;
+        color: #333;
+        cursor: pointer;
+        font-weight: 600;
+        transition: 0.3s;
+    }
+    #search-btn:hover { background-color: rgba(255, 255, 255, 0.9); }
+
+    /* ── City Info ─────────────────────────────── */
+    #place {
+        padding: 0 4vw;
+    }
+    #city {
+        color: white;
+        font-size: clamp(18px, 5vw, 24px);
+        font-weight: 600;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    /* ── Temperature Hero Section ─────────────── */
+    #temp-display {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        grid-template-areas:
+            "datetime image"
+            "temp image";
+        align-items: center;
+        padding: 10px 3vw;
+    }
+
+    .datetime p {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 14px;
+        font-weight: 300;
+    }
+
+    .temp {
+        grid-area: temp;
+        font-size: clamp(60px, 20vw, 86px);
+        color: white;
+        font-weight: 600;
+        line-height: 1;
+        text-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    #temp-display img {
+        grid-area: image;
+        width: 140px;
+        filter: drop-shadow(0 5px 15px rgba(0,0,0,0.2));
+    }
+
+    #feels-row {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        padding: 0 4vw 20px 4vw;
+    }
+    #feels-row p {
+        color: white;
+        font-size: 15px;
+        background: rgba(255, 255, 255, 0.15);
+        padding: 4px 12px;
+        border-radius: 20px;
+    }
+
+    /* ── Details Grid ──────────────────────────── */
+    .glass {
+        background: rgba(255, 255, 255, 0.12);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 20px;
+    }
+
+    #details {
+        margin: 0 4vw 2vw 4vw;
+        padding: 24px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 24px;
+    }
+
+    .detail-item { text-align: center; }
+
+    .detail-item p:first-child {
+        color: rgb(41, 144, 160);
+        font-size: clamp(14px, 4vw, 18px);
+        font-weight: 600;
+        margin-bottom: 2px;
+    }
+
+    .detail-item p:last-child {
+        color: rgb(41, 144, 160);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* ── Sun Card ──────────────────────────────── */
+    #sun-card {
+        display: flex;
+        justify-content: space-around;
+        margin: 0 4vw;
+        padding: 16px;
+    }
+    .sun-item { text-align: center; }
+    .sun-item p:first-child { font-size: 18px; color: rgb(89 199 215); font-weight: 600; }
+    .sun-item p:last-child { font-size: 12px; color: rgb(89 199 215); }
+</style>
+
+<body>
+    <main>
+        <div id="search">
+            <div class="search-container">
+                <input type="text" placeholder="Search city..." id="search-input">
+                <button id="search-btn">Search</button>
+            </div>
+        </div>
+
+        <div id="place">
+            <h3 id="city">Mumbai, India</h3>
+        </div>
+
+        <div id="temp-display">
+            <div class="datetime">
+                <p id="date">Monday, 23 March</p>
+                <p id="time">12:16 PM</p>
+            </div>
+            <p class="temp" id="temp">34°C</p>
+            <img src="./assets/partly-cloudy.png" alt="Weather Icon">
+        </div>
+
+        <div id="feels-row">
+            <p id="apparentTemp">Feels Like 28°C</p>
+            <p id="weather">Partly Cloudy</p>
+        </div>
+
+        <div class="glass" id="details">
+            <div class="detail-item"><p id="humidity">72%</p><p>Humidity</p></div>
+            <div class="detail-item" >
+                <p id="windSpeed">18
+                    
+                </p>
+                <p>Wind</p>
+            </div>
+            <div class="detail-item"><p id="windDirection">SW</p><p>Direction</p></div>
+            <div class="detail-item"><p>6 Km</p><p>Visibility</p></div>
+            <div class="detail-item"><p>46</p><p>UV Index</p></div>
+            <div class="detail-item"><p id="airQuality">21</p><p>Air Quality</p></div>
+        </div>
+
+        <div class="glass" id="sun-card">
+            <div class="sun-item">
+                <p>06:28 AM</p>
+                <p>Sunrise</p>
+            </div>
+            <div class="sun-item">
+                <p>06:44 PM</p>
+                <p>Sunset</p>
+            </div>
+        </div>
+        <div style="margin-top: 20px; display: flex; justify-content: center;">
+            <img src="./assets/logo.png" style="object-fit: cover; justify-content: center;">
+        </div>
+    </main>
+    <script src="./weatherForecast.js"></script>
+</body>
