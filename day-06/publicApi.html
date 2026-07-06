@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Explorer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+    <link href="./publicApi.css" rel="stylesheet">
+</head>
+<body>
+
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand-icon">👥</div>
+            <div>
+                <h1>User Explorer</h1>
+                <p>Explore users, their posts and comments (JSONPlaceholder)</p>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section class="panel">
+            <div class="panel-header">
+                <h2>Users <span class="count-badge" id="usersCount">0</span></h2>
+            </div>
+            <input type="text" class="search-box" id="userSearch" placeholder="Search users...">
+            <div class="panel-body">
+                <ul id="userList"></ul>
+            </div>
+            <div class="panel-footer">Total Users: <span id="totalUsersFooter">0</span></div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-header">
+                <h2>User Details</h2>
+            </div>
+            <div class="panel-body" id="userDetails"></div>
+            <div class="section-label">
+                Posts by <span id="postsByName">—</span>
+                <span class="count-badge" id="postsCount">0</span>
+            </div>
+            <div class="panel-body" id="postsList" style="padding-top: 0;"></div>
+            <div class="panel-footer">Total Posts: <span id="totalPostsFooter">0</span></div>
+        </section>
+    </main>
+
+    <script src="./publicApi.js"></script>
+</body>
+</html>
