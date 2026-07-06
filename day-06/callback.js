@@ -1,11 +1,15 @@
-/* Asyn callback is being created. As setTimout is adding a delay of 2s 
-    due to async callback next line 3 will be printed and later Hello will be printed 
-*/
+// Synchronous callbacks using array methods
+const numbers = [1, 2, 3, 4, 5]
+
+const doubled = numbers.map(num => num * 2)
+const evens = numbers.filter(num => num % 2 === 0)
+
+/* Asyn callback is being created with a delay of 2s so three will be printed before Hello*/
 console.log("One");
 console.log("Two");
 
 setTimeout(() => {
-    console.log("Hell0");
+    console.log("Hello");
 }, 2000)
 
 console.log("Three");
