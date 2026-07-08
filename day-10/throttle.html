@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Throttle Demo</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        background: #0f172a;
+        color: #e2e8f0;
+        padding: 24px;
+      }
+
+      h2 {
+        margin-bottom: 8px;
+        color: #38bdf8;
+      }
+
+      .counter-row {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      .counter {
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 8px;
+        padding: 12px 20px;
+        text-align: center;
+        min-width: 140px;
+      }
+
+      .counter label {
+        display: block;
+        font-size: 11px;
+        color: #64748b;
+        margin-bottom: 4px;
+      }
+
+      .counter span {
+        font-size: 28px;
+        font-weight: 700;
+      }
+
+      .red {
+        color: #f87171;
+      }
+      .green {
+        color: #4ade80;
+      }
+
+      .scroll-box {
+        height: 300px;
+        overflow-y: auto;
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 8px;
+        padding: 16px;
+      }
+
+      .book-item {
+        padding: 10px 0;
+        border-bottom: 1px solid #334155;
+        font-size: 13px;
+      }
+
+      .book-item:last-child {
+        border-bottom: none;
+      }
+
+      .book-title {
+        font-weight: 500;
+        margin-bottom: 2px;
+      }
+      .book-author {
+        color: #64748b;
+        font-size: 12px;
+      }
+
+      .loading {
+        color: #64748b;
+        text-align: center;
+        padding: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Throttle Demo</h2>
+    <p style="color: #64748b; font-size: 13px; margin-bottom: 16px">
+      Scroll inside the box. Throttle limits handler to once per 500ms.
+    </p>
+
+    <div class="counter-row">
+      <div class="counter">
+        <label>Scroll Events Fired</label>
+        <span class="red" id="eventsCount">0</span>
+      </div>
+      <div class="counter">
+        <label>Handler Executions</label>
+        <span class="green" id="handlerCount">0</span>
+      </div>
+    </div>
+
+    <div class="scroll-box" id="scrollBox">
+      <div id="bookList">
+        <p class="loading">Loading books...</p>
+      </div>
+    </div>
+
+    <script>
+      // ── Throttle function apply limit in calling onScroll function
+      function throttle(fn, limit) {
+        let lastCall = 0;
+        return function (...args) {
+          const now = Date.now();
+
+          // Only execute if enough time has passed
+          if (now - lastCall >= limit) {
+            lastCall = now;
+            fn(...args);
+          }
+        };
+      }
+
+      let scrollEvents = 0;
+      let handlerRuns = 0;
+
+      const eventsEl = document.getElementById("eventsCount");
+      const handlerEl = document.getElementById("handlerCount");
+
+      // Fetch data
+      async function loadBooks() {
+        const res = await fetch(
+          "https://openlibrary.org/search.json?q=javascript&limit=40",
+        );
+        const data = await res.json();
+
+        document.getElementById("bookList").innerHTML = data.docs
+          .map(
+            (book) => `
+                <div class="book-item">
+                    <p class="book-title">${book.title}</p>
+                    <p class="book-author">
+                        ${book.author_name?.[0] ?? "Unknown"}
+                    </p>
+                </div>
+            `,
+          )
+          .join("");
+      }
+
+      loadBooks();
+
+      // Throttled scroll handler
+      function onScroll() {
+        handlerRuns++; // One handler increaments at every 500ms delay
+        handlerEl.textContent = handlerRuns;
+        console.log(`Handler ran — execution #${handlerRuns}`);
+      }
+
+      const throttledScroll = throttle(onScroll, 500);
+
+      document.getElementById("scrollBox").addEventListener("scroll", () => {
+        scrollEvents++; // Browser is counting this scroll event
+        eventsEl.textContent = scrollEvents;
+        throttledScroll();
+      });
+    </script>
+  </body>
+</html>
