@@ -23,11 +23,11 @@ const openAddBookBtn = document.getElementById("openAddBookBtn");
 const openAddMemberBtn = document.getElementById("openAddMemberBtn");
 const closeButtons = document.querySelectorAll("[data-close-modal]");
 
-function openModal(id) {
+export function openModal(id) {
   document.getElementById(id).classList.remove("hidden");
 }
 
-function closeModal(id) {
+export function closeModal(id) {
   document.getElementById(id).classList.add("hidden");
 }
 

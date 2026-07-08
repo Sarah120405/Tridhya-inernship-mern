@@ -1,13 +1,9 @@
-// ============================================================
-// This file assumes libraryManagement.js is loaded first, and
-// assumes you've added getAllMembers() / getAllBorrowingRecords()
-// to your Library class, and matchSearch().
-// ============================================================
+import { Book, Member, Librarian, Library } from "./libraryManagement.js";
+import { openModal, closeModal } from "./navigation.js";
 
 const library = Library.getInstance();
 const librarian = new Librarian("Alice", "alice@lib.com", "EMP001");
 
-// ---------- Seed data so the UI has something to render ----------
 librarian.addBook(
   library,
   new Book("Harry Potter", "Rowling", "Fantasy", 3, "ISBN001"),
@@ -25,7 +21,8 @@ const memberSarah = new Member("Sarah", "sarah@gmail.com");
 const memberJohn = new Member("John", "john@gmail.com");
 library.registerMember(memberSarah);
 library.registerMember(memberJohn);
-// ---------- DOM references ----------
+
+//DOM Elements
 const statTotalBooks = document.getElementById("statTotalBooks");
 const statTotalMembers = document.getElementById("statTotalMembers");
 const statBorrowed = document.getElementById("statBorrowed");
@@ -55,7 +52,6 @@ const genreBreakdown = document.getElementById("genreBreakdown");
 
 let selectedMemberId = null;
 
-// ---------- Small helpers ----------
 function isOverdue(record) {
   return !record.returned && new Date() > record.dueDate;
 }
@@ -89,9 +85,7 @@ function calculateFineForRecord(record) {
   return record.member.calculateFine(record.book.ISBN);
 }
 
-// ============================================================
 // DASHBOARD
-// ============================================================
 function renderDashboard() {
   const allRecords = library.getAllBorrowingRecords();
   const activeRecords = allRecords.filter((r) => !r.returned);
@@ -126,9 +120,7 @@ function renderDashboard() {
     .join("");
 }
 
-// ============================================================
 // BOOKS PAGE
-// ============================================================
 function renderBookGrid(items) {
   if (items.length === 0) {
     bookGrid.innerHTML = `<p style="color:var(--muted);">No items match your search.</p>`;
@@ -268,6 +260,7 @@ document.getElementById("borrowBookForm").addEventListener("submit", (e) => {
 
 // MEMBERS PAGE
 function renderMemberList(members) {
+  // Members List
   memberListCount.textContent = members.length;
 
   if (members.length === 0) {
@@ -304,6 +297,7 @@ memberList.addEventListener("click", (event) => {
   renderMemberDetail(member);
 });
 
+// Member detail panel
 function renderMemberDetail(member) {
   const borrowed = member.getBorrowedBooks();
   const history = member.getBorrowingHistory();
@@ -382,6 +376,8 @@ memberDetailPanel.addEventListener("click", (e) => {
   renderDashboard();
   alert(res);
 });
+
+// Search members
 function getFilteredMembers() {
   const term = memberSearchInput.value.trim().toLowerCase();
   const all = library.getAllMembers();
@@ -407,9 +403,7 @@ addMemberForm.addEventListener("submit", (event) => {
   renderDashboard();
 });
 
-// ============================================================
 // BORROWING HISTORY PAGE
-// ============================================================
 function renderHistoryTable() {
   const filter = historyStatusFilter.value;
   let records = library.getAllBorrowingRecords();
@@ -454,9 +448,7 @@ function renderHistoryTable() {
 
 historyStatusFilter.addEventListener("change", renderHistoryTable);
 
-// ============================================================
 // STATISTICS PAGE
-// ============================================================
 function renderStatistics() {
   const members = library.getAllMembers();
   const allRecords = library.getAllBorrowingRecords();
@@ -516,10 +508,7 @@ function renderStatistics() {
   statAvgDuration.textContent = activeBorrowers.size;
 }
 
-// ============================================================
-// Re-render the relevant page whenever its nav item is clicked,
-// so data is always fresh instead of computed once on load.
-// ============================================================
+// Re-render the relevant page whenever its nav item is clicked, so data is always fresh instead of computed once on load.
 document.querySelectorAll(".nav-item").forEach((item) => {
   item.addEventListener("click", () => {
     const page = item.dataset.page;
@@ -531,7 +520,6 @@ document.querySelectorAll(".nav-item").forEach((item) => {
   });
 });
 
-// ---------- Initial render ----------
 renderDashboard();
 renderBookGrid(getFilteredBooks());
 renderMemberList(getFilteredMembers());
