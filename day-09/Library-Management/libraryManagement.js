@@ -1,8 +1,9 @@
 // Base class for Books and Magazines that will be stored in library
 class LibraryItem {
+  static #nextId = 1;
   #id;
   constructor(title, type, copies) {
-    this.#id = Date.now();
+    this.#id = LibraryItem.#nextId++;
     this.title = title;
     this.type = type;
     this.copies = copies;
@@ -50,31 +51,26 @@ class Book extends LibraryItem {
   }
 }
 
-// Similar to book class but for magazine
-class Magazine extends LibraryItem {
-  constructor(title, issueNo, publisher, copies) {
-    super(title, "Magazine", copies);
-    this.issueNo = issueNo;
-    this.publisher = publisher;
-  }
-  getInfo() {
-    super.getInfo();
-    console.log(`\nPublisher: ${this.publisher}\n Issue No: ${this.issueNo}`);
-  }
-}
-
 // Person parent class for members who can borrow books and librarian who can add, remove books
 class Person {
+  static #nextId = 1;
   #id;
   constructor(name, email) {
-    this.#id = Date.now();
+    this.#id = Person.#nextId++;
     this.name = name;
     this.email = email;
   }
 
+  get itemId() {
+    return this.#id;
+  }
+
   getDetails() {
     const masked = this.email.replace(/^(.).*@/, "$1****@");
-    return `Name: ${this.name} | Email: ${masked}`;
+    return {
+      name: this.name,
+      email: masked,
+    };
   }
 }
 
@@ -100,32 +96,36 @@ class Member extends Person {
     if (!record) return null;
 
     record.returned = true;
+    record.returnDate = new Date();
     this.#borrowingHistory.push(record);
 
     return record;
   }
 
   calculateFine(ISBN) {
-    const record = this.#borrowingHistory.find((r) => r.book.ISBN === ISBN);
+    const record =
+      this.#borrowedBooks.find((r) => r.book.ISBN === ISBN && !r.returned) ||
+      this.#borrowingHistory.find((r) => r.book.ISBN === ISBN);
 
     if (!record) return 0;
 
-    const today = new Date();
-    if (today <= record.dueDate) return 0;
+    const endDate = record.returnDate || new Date();
+    if (endDate <= record.dueDate) return 0;
 
-    const overdueDays = Math.ceil(
-      (today - record.dueDate) / (1000 * 60 * 60 * 24),
+    const overdueDays = Math.max(
+      0,
+      Math.ceil((endDate - record.dueDate) / (1000 * 60 * 60 * 24)),
     );
 
     return overdueDays * 5;
   }
 
   getBorrowedBooks() {
-    return this.#borrowedBooks.filter((book) => !book.returned);
+    return [...this.#borrowedBooks.filter((book) => !book.returned)];
   }
 
   getBorrowingHistory() {
-    return this.#borrowingHistory;
+    return [...this.#borrowingHistory];
   }
 
   get borrowedCount() {
@@ -144,8 +144,15 @@ class Librarian extends Person {
   }
 
   addBook(library, book) {
-    library.addBook(book);
+    let res = library.addBook(book);
+
+    if (!res) {
+      alert("ISBN already exists");
+      return "ISBN already exists";
+    }
+
     console.log(`${this.name} added ${book.title}`);
+    return true;
   }
   removeBook(library, ISBN) {
     library.removeBook(ISBN);
@@ -169,22 +176,32 @@ class Library {
     return Library.#instance;
   }
   findBookByISBN(ISBN) {
-    return this.#books.find((book) => book.ISBN === ISBN);
+    return this.#books.find((book) => book.ISBN === ISBN) || null;
   }
 
-  borrowBook(member, book) {
+  borrowBook(member, ISBN) {
+    const book = this.findBookByISBN(ISBN);
+    if (!book) {
+      return "Book doesn't exist";
+    }
     if (!book.available) {
       return "Book not available";
     }
 
+    const alreadyHasThisBook = member
+      .getBorrowedBooks()
+      .some((record) => record.book.ISBN === ISBN);
+
+    if (alreadyHasThisBook) {
+      return "You already have that book";
+    }
     if (!member.canBorrow) {
-      // note: canBorrow is getter, no ()
       return "Borrowing limit reached";
     }
 
     const borrowDate = new Date();
     const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + 14); // adds 14 days correctly
+    dueDate.setDate(dueDate.getDate() + 14); // adds 14 days
 
     member.addBorrowRecord({
       book,
@@ -221,15 +238,29 @@ class Library {
       libraryRecord.returned = true;
     }
 
-    return `Returned: ${record.book.title}`;
+    return `Returned: ${record.book.title} at ${record.returnDate}`;
   }
 
   addBook(book) {
+    const exists = this.#books.some((b) => b.ISBN === book.ISBN);
+
+    if (exists) return false;
+
     this.#books = [...this.#books, book];
+    return true;
   }
 
   removeBook(ISBN) {
+    const isBorrowed = this.#borrowingRecords.some(
+      (record) => record.book.ISBN === ISBN && !record.returned,
+    );
+
+    if (isBorrowed) {
+      return "Book is currently borrowed";
+    }
+
     this.#books = this.#books.filter((b) => b.ISBN !== ISBN);
+    return true;
   }
 
   searchBooks(query) {
@@ -244,11 +275,21 @@ class Library {
   }
 
   registerMember(member) {
+    const exists = this.#members.some((m) => m.email === member.email);
+
+    if (exists) return "Member already exists";
     this.#members = [...this.#members, member];
   }
 
   displayBooks() {
-    return this.#books;
+    return [...this.#books];
+  }
+  getAllMembers() {
+    return [...this.#members];
+  }
+
+  getAllBorrowingRecords() {
+    return [...this.#borrowingRecords];
   }
 
   getCurrentlyBorrowedBooks() {

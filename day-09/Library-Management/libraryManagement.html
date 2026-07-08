@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Library Management</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap"
+      rel="stylesheet"
+    />
+    <link href="./libraryManagement.css" rel="stylesheet" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <!-- ============ SIDEBAR ============ -->
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">§</div>
+          <div>
+            <h1>The Stacks</h1>
+            <p>Library Management</p>
+          </div>
+        </div>
+
+        <nav class="nav">
+          <button class="nav-item active" data-page="dashboard">
+            <span class="nav-icon">⌂</span> Dashboard
+          </button>
+          <button class="nav-item" data-page="books">
+            <span class="nav-icon">▤</span> Books
+          </button>
+          <button class="nav-item" data-page="members">
+            <span class="nav-icon">☺</span> Members
+          </button>
+          <button class="nav-item" data-page="history">
+            <span class="nav-icon">↺</span> Borrowing History
+          </button>
+          <button class="nav-item" data-page="statistics">
+            <span class="nav-icon">◈</span> Statistics
+          </button>
+        </nav>
+
+        <div class="sidebar-footer">
+          <div class="librarian-tag">
+            <div class="librarian-avatar">A</div>
+            <div>
+              <p class="librarian-name" id="currentLibrarianName">Alice</p>
+              <p class="librarian-role">Librarian on duty</p>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- ============ MAIN CONTENT ============ -->
+      <main class="content">
+        <!-- ============ DASHBOARD PAGE ============ -->
+        <section class="page active" id="page-dashboard">
+          <header class="page-header">
+            <div>
+              <h2>Dashboard</h2>
+              <p class="subtitle">Overview of the collection at a glance</p>
+            </div>
+          </header>
+
+          <div class="stat-grid">
+            <div class="stat-card">
+              <p class="stat-label">Total Books</p>
+              <p class="stat-value" id="statTotalBooks">0</p>
+              <p class="stat-foot">titles in the catalog</p>
+            </div>
+            <div class="stat-card">
+              <p class="stat-label">Total Members</p>
+              <p class="stat-value" id="statTotalMembers">0</p>
+              <p class="stat-foot">registered readers</p>
+            </div>
+            <div class="stat-card">
+              <p class="stat-label">Currently Borrowed</p>
+              <p class="stat-value" id="statBorrowed">0</p>
+              <p class="stat-foot">copies out on loan</p>
+            </div>
+            <div class="stat-card accent">
+              <p class="stat-label">Overdue</p>
+              <p class="stat-value" id="statOverdue">0</p>
+              <p class="stat-foot">past their due date</p>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <h3>Recent Activity</h3>
+              <span class="count-pill" id="recentActivityCount">0</span>
+            </div>
+            <ul class="activity-list" id="recentActivityList">
+              <!-- recent borrow/return entries render here -->
+            </ul>
+          </div>
+        </section>
+
+        <!-- ============ BOOKS PAGE ============ -->
+        <section class="page" id="page-books">
+          <header class="page-header">
+            <div>
+              <h2>Books</h2>
+              <p class="subtitle">Search, add, and manage the catalog</p>
+            </div>
+            <button class="btn primary" id="openAddBookBtn">+ Add Book</button>
+          </header>
+
+          <div class="toolbar">
+            <input
+              type="text"
+              class="search-input"
+              id="bookSearchInput"
+              placeholder="Search by title, author, or genre..."
+            />
+            <select class="filter-select" id="bookTypeFilter">
+              <option value="all">All Genres</option>
+              <option value="Fantasy">Fantasy</option>
+              <option value="Tech">Tech</option>
+              <option value="Self Help">Self Help</option>
+            </select>
+          </div>
+
+          <div class="book-grid" id="bookGrid">
+            <!-- book-card elements render here -->
+          </div>
+        </section>
+
+        <!-- ============ MEMBERS PAGE ============ -->
+        <section class="page" id="page-members">
+          <header class="page-header">
+            <div>
+              <h2>Members</h2>
+              <p class="subtitle">
+                Registered readers and their borrowing status
+              </p>
+            </div>
+            <button class="btn primary" id="openAddMemberBtn">
+              + Register Member
+            </button>
+          </header>
+
+          <div class="toolbar">
+            <input
+              type="text"
+              class="search-input"
+              id="memberSearchInput"
+              placeholder="Search members by name..."
+            />
+          </div>
+
+          <div class="member-layout">
+            <div class="panel">
+              <div class="panel-header">
+                <h3>All Members</h3>
+                <span class="count-pill" id="memberListCount">0</span>
+              </div>
+              <ul class="member-list" id="memberList">
+                <!-- member-row elements render here -->
+              </ul>
+            </div>
+
+            <div class="panel">
+              <div class="panel-header">
+                <h3>Member Details</h3>
+              </div>
+              <div id="memberDetailPanel" class="member-detail">
+                <p>Select a member to view their borrowing details.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ BORROWING HISTORY PAGE ============ -->
+        <section class="page" id="page-history">
+          <header class="page-header">
+            <div>
+              <h2>Borrowing History</h2>
+              <p class="subtitle">Every loan, past and present</p>
+            </div>
+          </header>
+
+          <div class="toolbar">
+            <select class="filter-select" id="historyStatusFilter">
+              <option value="all">All Records</option>
+              <option value="active">Currently Borrowed</option>
+              <option value="returned">Returned</option>
+              <option value="overdue">Overdue</option>
+            </select>
+          </div>
+
+          <div class="panel">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Member</th>
+                  <th>Book</th>
+                  <th>Borrowed</th>
+                  <th>Due</th>
+                  <th>Status</th>
+                  <th>Fine</th>
+                </tr>
+              </thead>
+              <tbody id="historyTableBody">
+                <!-- history rows render here -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ============ STATISTICS PAGE ============ -->
+        <section class="page" id="page-statistics">
+          <header class="page-header">
+            <div>
+              <h2>Statistics</h2>
+              <p class="subtitle">
+                Trends across the collection and its readers
+              </p>
+            </div>
+          </header>
+
+          <div class="stat-grid">
+            <div class="stat-card">
+              <p class="stat-label">Most Borrowed Genre</p>
+              <p class="stat-value small" id="statTopGenre">—</p>
+            </div>
+            <div class="stat-card">
+              <p class="stat-label">Active Borrowers</p>
+              <p class="stat-value small" id="statAvgDuration">—</p>
+            </div>
+            <div class="stat-card">
+              <p class="stat-label">Total Fines Collected</p>
+              <p class="stat-value small" id="statTotalFines">₹0</p>
+            </div>
+            <div class="stat-card">
+              <p class="stat-label">Most Active Member</p>
+              <p class="stat-value small" id="statTopMember">—</p>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <h3>Books by Genre</h3>
+            </div>
+            <div id="genreBreakdown" class="breakdown-list">
+              <!-- genre bar rows render here -->
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- ============ ADD BOOK MODAL ============ -->
+    <div class="modal-overlay hidden" id="addBookModal">
+      <div class="modal">
+        <div class="modal-header">
+          <h3>Add Book</h3>
+          <button class="icon-btn" data-close-modal="addBookModal">✕</button>
+        </div>
+        <form id="addBookForm">
+          <div class="form-row">
+            <div class="field">
+              <label for="bookTitle">Title</label>
+              <input type="text" id="bookTitle" required />
+            </div>
+            <div class="field">
+              <label for="bookAuthor">Author</label>
+              <input type="text" id="bookAuthor" required />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label for="bookGenre">Genre</label>
+              <input type="text" id="bookGenre" required />
+            </div>
+            <div class="field">
+              <label for="bookCopies">Copies</label>
+              <input type="number" id="bookCopies" min="1" value="1" required />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="field full">
+              <label for="bookISBN">ISBN</label>
+              <input type="text" id="bookISBN" required />
+            </div>
+          </div>
+          <div class="form-actions">
+            <button
+              type="button"
+              class="btn secondary"
+              data-close-modal="addBookModal"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="btn primary">Add Book</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ============ BORROW BOOK MODAL ============ -->
+    <div class="modal-overlay hidden" id="borrowBookModal">
+      <div class="modal">
+        <div class="modal-header">
+          <h3>Borrow Book</h3>
+          <button class="icon-btn" data-close-modal="borrowBookModal">✕</button>
+        </div>
+
+        <form id="borrowBookForm">
+          <div class="form-row">
+            <div class="field full">
+              <label for="borrowBookTitle">Book</label>
+              <input type="text" id="borrowBookTitle" readonly />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="field full">
+              <label for="borrowMember">Select Member</label>
+              <select id="borrowMember" required>
+                <option value="">Choose Member</option>
+                <!-- Members will be added dynamically -->
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="field">
+              <label for="borrowDate">Borrow Date</label>
+              <input type="date" id="borrowDate" readonly />
+            </div>
+
+            <div class="field">
+              <label for="dueDate">Due Date</label>
+              <input type="date" id="dueDate" readonly />
+            </div>
+          </div>
+
+          <!-- Hidden ISBN -->
+          <input type="hidden" id="borrowBookISBN" />
+
+          <div class="form-actions">
+            <button
+              type="button"
+              class="btn secondary"
+              data-close-modal="borrowBookModal"
+            >
+              Cancel
+            </button>
+
+            <button type="submit" class="btn primary">Borrow Book</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ============ REGISTER MEMBER MODAL ============ -->
+    <div class="modal-overlay hidden" id="addMemberModal">
+      <div class="modal">
+        <div class="modal-header">
+          <h3>Register Member</h3>
+          <button class="icon-btn" data-close-modal="addMemberModal">✕</button>
+        </div>
+        <form id="addMemberForm">
+          <div class="form-row">
+            <div class="field full">
+              <label for="memberName">Name</label>
+              <input type="text" id="memberName" required />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="field full">
+              <label for="memberEmail">Email</label>
+              <input type="email" id="memberEmail" required />
+            </div>
+          </div>
+          <div class="form-actions">
+            <button
+              type="button"
+              class="btn secondary"
+              data-close-modal="addMemberModal"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="btn primary">Register</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script src="./libraryManagement.js"></script>
+    <script src="./libraryDOM.js"></script>
+    <script src="./navigation.js"></script>
+  </body>
+</html>
