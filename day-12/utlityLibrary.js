@@ -60,6 +60,32 @@ function sortNumbers(numbers, order) {
         return sorted;
     }
 }
+function StudentGrade(student) {
+    const studentGrade = {
+        grade: student.grade,
+        name: student.name,
+    };
+    return {
+        Grade: studentGrade.grade,
+        Name: studentGrade.name,
+    };
+}
+function summary(student) {
+    const summary = {
+        name: student.name,
+        age: student.age,
+        grade: student.grade,
+        city: student.city,
+    };
+    return summary;
+}
+// Merge Objects
+function mergeObjects(obj1, obj2) {
+    return {
+        ...obj1,
+        ...obj2,
+    };
+}
 // Create an API response
 var HttpStatus;
 (function (HttpStatus) {
@@ -109,6 +135,9 @@ const students = [
 console.log("\nSwap: \n", swap(4, 7));
 console.log("\nGet 1st Element: \n", getFirst([2, 5, 7, 3, 9]));
 console.log("\nGet last Element: \n", getFirst([2, 5, 7, 3, 9]));
+console.log("\nReverse");
+console.log("Actual Array: [1,2,3,4,5]");
+console.log("Reversed Array: ", reverseArray([1, 2, 3, 4, 5]));
 console.log("\nFilter");
 console.log(filter(students, (s) => s.grade > 80));
 console.log("\nMap");
@@ -120,7 +149,14 @@ console.log(groupBy(students, "city"));
 console.log("\nRemove Duplicates");
 console.log(removeDuplicates([1, 2, 2, 3, 3, 3, 4]));
 console.log("\nSort By");
-console.log(sortNumbers([2, 5, 1, 8, 3, 7], SortOrder.Desc));
+console.log("Unsorted Array: [2, 5, 1, 8, 3, 7]");
+console.log("Sorted Array: ", sortNumbers([2, 5, 1, 8, 3, 7], SortOrder.Desc));
+console.log("\nPick Grade: ");
+console.log(StudentGrade(students[0]));
+console.log("\nOmit id: ");
+console.log(summary(students[0]));
+console.log("\nMerge Objects");
+console.log("Merged Name and Birthday Object\n", mergeObjects({ name: "Sarah" }, { birthday: "12/04/2005" }));
 console.log("\nApI Response");
 console.log(createResponse(students, HttpStatus.OK, "Students fetched"));
 console.log("\nStack class");
@@ -131,27 +167,3 @@ stack.push(3);
 console.log("Peek:", stack.peek()); // 3
 console.log("Pop:", stack.pop()); // 3
 console.log("Size:", stack.size()); // 2
-/*
-// Test pick
-console.log("\n=== pick ===")
-console.log(pick(students[0], ["name", "grade"]))
-
-// Test omit
-console.log("\n=== omit ===")
-console.log(omit(students[0], ["id"]))
-
-// Test log
-console.log("\n=== Logger ===")
-log(LogLevel.Info, "App started")
-log(LogLevel.Warn, "High memory usage", { usage: "85%" })
-log(LogLevel.Error, "Student not found", { id: 99 })
-
-// Test Queue
-console.log("\n=== Queue ===")
-const queue = new Queue<string>()
-queue.enqueue("first")
-queue.enqueue("second")
-queue.enqueue("third")
-console.log("Front:", queue.front())      // "first"
-console.log("Dequeue:", queue.dequeue())  // "first"
-console.log("Size:", queue.size())        // 2 */
