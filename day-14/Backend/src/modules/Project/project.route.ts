@@ -33,3 +33,5 @@ route.post(
     res.status(201).json(project);
   },
 );
+
+export default route;
