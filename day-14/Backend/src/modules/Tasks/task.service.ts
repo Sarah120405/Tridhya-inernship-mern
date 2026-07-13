@@ -1,7 +1,11 @@
 import { tasks, CreateTaskBody, Task } from "../../types";
 
-export function getAllTasks(): Task[] {
-  return tasks;
+export function getAllTasks(projectId?: string): Task[] {
+  if (!projectId) {
+    return tasks;
+  }
+
+  return tasks.filter((task) => task.projectId === projectId);
 }
 
 export function getTaskById(id: string): Task | undefined {

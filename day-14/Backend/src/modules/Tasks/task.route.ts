@@ -11,7 +11,10 @@ import { Task, CreateTaskBody } from "../../types";
 const route = express.Router();
 
 route.get("/tasks", (req: Request, res: Response) => {
-  res.json(getAllTasks());
+  const projectId = req.query.projectId;
+  const projectIdValue = typeof projectId === "string" ? projectId : undefined;
+
+  res.json(getAllTasks(projectIdValue));
 });
 
 route.get("/tasks/:id", (req: Request<{ id: string }>, res: Response) => {
@@ -37,7 +40,10 @@ route.post(
 
 route.patch(
   "/tasks/:id",
-  (req: Request<{ id: string }, Task, Partial<CreateTaskBody>>, res: Response) => {
+  (
+    req: Request<{ id: string }, Task, Partial<CreateTaskBody>>,
+    res: Response,
+  ) => {
     const task = updateTask(req.params.id, req.body);
     if (!task) {
       return res.status(404).json({ error: "Not found" });

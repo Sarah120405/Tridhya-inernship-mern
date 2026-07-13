@@ -1,9 +1,17 @@
 import express, { NextFunction, Request, Response } from "express";
+import cors from "cors";
 import projectRoute from "./modules/Project/project.route";
 import taskRoute from "./modules/Tasks/task.route";
 
 const app = express();
 
+app.use(
+  cors({
+    origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
+    methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    credentials: true,
+  }),
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

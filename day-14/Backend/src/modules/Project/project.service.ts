@@ -1,5 +1,5 @@
 import { Project, CreateProjectBody } from "../../types";
-import { projects } from "../../types";
+import { projects, tasks } from "../../types";
 
 export function getAllProjects(): Project[] {
   return projects;
@@ -27,5 +27,8 @@ export function deleteProject(id: string): boolean {
     return false;
   }
   projects.splice(projectIndex, 1);
+  const remainingTasks = tasks.filter((t) => t.projectId !== id);
+  tasks.length = 0;
+  tasks.push(...remainingTasks);
   return true;
 }
