@@ -1,0 +1,40 @@
+Git & GitHub — Day 15 & 16 Learning Summary
+
+Day 15 — Fundamentals & Branching
+    1.	Core commands: init, add, commit, status, log, .gitignore
+    2.	Remotes: clone, push, pull, fetch — connecting a local repo to GitHub
+    3.	Branching: created a branch, made commits on it, merged back into main
+    4.	Fast-forward vs. merge commit: fast-forward happens when main hasn't moved since branching (history stays linear); 
+        a merge commit is created when both branches have diverged
+
+Day 16 — Merge, Rebase, Pull Requests, Team Workflow
+    1.	Rebase: replays your branch's commits on top of a new base (e.g. updated main), 
+        producing linear history instead of a merge commit; each replayed commit gets a new hash
+    2.	Interactive rebase (git rebase -i): lets you pick, reword, squash/fixup, drop, or reorder commits before replaying 
+        used to clean up messy commit history
+    3.	Pull requests: a GitHub-level feature (not a Git command) for proposing a merge, reviewing diffs, commenting, and merging via the UI
+    4.	Team workflow practiced: branch → commit in stages → simulate main moving → rebase onto updated main → push → open PR → review → merge → clean up branch
+    5.	git stash: temporarily shelves uncommitted changes so you can switch branches cleanly, then reapply with pop/apply
+    6.	git revert vs git reset: revert creates a new commit undoing a previous one (safe for shared/pushed history); 
+        reset moves the branch pointer backward, optionally discarding commits (--soft/--mixed/--hard) — safe only for local, unpushed work
+    7.	git cherry-pick: applies one specific commit from another branch onto the current branch, without pulling in the rest of that branch's history
+
+GitHub Platform Concepts
+    1.	Issues: tracks bugs/features/tasks; can be auto-closed by referencing Fixes #12 in a commit/PR
+    2.	Discussions: open-ended conversation (Q&A, ideas) separate from actionable Issues; must be manually enabled
+    3.	Projects (Kanban boards): visual board organizing Issues/PRs into columns (To Do/In Progress/Done)
+    4.	Releases: packages a specific commit (via a Git tag) as a versioned milestone, optionally with downloadable assets
+    5.	Actions: GitHub's built-in CI/CD — YAML-defined workflows that auto-run on events (e.g. run tests on every PR)
+    6.	Branch protection rules: repo settings that block direct pushes to a branch and/or require PR review and passing checks before merge
+
+Other Concepts
+    1.	Git submodules: embeds another Git repo as a subdirectory with its own independent history
+    2.	Git subtree: alternative to submodules — copies another repo's code into your history directly instead of linking
+    3.	Git worktree: multiple working directories from one repo, each on a different branch, at the same time
+    4.	Git hooks: scripts that run automatically at Git events (e.g. pre-commit linting); often managed via Husky in JS projects
+    5.	Git LFS: handles large binary files by storing a pointer in Git while the actual file lives on a separate server
+    6.	Signed commits (GPG): cryptographically signs commits so GitHub shows a "Verified" badge
+    7.	Sparse checkout: checks out only part of a repo's directory tree, useful for large monorepos
+    8.	Low-level plumbing commands (git cat-file, git hash-object, git ls-tree): direct access to Git's underlying object database of blobs/trees/commits, 
+        which the everyday "porcelain" commands (add, commit) are built on top of
+
