@@ -108,6 +108,27 @@ fieldset {
   background-color: transparent;
   color: #d9e2f1;
 }
+.passwords-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.passwords-wrapper .control {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.passwords-wrapper .control input {
+  width: 100%;
+  max-width: none;
+}
+
+.password-handler {
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+}
 
 .control-error {
   color: #ffca99;
@@ -131,6 +152,15 @@ fieldset {
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
+}
+.show-button {
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  border-radius: 4px;
+  border: 1px solid #758a8a;
+  background-color: #869999;
+  color: #142020;
+  cursor: pointer;
 }
 
 .button {
