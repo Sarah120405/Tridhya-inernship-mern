@@ -1,26 +1,8 @@
 import { Link } from "react-router-dom";
 import { useBookmarks } from "../hooks/bookMarkHook";
 import { FiBookmark } from "react-icons/fi";
+import colorForTag from "../components/ColorTag";
 
-const TAG_COLORS = [
-  "#4F46E5",
-  "#F59E0B",
-  "#10B981",
-  "#EC4899",
-  "#8B5CF6",
-  "#EF4444",
-  "#0EA5E9",
-  "#14B8A6",
-];
-
-function colorForTag(tag) {
-  if (!tag) return TAG_COLORS[0];
-  let hash = 0;
-  for (let i = 0; i < tag.length; i++) {
-    hash = tag.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return TAG_COLORS[Math.abs(hash) % TAG_COLORS.length];
-}
 function getBookmarkStats(bookmarks) {
   const totalReadingTime = bookmarks.reduce(
     (sum, b) => sum + (b.reading_time_minutes || 0),
