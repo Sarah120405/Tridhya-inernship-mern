@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { getAllArticles } from "../api/posts";
 import PosterImage from "../assets/home-poster.jpg";
+import { FiArrowRight } from "react-icons/fi";
 
 const TAG_COLORS = [
   "#4F46E5", // indigo
@@ -100,9 +101,10 @@ function Home() {
         </h2>
         <Link
           to="/articles"
-          className="text-indigo-600 text-sm font-medium hover:underline"
+          className="text-indigo-600 text-sm font-medium hover:underline items-center flex flex-row gap-2"
         >
-          View all articles →
+          <p>View all articles</p>
+          <FiArrowRight />
         </Link>
       </div>
 
@@ -169,23 +171,25 @@ function Home() {
         </h2>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 mb-10">
-        {Object.entries(categoryCounts).map(([category, count]) => (
-          <div
-            key={category}
-            className="flex flex-col items-center gap-2 rounded-xl border border-slate-200 bg-white p-4 hover:shadow-md transition cursor-pointer"
-          >
+        {Object.entries(categoryCounts)
+          .slice(0, 12)
+          .map(([category, count]) => (
             <div
-              className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold"
-              style={{ backgroundColor: colorForTag(category) }}
+              key={category}
+              className="flex flex-col items-center gap-2 rounded-xl border border-slate-200 bg-white p-4 hover:shadow-md transition cursor-pointer"
             >
-              {category.charAt(0).toUpperCase()}
+              <div
+                className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold"
+                style={{ backgroundColor: colorForTag(category) }}
+              >
+                {category.charAt(0).toUpperCase()}
+              </div>
+              <span className="text-sm font-medium text-slate-700 capitalize">
+                {category}
+              </span>
+              <span className="text-xs text-slate-400">{count} Articles</span>
             </div>
-            <span className="text-sm font-medium text-slate-700 capitalize">
-              {category}
-            </span>
-            <span className="text-xs text-slate-400">{count} Articles</span>
-          </div>
-        ))}
+          ))}
       </div>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-semibold text-slate-800">Trending Now</h2>

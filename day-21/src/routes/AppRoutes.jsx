@@ -5,6 +5,7 @@ import Home from "../pages/Home.jsx";
 import Articles from "../pages/Articles.jsx";
 import ArticleDetail from "../pages/ArticleDetail.jsx";
 import BookMark from "../pages/BookMark.jsx";
+import NotFound from "../pages/NotFound";
 
 function AppRoutes() {
   return (
@@ -14,7 +15,7 @@ function AppRoutes() {
         <Route path="articles" element={<Articles />} />
         <Route path="articles/:id" element={<ArticleDetail />} />
         <Route path="bookmarks" element={<BookMark />} />
-        {/* <Route path="*" element={<NotFound />} /> */}
+        <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
   );

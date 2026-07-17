@@ -23,8 +23,9 @@ function Sidebar({ openSidebar, setOpenSidebar }) {
           openSidebar ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="px-6 py-3 border-b border-slate-100">
-          <span className="text-xl font-bold text-slate-800">📰 BlogHub</span>
+        <div className="px-6 py-3 border-b border-slate-100 flex items-center gap-2">
+          <FiFileText />
+          <span className="text-xl font-bold text-slate-800">BlogHub</span>
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-1">
@@ -34,14 +35,8 @@ function Sidebar({ openSidebar, setOpenSidebar }) {
           <NavLink to="/articles" className={getNavLinkClass}>
             <FiFileText /> Articles
           </NavLink>
-          <NavLink to="/categories" className={getNavLinkClass}>
-            <FiGrid /> Categories
-          </NavLink>
           <NavLink to="/bookmarks" className={getNavLinkClass}>
             <FiBookmark /> Bookmarks
-          </NavLink>
-          <NavLink to="/about" className={getNavLinkClass}>
-            <FiInfo /> About
           </NavLink>
         </nav>
       </aside>
