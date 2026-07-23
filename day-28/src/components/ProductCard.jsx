@@ -7,7 +7,7 @@ const ProductCard = memo(function ProductCard({ product }) {
   const dispatch = useDispatch();
 
   return (
-    <div className="bg-white relative rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition flex flex-col">
+    <div data-testid={`product-card-${product.id}`} className="bg-white relative rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition flex flex-col">
       <span className="absolute top-1 right-1 border border-purple-500 text-purple-500 shadow-sm text-xs font-medium px-2 py-1 rounded-lg capitalize shadow-sm">
         {product.category}
       </span>

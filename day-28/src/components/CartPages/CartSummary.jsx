@@ -16,7 +16,7 @@ export default function CartSummary() {
       </div>
       <div className="border-t border-slate-100 pt-2 flex justify-between">
         <span className="font-semibold text-slate-800">Total</span>
-        <span className="font-bold text-purple-600 text-lg">
+        <span data-testid="cart-total" className="font-bold text-purple-600 text-lg">
           ₹{totalPrice.toLocaleString()}
         </span>
       </div>
