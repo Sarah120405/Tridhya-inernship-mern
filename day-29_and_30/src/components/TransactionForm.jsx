@@ -3,8 +3,15 @@ import { useDispatch } from "react-redux";
 import { addTransaction } from "../store/slice/transactionSlice";
 
 const CATEGORIES = [
-  "Food", "Transport", "Rent", "Utilities",
-  "Entertainment", "Salary", "Shopping", "Health", "Other",
+  "Food",
+  "Transport",
+  "Rent",
+  "Utilities",
+  "Entertainment",
+  "Salary",
+  "Shopping",
+  "Health",
+  "Other",
 ];
 
 export default function TransactionForm() {
@@ -58,7 +65,7 @@ export default function TransactionForm() {
         ...formData,
         amount: Number(formData.amount),
         date: new Date(formData.date).toISOString(),
-      })
+      }),
     );
 
     setFormData({
@@ -114,7 +121,9 @@ export default function TransactionForm() {
             placeholder="0"
             className="rounded-lg border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 transition"
           />
-          {errors.amount && <span className="text-xs text-rose-500">{errors.amount}</span>}
+          {errors.amount && (
+            <span className="text-xs text-rose-500">{errors.amount}</span>
+          )}
         </div>
 
         <div className="flex flex-col gap-1">
@@ -127,10 +136,14 @@ export default function TransactionForm() {
           >
             <option value="">Select category</option>
             {CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>{cat}</option>
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
             ))}
           </select>
-          {errors.category && <span className="text-xs text-rose-500">{errors.category}</span>}
+          {errors.category && (
+            <span className="text-xs text-rose-500">{errors.category}</span>
+          )}
         </div>
 
         <div className="flex flex-col gap-1">
@@ -142,11 +155,15 @@ export default function TransactionForm() {
             onChange={handleChange}
             className="rounded-lg border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 transition"
           />
-          {errors.date && <span className="text-xs text-rose-500">{errors.date}</span>}
+          {errors.date && (
+            <span className="text-xs text-rose-500">{errors.date}</span>
+          )}
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-slate-600">Paid to / from</label>
+          <label className="text-sm font-medium text-slate-600">
+            Paid to / from
+          </label>
           <input
             type="text"
             name="paidTo"
@@ -156,20 +173,24 @@ export default function TransactionForm() {
             className="rounded-lg border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 transition"
           />
         </div>
-        
-      <div className="flex flex-col gap-1">
-        <label className="text-sm font-medium text-slate-600">Note (optional)</label>
-        <input
-          type="text"
-          name="note"
-          value={formData.note}
-          onChange={handleChange}
-          placeholder="Add a note..."
-          className="rounded-lg border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 transition"
-        />
-      </div>
-      <div className="flex flex-col gap-1">
-        <label className="text-sm font-medium text-slate-600">Payment method</label>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium text-slate-600">
+            Note (optional)
+          </label>
+          <input
+            type="text"
+            name="note"
+            value={formData.note}
+            onChange={handleChange}
+            placeholder="Add a note..."
+            className="rounded-lg border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 transition"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium text-slate-600">
+            Payment method
+          </label>
           <select
             name="paymentMethod"
             value={formData.paymentMethod}
@@ -177,17 +198,14 @@ export default function TransactionForm() {
             className="rounded-lg border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 transition bg-white"
           >
             <option value="">Select payment method</option>
-            
-              <option value="upi">UPI</option>
-            
-              <option value="creditCard">Credit card</option>
-              
-              <option value="cash">Cash</option>
-            
-            
-          </select>
-      </div>
 
+            <option value="upi">UPI</option>
+
+            <option value="creditCard">Credit card</option>
+
+            <option value="cash">Cash</option>
+          </select>
+        </div>
       </div>
 
       <button
