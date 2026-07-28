@@ -18,7 +18,6 @@ import {
   FiDollarSign,
   FiPieChart,
   FiTrendingUp,
-  FiActivity,
   FiShoppingCart,
 } from "react-icons/fi";
 import { CATEGORY_BAR_COLORS } from "../utils/constants";

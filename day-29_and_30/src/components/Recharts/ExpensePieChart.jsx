@@ -1,3 +1,4 @@
+import { memo } from "react";
 import {
   PieChart,
   Pie,
@@ -17,7 +18,7 @@ const COLORS = [
   "#f43f5e",
 ];
 
-export default function ExpensePieChart({ data }) {
+function ExpensePieChart({ data }) {
   if (data.length === 0) {
     return (
       <p className="text-slate-400 text-sm text-center py-12">
@@ -49,3 +50,5 @@ export default function ExpensePieChart({ data }) {
     </ResponsiveContainer>
   );
 }
+
+export default memo(ExpensePieChart);

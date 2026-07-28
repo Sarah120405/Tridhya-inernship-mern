@@ -62,7 +62,6 @@ export default function BudgetForm() {
         onSubmit={handleSubmit}
         className="bg-white rounded-xl border border-slate-200 p-5 flex flex-col gap-4"
       >
-        <h2 className="text-lg font-bold text-slate-800">Create Budget</h2>
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-slate-600">Category</label>
           <select

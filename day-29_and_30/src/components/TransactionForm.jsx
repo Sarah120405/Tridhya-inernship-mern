@@ -1,18 +1,7 @@
 import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { addTransaction } from "../store/slice/transactionSlice";
-
-const CATEGORIES = [
-  "Food",
-  "Transport",
-  "Rent",
-  "Utilities",
-  "Entertainment",
-  "Salary",
-  "Shopping",
-  "Health",
-  "Other",
-];
+import { CATEGORIES } from "../utils/constants";
 
 export default function TransactionForm() {
   const dispatch = useDispatch();
@@ -83,8 +72,6 @@ export default function TransactionForm() {
       onSubmit={handleSubmit}
       className="bg-white rounded-xl border border-slate-200 p-5 flex flex-col gap-4"
     >
-      <h2 className="text-lg font-bold text-slate-800">Add Transaction</h2>
-
       <div className="flex gap-2">
         <button
           type="button"

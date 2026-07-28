@@ -1,6 +1,10 @@
 import { NavLink } from "react-router-dom";
 import {
-  FiHome, FiRepeat, FiPieChart, FiBarChart2, FiDollarSign
+  FiHome,
+  FiRepeat,
+  FiPieChart,
+  FiBarChart2,
+  FiDollarSign,
 } from "react-icons/fi";
 
 function Sidebar({ openSidebar, setOpenSidebar }) {
@@ -39,9 +43,6 @@ function Sidebar({ openSidebar, setOpenSidebar }) {
           </NavLink>
           <NavLink to="/budgets" className={getNavLinkClass}>
             <FiPieChart /> Budgets
-          </NavLink>
-          <NavLink to="/reports" className={getNavLinkClass}>
-            <FiBarChart2 /> Reports
           </NavLink>
         </nav>
       </aside>

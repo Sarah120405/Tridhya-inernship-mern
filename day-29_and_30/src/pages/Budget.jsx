@@ -7,14 +7,11 @@ import {
   getDailySpendingTrend,
   getCategoryInsights,
 } from "../utils/budgetStats";
-import { CATEGORY_BAR_COLORS } from "../utils/constants";
-import BudgetForm from "../components/BudgetForm";
 import ExpensePieChart from "../components/Recharts/ExpensePieChart";
 
 import BudgetRadialChart from "../components/Recharts/BudgetRadialChart";
 import { MetricCard } from "../components/MetricCard";
 import {
-  FiPlus,
   FiDollarSign,
   FiTrendingDown,
   FiPieChart,

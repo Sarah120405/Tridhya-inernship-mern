@@ -1,6 +1,6 @@
-import { FiMenu, FiShoppingCart, FiPlus } from "react-icons/fi";
-import { useSelector, useDispatch } from "react-redux";
-import { Link, useLocation } from "react-router-dom";
+import { FiMenu, FiPlus } from "react-icons/fi";
+import { useDispatch } from "react-redux";
+import { useLocation } from "react-router-dom";
 import { addTransaction } from "../../store/slice/transactionSlice";
 import { setBudget } from "../../store/slice/budgetSlice";
 import Modal from "../../components/Modal";
@@ -164,8 +164,6 @@ const dummyBudgets = [
   { category: "Entertainment", monthlyLimit: 800, alertThreshold: 90 },
   { category: "Utilities", monthlyLimit: 1500, alertThreshold: 80 },
   { category: "Shopping", monthlyLimit: 3200, alertThreshold: 80 },
-  { category: "Rent", monthlyLimit: 2000 },
-  { category: "Health", monthlyLimit: 3500 },
 ];
 
 function Navbar({ openSidebar, setOpenSidebar }) {
@@ -219,12 +217,14 @@ function Navbar({ openSidebar, setOpenSidebar }) {
         )}
       </div>
       {isDashboard ? (
-        <button
-          onClick={handleSeed}
-          className="rounded-xl bg-emerald-600 px-3 py-2 text-white text-sm font-medium shadow-sm transition hover:bg-emerald-700"
-        >
-          Seed Dummy Data
-        </button>
+        import.meta.env.DEV && (
+          <button
+            onClick={handleSeed}
+            className="rounded-xl bg-emerald-600 px-3 py-2 text-slate-50 text-sm font-medium shadow-sm transition hover:bg-emerald-700"
+          >
+            Seed Dummy Data
+          </button>
+        )
       ) : isTransaction ? (
         <button
           onClick={() => setShowTransactionForm((prev) => !prev)}
