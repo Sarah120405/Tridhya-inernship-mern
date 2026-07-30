@@ -10,6 +10,16 @@ import { extractMarkdownHeadings } from "@/lib/markdownUtils";
 import DocToc from "./DocToc";
 import FeedbackWidget from "./FeedbackWidget";
 
+export async function generateStaticParams() {
+  const nav = await getDocsNav();
+  return nav.flatMap((entry) =>
+    entry.subItems.map((item) => ({
+      framework: entry.framework,
+      slug: item.slug,
+    })),
+  );
+}
+
 export default async function DocSubPage({ params }) {
   const { framework, slug } = await params;
 
