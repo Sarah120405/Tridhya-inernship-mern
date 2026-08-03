@@ -1,5 +1,9 @@
+"use client";
+import { useState } from "react";
+import Modal from "./components/Modal";
+import AuthForm from "./components/AuthForm";
+import { useRouter } from "next/navigation";
 import FeatureCards from "./components/FeaturesCards";
-import Link from "next/link";
 import { Sparkles, Users, UserCog, ShieldCheck } from "lucide-react";
 
 const stats = [
@@ -10,6 +14,8 @@ const stats = [
 ];
 
 export default function Home() {
+  const [activeModal, setActiveModal] = useState(null);
+  const router = useRouter();
   return (
     <div className="mx-auto w-full flex flex-col flex-1 bg-zinc-50 font-sans dark:bg-black min-h-screen">
       <header className="flex items-center justify-between px-8 py-5 border-b border-purple-200 dark:border-zinc-700 mx-auto w-full">
@@ -19,18 +25,18 @@ export default function Home() {
         </div>
 
         <div className="flex items-center gap-3">
-          <Link
-            href="/login"
+          <button
+            onClick={() => setActiveModal("login")}
             className="text-sm font-medium px-4 py-2 rounded-full border hover:bg-zinc-50"
           >
             Log in
-          </Link>
-          <Link
-            href="/register"
+          </button>
+          <button
+            onClick={() => setActiveModal("register")}
             className="text-sm font-medium px-4 py-2 rounded-full text-white bg-gradient-to-r from-purple-600 to-pink-500 hover:opacity-90"
           >
             Sign up
-          </Link>
+          </button>
         </div>
       </header>
       <section className="max-w-7xl mx-auto w-full px-8 py-12 grid md:grid-cols-2 gap-10 items-center">
@@ -107,6 +113,29 @@ export default function Home() {
           ))}
         </div>
       </section>
+      {activeModal === "login" && (
+        <Modal title="Log In" onClose={() => setActiveModal(null)}>
+          <AuthForm
+            mode="login"
+            onSuccess={() => {
+              setActiveModal(null);
+              router.push("/dashboard");
+            }}
+          />
+        </Modal>
+      )}
+
+      {activeModal === "register" && (
+        <Modal title="Register" onClose={() => setActiveModal(null)}>
+          <AuthForm
+            mode="register"
+            onSuccess={() => {
+              setActiveModal(null);
+              router.push("/login");
+            }}
+          />
+        </Modal>
+      )}
     </div>
   );
 }
