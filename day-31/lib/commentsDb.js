@@ -14,5 +14,11 @@ export function addComment(postSlug, author, text) {
     createdAt: new Date().toISOString(),
   };
   comments.push(comment);
+  console.log("Comment added, array now:", comments);
   return comment;
+}
+
+export function getAllCommentsAcrossPosts() {
+  console.log("getAllCommentsAcrossPosts called", comments);
+  return comments;
 }
