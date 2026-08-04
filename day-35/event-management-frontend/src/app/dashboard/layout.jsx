@@ -7,33 +7,22 @@ import {
   LayoutDashboard,
   Search,
   BookMarked,
-  Ticket,
   Heart,
-  Bell,
-  User,
   Settings,
-  LogOut,
   Sparkles,
+  Bell,
 } from "lucide-react";
+import LogoutButton from "../components/LogoutButton";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/dashboard/events", label: "Explore Events", icon: Search },
   { href: "/dashboard/my-bookings", label: "My Bookings", icon: BookMarked },
-  { href: "/dashboard/tickets", label: "Tickets", icon: Ticket },
   { href: "/dashboard/favorites", label: "Wishlist", icon: Heart },
-  {
-    href: "/dashboard/notifications",
-    label: "Notifications",
-    icon: Bell,
-    badge: true,
-  },
-  { href: "/dashboard/profile", label: "Profile", icon: User },
-  { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
 export default function DashboardLayout({ children }) {
-  const { user, loading, logout } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -93,7 +82,7 @@ export default function DashboardLayout({ children }) {
             )}
           </nav>
         </div>
-        {/* Promo card 
+        {/* Promo card  */}
         <div className="mt-auto pt-4">
           <div className="bg-white/10 rounded-2xl p-4 mb-3">
             <p className="text-sm font-semibold mb-1">
@@ -107,17 +96,11 @@ export default function DashboardLayout({ children }) {
               Enable Alerts
             </button>
           </div>
-        </div>*/}
-        <button
-          onClick={logout}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-purple-200 hover:bg-white/10 w-full"
-        >
-          <LogOut className="w-4 h-4" />
-          Logout
-        </button>
+        </div>
+        <LogoutButton />
       </aside>
 
-      <div className="flex-1 px-8 py-6 bg-zinc-50">{children}</div>
+      <div className="flex-1 px-4 py-2 bg-zinc-50">{children}</div>
     </div>
   );
 }

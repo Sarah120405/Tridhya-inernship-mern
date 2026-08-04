@@ -1,24 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useAuth } from "../context/AuthContext";
 
 export default function DashboardPage() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch("http://localhost:5000/api/user/me", { credentials: "include" })
-      .then((res) => (res.ok ? res.json() : null))
-      .then(setUser)
-      .finally(() => setLoading(false));
-  }, []);
+  const { user, loading } = useAuth();
 
   if (loading) return <p>Loading...</p>;
-  if (!user) return <p>You must be logged in to view this page.</p>;
+  if (!user) return null; // dashboard/layout.jsx already handles the redirect
 
   return (
-    <p>
-      Welcome, {user.name} ({user.role})
-    </p>
+    <div className="max-w-2xl">
+      <h1 className="text-2xl font-bold text-slate-800 mb-2">
+        Welcome, {user.name}
+      </h1>
+      <p className="text-slate-500">
+        You're logged in as a{user.role === "admin" ? "n" : ""} {user.role}.
+      </p>
+    </div>
   );
 }

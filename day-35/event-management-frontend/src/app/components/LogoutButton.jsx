@@ -1,5 +1,5 @@
 "use client";
-
+import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function LogoutButton() {
@@ -11,14 +11,15 @@ export default function LogoutButton() {
       credentials: "include",
     });
     router.push("/login");
-    router.refresh(); // forces Server Components on the next page to re-fetch, clearing any stale "logged in" state
+    router.refresh();
   }
 
   return (
     <button
       onClick={handleLogout}
-      className="text-sm text-slate-500 hover:text-rose-600"
+      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-purple-200 hover:bg-white/10 w-full"
     >
+      <LogOut className="w-4 h-4" />
       Log out
     </button>
   );

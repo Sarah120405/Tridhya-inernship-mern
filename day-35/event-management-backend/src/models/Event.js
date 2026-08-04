@@ -21,6 +21,12 @@ const eventSchema = new mongoose.Schema(
     capacity: {
       type: Number,
     },
+    price: { type: Number, default: 0 },
+    category: {
+      type: String,
+      enum: ["Music", "Tech", "Sports", "Arts", "Food", "Other"],
+      default: "Other",
+    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

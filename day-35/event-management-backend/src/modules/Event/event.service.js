@@ -1,4 +1,6 @@
 import Event from "../../models/Event.js";
+import Booking from "../../models/Booking.js";
+import Favorite from "../../models/Favorite.js";
 
 export async function createEvent(eventData, adminId) {
   const event = await Event.findOne({ title: eventData.title });
@@ -14,6 +16,8 @@ export async function createEvent(eventData, adminId) {
     location: eventData.location,
     capacity: eventData.capacity,
     createdBy: adminId,
+    price: eventData.price,
+    category: eventData.category,
   });
   return newEvent;
 }
@@ -25,7 +29,13 @@ export async function getEventById(eventId) {
     notFoundError.status = 404;
     throw notFoundError;
   }
-  return event;
+  const bookings = await Booking.find({ event: eventId });
+  const favoriteCount = await Favorite.countDocuments({ event: eventId });
+  return {
+    ...event.toObject(),
+    bookings: bookings.length,
+    favoriteCount: favoriteCount,
+  };
 }
 
 export async function getAllEvents() {
