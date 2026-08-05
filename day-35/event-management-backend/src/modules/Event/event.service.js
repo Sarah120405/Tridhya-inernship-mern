@@ -41,7 +41,15 @@ export async function getEventById(eventId) {
 export async function getAllEvents() {
   try {
     const events = await Event.find();
-    return events;
+
+    const eventsWithCounts = await Promise.all(
+      events.map(async (event) => {
+        const bookedCount = await Booking.countDocuments({ event: event._id });
+        return { ...event.toObject(), bookedCount };
+      }),
+    );
+
+    return eventsWithCounts;
   } catch (error) {
     throw new Error("Error fetching events");
   }

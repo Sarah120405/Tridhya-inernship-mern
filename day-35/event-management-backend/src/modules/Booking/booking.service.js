@@ -43,3 +43,7 @@ export async function cancelBooking(userId, bookingId) {
 
   return Booking.findByIdAndDelete(bookingId);
 }
+
+export async function getBookingsForEvents(eventId) {
+  return Booking.find({ event: eventId }).populate("bookedBy", "name email");
+}

@@ -3,10 +3,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "../context/AuthContext";
 
 export default function AuthForm({ mode, onSuccess }) {
   const router = useRouter();
   const isRegister = mode === "register";
+  const { refetchUser } = useAuth();
 
   const [formData, setFormData] = useState(
     isRegister
@@ -39,6 +41,7 @@ export default function AuthForm({ mode, onSuccess }) {
       return;
     }
 
+    await refetchUser();
     if (onSuccess) {
       console.log("Authentication successful");
       onSuccess();

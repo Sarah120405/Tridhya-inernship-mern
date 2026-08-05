@@ -2,6 +2,7 @@ import {
   createBooking,
   getMyBookings,
   cancelBooking,
+  getBookingsForEvents,
 } from "./booking.service.js";
 
 export async function createBookingController(req, res) {
@@ -33,5 +34,14 @@ export async function cancelBookingController(req, res) {
     res.status(200).json(deletedBooking);
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message });
+  }
+}
+
+export async function getBookingsForEventsController(req, res) {
+  try {
+    const bookings = await getBookingsForEvents(req.params.eventId);
+    res.status(200).json(bookings);
+  } catch (error) {
+    res.status(error.status || 500).json({ error: error.message });
   }
 }

@@ -94,10 +94,44 @@ async function seed() {
 
   // --- Bookings ---
   await Booking.create([
-    { bookedBy: alice._id, event: events[0]._id }, // Alice booked React Summit
-    { bookedBy: alice._id, event: events[1]._id }, // Alice booked Music Night
-    { bookedBy: bob._id, event: events[0]._id }, // Bob booked React Summit
-    { bookedBy: bob._id, event: events[2]._id }, // Bob booked Marathon (capacity: 2, now full since 1 spot left)
+    {
+      bookedBy: alice._id,
+      event: events[0]._id,
+      createdAt: new Date("2026-05-10"),
+    },
+    {
+      bookedBy: bob._id,
+      event: events[0]._id,
+      createdAt: new Date("2026-05-22"),
+    },
+
+    {
+      bookedBy: alice._id,
+      event: events[1]._id,
+      createdAt: new Date("2026-06-03"),
+    },
+
+    {
+      bookedBy: bob._id,
+      event: events[2]._id,
+      createdAt: new Date("2026-07-15"),
+    },
+    {
+      bookedBy: alice._id,
+      event: events[3]._id,
+      createdAt: new Date("2026-07-18"),
+    },
+    {
+      bookedBy: bob._id,
+      event: events[1]._id,
+      createdAt: new Date("2026-07-25"),
+    },
+
+    {
+      bookedBy: alice._id,
+      event: events[2]._id,
+      createdAt: new Date("2026-08-01"),
+    }, // changed from events[0] to events[2]
   ]);
 
   console.log("Bookings created");
