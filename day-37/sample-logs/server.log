@@ -7,3 +7,7 @@
 2026-08-11 09:22:30 [INFO] User login: bob@example.com
 2026-08-11 09:25:45 [WARN] High memory usage detected: 85%
 2026-08-11 09:30:00 [INFO] Scheduled backup completed
+2026-08-11 09:35:00 [DEBUG] Test append line
+2026-08-07 18:50:00 [ERROR] Test database failure
+2026-08-07 18:51:00 [WARN] High memory usage
+2026-08-11 09:35:00 [DEBUG] Test append line

@@ -1,14 +1,21 @@
-import fs from "fs";
+import fs from "fs/promises";
 import path from "path";
 import { parseLogFile } from "../parseLog.js";
+import { isValidLevel } from "../validate.js";
 
-export function filterCommand(level, filePath) {
+export async function filterCommand(level, filePath) {
   if (!level || !filePath) {
     console.error("Usage: node bin/cli.js filter <LEVEL> <file>");
     process.exit(1);
   }
 
-  const { entries } = parseLogFile(filePath);
+  if (!isValidLevel(level)) {
+    console.error(
+      `Invalid level: "${level}". Must be one of INFO, WARN, ERROR, DEBUG.`,
+    );
+    process.exit(1);
+  }
+  const { entries } = await parseLogFile(filePath);
   const filtered = entries.filter(
     (entry) => entry.level === level.toUpperCase(),
   );
@@ -24,11 +31,9 @@ export function filterCommand(level, filePath) {
   outputLines.forEach((line) => console.log(line));
 
   const reportsDir = "reports";
-  if (!fs.existsSync(reportsDir)) {
-    fs.mkdirSync(reportsDir);
-  }
+  await fs.mkdir(reportsDir, { recursive: true });
 
-  const outputPath = path.join(reportsDir, "errors.log");
-  fs.writeFileSync(outputPath, outputLines.join("\n") + "\n");
+  const outputPath = path.join(reportsDir, `${level.toUpperCase()}.log`);
+  await fs.writeFile(outputPath, outputLines.join("\n") + "\n");
   console.log(`\nSaved to ${outputPath}`);
 }

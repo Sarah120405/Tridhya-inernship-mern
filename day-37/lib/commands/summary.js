@@ -1,12 +1,13 @@
 import { parseLogFile } from "../parseLog.js";
+import chalk from "chalk";
 
-export function summaryCommand(filePath) {
+export async function summaryCommand(filePath) {
   if (!filePath) {
     console.error("Usage: node bin/cli.js summary <file>");
     process.exit(1);
   }
 
-  const { entries } = parseLogFile(filePath);
+  const { entries } = await parseLogFile(filePath);
 
   const errors = entries.filter((e) => e.level === "ERROR");
   const warnings = entries.filter((e) => e.level === "WARN");
@@ -27,16 +28,18 @@ export function summaryCommand(filePath) {
   const longest = sortedByLength[0];
   const shortest = sortedByLength[sortedByLength.length - 1];
 
-  console.log("\nSummary");
-  console.log(`Errors: ${errors.length}`);
-  console.log(`Warnings: ${warnings.length}`);
+  console.log(chalk.bold("\n📋 Summary"));
+  console.log(chalk.gray("─".repeat(32)));
+  console.log(`${chalk.red("Errors:")}   ${errors.length}`);
+  console.log(`${chalk.yellow("Warnings:")} ${warnings.length}`);
+  console.log(chalk.gray("─".repeat(32)));
   console.log(
-    `Most Frequent Error: ${mostFrequentError ? `${mostFrequentError[0]} (${mostFrequentError[1]}x)` : "none"}`,
+    `Most Frequent Error: ${mostFrequentError ? `${mostFrequentError[0]} ${chalk.dim(`(${mostFrequentError[1]}x)`)}` : "none"}`,
   );
   console.log(
-    `Longest Log: ${longest ? `${longest.message} (${longest.message.length} chars)` : "none"}`,
+    `Longest Log:  ${longest ? `${longest.message} ${chalk.dim(`(${longest.message.length} chars)`)}` : "none"}`,
   );
   console.log(
-    `Shortest Log: ${shortest ? `${shortest.message} (${shortest.message.length} chars)` : "none"}`,
+    `Shortest Log: ${shortest ? `${shortest.message} ${chalk.dim(`(${shortest.message.length} chars)`)}` : "none"}`,
   );
 }

@@ -1,22 +1,42 @@
+// lib/parseLog.js
 import fs from "fs";
+import readline from "readline";
+
+const logPattern = /^(\S+ \S+) \[(\w+)\] (.+)$/;
+
+export function parseLine(line) {
+  const match = line.match(logPattern);
+  if (!match) return null;
+
+  const [, timestamp, level, message] = match;
+  return { timestamp, level, message };
+}
 
 export function parseLogFile(filePath) {
-  const content = fs.readFileSync(filePath, "utf-8");
-  const lines = content.split(/\r?\n/).filter((line) => line.trim() !== "");
-  const entries = [];
-  const malformed = [];
+  return new Promise((resolve, reject) => {
+    const entries = [];
+    const malformed = [];
 
-  const logPattern = /^(\S+ \S+) \[(\w+)\] (.+)$/;
+    const stream = fs.createReadStream(filePath, "utf-8");
+    const rl = readline.createInterface({ input: stream });
 
-  for (const line of lines) {
-    const match = line.match(logPattern);
-    if (match) {
-      const [, timestamp, level, message] = match;
-      entries.push({ timestamp, level, message });
-    } else {
-      malformed.push(line);
-    }
-  }
+    rl.on("line", (line) => {
+      if (line.trim() === "") return;
+      const parsed = parseLine(line);
+      if (parsed) entries.push(parsed);
+      else malformed.push(line);
+    });
 
-  return { entries, malformed };
+    rl.on("close", () => {
+      resolve({ entries, malformed });
+    });
+
+    rl.on("error", (err) => {
+      reject(err);
+    });
+
+    stream.on("error", (err) => {
+      reject(err);
+    });
+  });
 }

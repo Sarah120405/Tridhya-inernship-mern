@@ -1,0 +1,5 @@
+[INFO] Server started on port 5000
+[INFO] User login: alice@example.com
+[INFO] Database connected successfully
+[INFO] User login: bob@example.com
+[INFO] Scheduled backup completed
