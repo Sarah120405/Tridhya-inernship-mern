@@ -7,8 +7,8 @@ export const createEventSchema = z.object({
     message: "Date must be a valid date string",
   }),
   location: z.string().min(1, "Location is required"),
-  capacity: z.number().int().positive().optional(),
-  price: z.number().nonnegative().optional(),
+  capacity: z.coerce.number().int().positive().optional(),
+  price: z.coerce.number().nonnegative().optional(),
   category: z
     .enum(["Music", "Tech", "Sports", "Arts", "Food", "Other"])
     .optional(),

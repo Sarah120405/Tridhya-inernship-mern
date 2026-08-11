@@ -19,6 +19,7 @@ export async function createEvent(eventData, adminId) {
     createdBy: adminId,
     price: eventData.price,
     category: eventData.category,
+    eventBanner: eventData.eventBanner,
   });
   return newEvent;
 }
@@ -55,7 +56,13 @@ export async function getAllEvents() {
     throw new Error("Error fetching events");
   }
 }
-export async function updateEvent(eventId, userId, userRole, body) {
+export async function updateEvent(
+  eventId,
+  userId,
+  userRole,
+  body,
+  newBannerPath,
+) {
   const event = await Event.findById(eventId);
   if (!event) {
     const notFoundError = new Error("Event not found");
@@ -70,7 +77,12 @@ export async function updateEvent(eventId, userId, userRole, body) {
     error.status = 403;
     throw error;
   }
-  const updatedEvent = await Event.findByIdAndUpdate(eventId, body, {
+  const updates = { ...body };
+  if (newBannerPath) {
+    updates.eventBanner = newBannerPath; // only overwrite if a new file was actually uploaded
+  }
+
+  const updatedEvent = await Event.findByIdAndUpdate(eventId, updates, {
     new: true,
   });
   return updatedEvent;
@@ -105,4 +117,10 @@ export async function deleteEvent(eventId, userId, userRole) {
   await Booking.deleteMany({ event: eventId });
   const deletedEvent = await Event.findByIdAndDelete(eventId);
   return { message: "Event deleted successfully" };
+}
+
+export async function getMyRecentEvents(organizerId, limit = 5) {
+  return Event.find({ createdBy: organizerId })
+    .sort({ createdAt: -1 })
+    .limit(limit);
 }

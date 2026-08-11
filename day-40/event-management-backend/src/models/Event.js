@@ -6,6 +6,10 @@ const eventSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    eventBanner: {
+      type: String,
+      default: null,
+    },
     description: {
       type: String,
       required: true,

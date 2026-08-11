@@ -6,10 +6,12 @@ import { validate } from "../../middleware/validate.middleware.js";
 import { z } from "zod";
 import User from "../../models/User.js";
 import {
+  getOrganizerStatsController,
   getAdminStatsController,
   getRecentActivityController,
   getBookingTrendsController,
   updateUserRoleController,
+  getAllUsersController,
 } from "./user.controller.js";
 
 const router = express.Router();
@@ -18,6 +20,13 @@ router.get("/me", requireAuth, async (req, res) => {
   const user = await User.findById(req.user.id).select("-passwordHash");
   res.json(user);
 });
+router.get("/", requireAuth, requireAdmin, getAllUsersController);
+router.get(
+  "/organizer-stats",
+  requireAuth,
+  requireRole("organizer", "admin"),
+  getOrganizerStatsController,
+);
 router.get("/stats", requireAuth, requireAdmin, getAdminStatsController);
 router.get(
   "/recent-activity",

@@ -119,10 +119,18 @@ export default function EventsPage() {
                     href={`/dashboard/events/${event._id}`}
                     className="block rounded-2xl border bg-white overflow-hidden hover:shadow-md transition"
                   >
-                    <div className="p-4 relative">
-                      <h3 className="font-semibold text-sm leading-snug">
-                        {event.title}
-                      </h3>
+                    <div className="relative  w-full h-40 bg-slate-100">
+                      {event.eventBanner ? (
+                        <img
+                          src={`http://localhost:5000${event.eventBanner}`}
+                          alt={event.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-slate-300 text-sm">
+                          No image
+                        </div>
+                      )}
                       <button
                         onClick={async (e) => {
                           e.preventDefault();
@@ -135,6 +143,11 @@ export default function EventsPage() {
                           className={`w-3.5 h-3.5 ${favorites.has(event._id) ? "fill-current" : ""} text-pink-500`}
                         />
                       </button>
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-semibold text-sm leading-snug">
+                        {event.title}
+                      </h3>
 
                       <div className="flex items-center justify-between">
                         <div className="flex flex-col items-start">
@@ -143,7 +156,7 @@ export default function EventsPage() {
                           </p>
                           {event.capacity && (
                             <p className="flex items-center gap-1 text-xs text-zinc-400 mt-1">
-                              <Users className="w-3 h-3" /> Capacity:{" "}
+                              <Users className="w-3 h-3" /> Capacity:
                               {event.capacity}
                             </p>
                           )}

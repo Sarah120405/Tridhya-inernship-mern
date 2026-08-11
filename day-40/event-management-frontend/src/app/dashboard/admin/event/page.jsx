@@ -1,7 +1,17 @@
 "use client";
 import { useEffect, useState, useMemo } from "react";
-import Link from "next/link";
-import { Search, Clock, MapPin, Download, Eye, Pencil } from "lucide-react";
+import {
+  Search,
+  Clock,
+  MapPin,
+  Download,
+  Eye,
+  Pencil,
+  Trash2,
+  MoreVertical,
+} from "lucide-react";
+import { useAuth } from "@/app/context/AuthContext";
+import { useRouter } from "next/navigation";
 
 const CATEGORY_STYLES = {
   Music: "bg-indigo-50 text-indigo-600",
@@ -17,10 +27,13 @@ const CATEGORY_STYLES = {
 };
 
 export default function ManageEventsPage() {
+  const { user } = useAuth();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All Categories");
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const router = useRouter();
 
   useEffect(() => {
     setLoading(true);
@@ -32,13 +45,20 @@ export default function ManageEventsPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  const visibleEvents =
+    user?.role === "admin"
+      ? events
+      : events.filter(
+          (e) => e.createdBy === user?._id || e.createdBy?._id === user?._id,
+        );
+
   const categories = useMemo(() => {
-    const set = new Set(events.map((e) => e.category).filter(Boolean));
+    const set = new Set(visibleEvents.map((e) => e.category).filter(Boolean));
     return ["All Categories", ...Array.from(set)];
-  }, [events]);
+  }, [visibleEvents]);
 
   const filteredEvents = useMemo(() => {
-    return events.filter((event) => {
+    return visibleEvents.filter((event) => {
       const matchesSearch = event.title
         ?.toLowerCase()
         .includes(search.toLowerCase());
@@ -47,12 +67,50 @@ export default function ManageEventsPage() {
         event.category === categoryFilter;
       return matchesSearch && matchesCategory;
     });
-  }, [events, search, categoryFilter]);
+  }, [visibleEvents, search, categoryFilter]);
+
+  function handleView(eventId) {
+    router.push(`/dashboard/admin/event/${eventId}/attendees`);
+    setOpenMenuId(null);
+  }
+
+  function handleEdit(eventId) {
+    router.push(`/dashboard/admin/event/${eventId}/edit`);
+    setOpenMenuId(null);
+  }
+
+  async function handleDelete(eventId) {
+    if (
+      !confirm(
+        "Are you sure you want to delete this event? This cannot be undone.",
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`http://localhost:5000/api/event/${eventId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error || "Failed to delete event");
+        return;
+      }
+      setEvents((prev) => prev.filter((e) => e._id !== eventId));
+    } catch (err) {
+      alert("Something went wrong. Try again.");
+    } finally {
+      setOpenMenuId(null);
+    }
+  }
 
   return (
     <div className="bg-zinc-50">
       <h1 className="text-3xl font-semibold text-slate-500 mb-3">
-        Manage Events
+        {user?.role === "admin" ? "Manage Events" : "My Events"}
       </h1>
 
       {/* Filter bar */}
@@ -89,7 +147,7 @@ export default function ManageEventsPage() {
       {loading && <p className="text-slate-400">Loading events...</p>}
 
       {!loading && (
-        <div className="bg-white border border-violet-100 shadow rounded-lg rounded-2xl overflow-hidden">
+        <div className="bg-white border border-violet-100 shadow rounded-lg rounded-2xl overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs text-zinc-400 uppercase border-b border-violet-100 rounded-lg bg-white">
@@ -179,15 +237,40 @@ export default function ManageEventsPage() {
                       )}
                     </td>
 
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <Link
-                          href={`/dashboard/admin/event/${event._id}/attendees`}
-                          className="flex items-center gap-1 text-xs font-medium text-zinc-500 border rounded-full px-3 py-1.5 hover:bg-zinc-50"
-                        >
-                          <Eye className="w-3 h-3" /> View
-                        </Link>
-                      </div>
+                    <td className="px-4 py-3 text-center relative">
+                      <button
+                        onClick={() =>
+                          setOpenMenuId(
+                            openMenuId === event._id ? null : event._id,
+                          )
+                        }
+                        className="text-zinc-400 hover:text-zinc-600"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+
+                      {openMenuId === event._id && (
+                        <div className="absolute right-4 top-10 z-10 w-36 rounded-lg border border-slate-200 bg-white shadow-lg">
+                          <button
+                            onClick={() => handleView(event._id)}
+                            className="flex items-center gap-2 w-full px-4 py-2 text-left text-sm text-zinc-600 hover:bg-zinc-50 rounded-t-lg"
+                          >
+                            <Eye className="w-3.5 h-3.5" /> View
+                          </button>
+                          <button
+                            onClick={() => handleEdit(event._id)}
+                            className="flex items-center gap-2 w-full px-4 py-2 text-left text-sm text-zinc-600 hover:bg-zinc-50"
+                          >
+                            <Pencil className="w-3.5 h-3.5" /> Edit
+                          </button>
+                          <button
+                            onClick={() => handleDelete(event._id)}
+                            className="flex items-center gap-2 w-full px-4 py-2 text-left text-sm text-rose-600 hover:bg-rose-50 rounded-b-lg"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" /> Delete
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 );

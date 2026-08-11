@@ -67,10 +67,10 @@ export default function DashboardLayout({ children }) {
             })}
           </nav>
 
-          {user.role === "admin" && (
+          {(user.role === "admin" || user.role === "organizer") && (
             <div>
               <h2 className="text-xs font-semibold uppercase text-pink-200 m-3">
-                Admin Tools
+                {user.role === "admin" ? "Admin Tools" : "Organizer Tools"}
               </h2>
               <nav className="flex flex-col gap-1">
                 <Link
@@ -82,10 +82,10 @@ export default function DashboardLayout({ children }) {
                   }`}
                 >
                   <FilePen className="w-4 h-4" />
-                  Admin Panel
+                  {user.role === "admin" ? "Admin Panel" : "My Events Panel"}
                 </Link>
                 <Link
-                  href="/dashboard/admin/event/"
+                  href="/dashboard/admin/event"
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium ${
                     pathname === "/dashboard/admin/event"
                       ? "bg-white text-indigo-900"
@@ -93,8 +93,21 @@ export default function DashboardLayout({ children }) {
                   }`}
                 >
                   <FiList className="w-4 h-4" />
-                  Manage Events
+                  {user.role === "admin" ? "Manage Events" : "My Events"}
                 </Link>
+                {user.role === "admin" && (
+                  <Link
+                    href="/dashboard/admin/users/"
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium ${
+                      pathname === "/dashboard/admin/users"
+                        ? "bg-white text-indigo-900"
+                        : "text-purple-200 hover:bg-white/10"
+                    }`}
+                  >
+                    <FiList className="w-4 h-4" />
+                    Manage Users
+                  </Link>
+                )}
               </nav>
             </div>
           )}

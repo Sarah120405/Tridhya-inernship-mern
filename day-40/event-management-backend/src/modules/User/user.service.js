@@ -1,5 +1,33 @@
 import { Event, Booking, User } from "../../models/index.js";
 
+export async function getAllUsers() {
+  const users = await User.find().select("-passwordHash");
+  const usersWithCounts = await Promise.all(
+    users.map(async (user) => {
+      const eventCount = await Event.countDocuments({ createdBy: user._id });
+      return { ...user.toObject(), eventCount };
+    }),
+  );
+  return usersWithCounts;
+}
+
+export async function getOrganizerStats(organizerId) {
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+
+  const myEvents = await Event.find({ createdBy: organizerId });
+  const myEventIds = myEvents.map((e) => e._id);
+
+  const myBookings = await Booking.find({ event: { $in: myEventIds } });
+
+  const totalEvents = myEvents.length;
+  const upcomingEvents = myEvents.filter((e) => new Date(e.date) >= now).length;
+  const totalBookings = myBookings.length;
+
+  return { totalEvents, upcomingEvents, totalBookings };
+}
+
 export async function getAdminStats() {
   const now = new Date();
   const currentMonth = now.getMonth();
@@ -88,7 +116,12 @@ export async function getBookingTrends() {
 }
 
 // user.service.js
-export async function updateUserRole(targetUserId, newRole) {
+export async function updateUserRole(targetUserId, newRole, requestingUserId) {
+  if (targetUserId === requestingUserId) {
+    const error = new Error("You cannot change your own role");
+    error.status = 403;
+    throw error;
+  }
   const user = await User.findById(targetUserId);
   if (!user) {
     const error = new Error("User not found");

@@ -8,14 +8,16 @@ export default function AdminLayout({ children }) {
   const { user, loading } = useAuth();
   const router = useRouter();
 
+  const hasAccess = user?.role === "admin" || user?.role === "organizer";
+
   useEffect(() => {
-    if (!loading && user?.role !== "admin") {
+    if (!loading && !hasAccess) {
       router.push("/dashboard");
     }
-  }, [loading, user, router]);
+  }, [loading, hasAccess, router]);
 
   if (loading) return <p>Loading...</p>;
-  if (user?.role !== "admin") return null;
+  if (!hasAccess) return null;
 
   return <>{children}</>;
 }

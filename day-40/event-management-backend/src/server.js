@@ -23,7 +23,7 @@ app.use(
     credentials: true,
   }),
 );
-
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 app.use(morgan("combined", { stream: logStream }));
 app.use(morgan("dev"));
 app.use("/api", index_api);
