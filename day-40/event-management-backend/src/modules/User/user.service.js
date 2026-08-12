@@ -13,72 +13,79 @@ export async function getAllUsers() {
 
 export async function getOrganizerStats(organizerId) {
   const now = new Date();
-  const currentMonth = now.getMonth();
-  const currentYear = now.getFullYear();
 
-  const myEvents = await Event.find({ createdBy: organizerId });
-  const myEventIds = myEvents.map((e) => e._id);
+  const myEventIds = await Event.distinct("_id", { createdBy: organizerId });
+  const [upcomingEvents, totalBookings] = await Promise.all([
+    Event.countDocuments({
+      createdBy: organizerId,
+      date: { $gte: now },
+    }),
+    Booking.countDocuments({ event: { $in: myEventIds } }),
+  ]);
 
-  const myBookings = await Booking.find({ event: { $in: myEventIds } });
-
-  const totalEvents = myEvents.length;
-  const upcomingEvents = myEvents.filter((e) => new Date(e.date) >= now).length;
-  const totalBookings = myBookings.length;
-
-  return { totalEvents, upcomingEvents, totalBookings };
+  return { totalEvents: myEventIds.length, upcomingEvents, totalBookings };
 }
 
 export async function getAdminStats() {
   const now = new Date();
   const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
+  const startOfMonth = new Date(currentYear, currentMonth, 1);
+  const endOfLastMonth = new Date(startOfMonth.getTime() - 1);
   const lastMonthDate = new Date(currentYear, currentMonth - 1);
-  const lastMonth = lastMonthDate.getMonth();
-  const lastMonthYear = lastMonthDate.getFullYear();
-
-  function isInMonth(date, month, year) {
-    const d = new Date(date);
-    return d.getMonth() === month && d.getFullYear() === year;
-  }
 
   function percentChange(current, previous) {
     if (previous === 0) return current > 0 ? 100 : 0;
     return Math.round(((current - previous) / previous) * 100);
   }
 
-  const [allEvents, allBookings, allUsers] = await Promise.all([
-    Event.find(),
-    Booking.find(),
-    User.find(),
+  const [
+    currentMonthEvents,
+    lastMonthEvents,
+    currentMonthBookings,
+    lastMonthBookings,
+    currentMonthUsers,
+    lastMonthUsers,
+    totalEvents,
+    upcomingEvents,
+    totalBookings,
+    totalUsers,
+  ] = await Promise.all([
+    Event.countDocuments({
+      createdAt: { $gte: startOfMonth, $lte: now },
+    }),
+    Event.countDocuments({
+      createdAt: { $gte: lastMonthDate, $lte: endOfLastMonth },
+    }),
+    Booking.countDocuments({
+      createdAt: {
+        $gte: startOfMonth,
+        $lte: now,
+      },
+    }),
+    Booking.countDocuments({
+      createdAt: {
+        $gte: lastMonthDate,
+        $lte: endOfLastMonth,
+      },
+    }),
+    User.countDocuments({
+      createdAt: {
+        $gte: startOfMonth,
+        $lte: now,
+      },
+    }),
+    User.countDocuments({
+      createdAt: {
+        $gte: lastMonthDate,
+        $lte: endOfLastMonth,
+      },
+    }),
+    Event.countDocuments(),
+    Event.countDocuments({ date: { $gte: now } }),
+    Booking.countDocuments(),
+    User.countDocuments({ role: "user" }),
   ]);
-
-  const currentMonthEvents = allEvents.filter((e) =>
-    isInMonth(e.createdAt, currentMonth, currentYear),
-  ).length;
-  const lastMonthEvents = allEvents.filter((e) =>
-    isInMonth(e.createdAt, lastMonth, lastMonthYear),
-  ).length;
-
-  const currentMonthBookings = allBookings.filter((b) =>
-    isInMonth(b.createdAt, currentMonth, currentYear),
-  ).length;
-  const lastMonthBookings = allBookings.filter((b) =>
-    isInMonth(b.createdAt, lastMonth, lastMonthYear),
-  ).length;
-
-  const currentMonthUsers = allUsers.filter((u) =>
-    isInMonth(u.createdAt, currentMonth, currentYear),
-  ).length;
-  const lastMonthUsers = allUsers.filter((u) =>
-    isInMonth(u.createdAt, lastMonth, lastMonthYear),
-  ).length;
-
-  const totalEvents = allEvents.length;
-  const upcomingEvents = allEvents.filter(
-    (e) => new Date(e.date) >= now,
-  ).length;
-  const totalBookings = allBookings.length;
-  const totalUsers = allUsers.length;
 
   return {
     totalEvents,
@@ -102,20 +109,39 @@ export async function getRecentActivity(limit = 5) {
 }
 
 export async function getBookingTrends() {
-  const bookings = await Booking.find();
+  const bookings = await Booking.aggregate([
+    {
+      $group: {
+        _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } },
+        count: { $sum: 1 },
+      },
+    },
+    {
+      $sort: { "_id.year": 1, "_id.month": 1 },
+    },
+  ]);
 
-  const trends = {};
-  bookings.forEach((b) => {
-    const month = new Date(b.createdAt).toLocaleString("default", {
-      month: "short",
-    });
-    trends[month] = (trends[month] || 0) + 1;
-  });
+  const monthNames = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
 
-  return Object.entries(trends).map(([month, count]) => ({ month, count }));
+  return bookings.map((r) => ({
+    month: `${monthNames[r._id.month - 1]} ${r._id.year}`,
+    count: r.count,
+  }));
 }
 
-// user.service.js
 export async function updateUserRole(targetUserId, newRole, requestingUserId) {
   if (targetUserId === requestingUserId) {
     const error = new Error("You cannot change your own role");

@@ -31,31 +31,38 @@ export async function getEventById(eventId) {
     notFoundError.status = 404;
     throw notFoundError;
   }
-  const bookings = await Booking.find({ event: eventId });
-  const favoriteCount = await Favorite.countDocuments({ event: eventId });
+  const [bookings, favoriteCount] = await Promise.all([
+    Booking.countDocuments({ event: eventId }),
+    Favorite.countDocuments({ event: eventId }),
+  ]);
   return {
     ...event.toObject(),
-    bookings: bookings.length,
+    bookings: bookings,
     favoriteCount: favoriteCount,
   };
 }
 
-export async function getAllEvents() {
-  try {
-    const events = await Event.find();
-
-    const eventsWithCounts = await Promise.all(
-      events.map(async (event) => {
-        const bookedCount = await Booking.countDocuments({ event: event._id });
-        return { ...event.toObject(), bookedCount };
-      }),
-    );
-
-    return eventsWithCounts;
-  } catch (error) {
-    throw new Error("Error fetching events");
+export async function getAllEvents({ search, category } = {}) {
+  const filter = {};
+  if (search) {
+    filter.title = { $regex: search, $options: "i" };
   }
+  if (category) {
+    filter.category = category;
+  }
+
+  const events = await Event.find(filter).populate("createdBy", "name");
+
+  const eventsWithCounts = await Promise.all(
+    events.map(async (event) => {
+      const bookedCount = await Booking.countDocuments({ event: event._id });
+      return { ...event.toObject(), bookedCount };
+    }),
+  );
+
+  return eventsWithCounts;
 }
+
 export async function updateEvent(
   eventId,
   userId,

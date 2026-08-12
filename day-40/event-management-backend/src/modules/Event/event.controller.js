@@ -48,7 +48,8 @@ export async function getEventByIdController(req, res) {
 
 export async function getAllEventsController(req, res) {
   try {
-    const events = await getAllEvents();
+    const { search, category } = req.query;
+    const events = await getAllEvents({ search, category });
     res.status(200).json(events);
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message });

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import {
   Search,
   Clock,
@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/app/context/AuthContext";
 import { useRouter } from "next/navigation";
-
+import useDebounce from "@/app/hooks/useDebounce";
 const CATEGORY_STYLES = {
   Music: "bg-indigo-50 text-indigo-600",
   "Food & Drink": "bg-orange-50 text-orange-600",
@@ -25,7 +25,15 @@ const CATEGORY_STYLES = {
   Food: "bg-orange-50 text-orange-600",
   Other: "bg-zinc-100 text-zinc-600",
 };
-
+const CATEGORIES = [
+  "All Categories",
+  "Music",
+  "Tech",
+  "Sports",
+  "Arts",
+  "Food",
+  "Other",
+];
 export default function ManageEventsPage() {
   const { user } = useAuth();
   const [events, setEvents] = useState([]);
@@ -34,16 +42,32 @@ export default function ManageEventsPage() {
   const [categoryFilter, setCategoryFilter] = useState("All Categories");
   const [openMenuId, setOpenMenuId] = useState(null);
   const router = useRouter();
+  const debouncedSearch = useDebounce(search, 300);
 
   useEffect(() => {
-    setLoading(true);
-    fetch("http://localhost:5000/api/event", {
-      credentials: "include",
-    })
-      .then((res) => res.json())
-      .then(setEvents)
-      .finally(() => setLoading(false));
-  }, []);
+    async function fetchEvents() {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams();
+        if (debouncedSearch) params.set("search", debouncedSearch);
+        if (categoryFilter !== "All Categories")
+          params.set("category", categoryFilter);
+        const res = await fetch(
+          `http://localhost:5000/api/event?${params.toString()}`,
+          {
+            credentials: "include",
+          },
+        );
+        const data = await res.json();
+        setEvents(data);
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchEvents();
+  }, [debouncedSearch, categoryFilter]);
 
   const visibleEvents =
     user?.role === "admin"
@@ -51,23 +75,6 @@ export default function ManageEventsPage() {
       : events.filter(
           (e) => e.createdBy === user?._id || e.createdBy?._id === user?._id,
         );
-
-  const categories = useMemo(() => {
-    const set = new Set(visibleEvents.map((e) => e.category).filter(Boolean));
-    return ["All Categories", ...Array.from(set)];
-  }, [visibleEvents]);
-
-  const filteredEvents = useMemo(() => {
-    return visibleEvents.filter((event) => {
-      const matchesSearch = event.title
-        ?.toLowerCase()
-        .includes(search.toLowerCase());
-      const matchesCategory =
-        categoryFilter === "All Categories" ||
-        event.category === categoryFilter;
-      return matchesSearch && matchesCategory;
-    });
-  }, [visibleEvents, search, categoryFilter]);
 
   function handleView(eventId) {
     router.push(`/dashboard/admin/event/${eventId}/attendees`);
@@ -131,7 +138,7 @@ export default function ManageEventsPage() {
           onChange={(e) => setCategoryFilter(e.target.value)}
           className="text-sm border border-violet-100 rounded-lg px-3 py-2 text-zinc-600"
         >
-          {categories.map((cat) => (
+          {CATEGORIES.map((cat) => (
             <option key={cat} value={cat}>
               {cat}
             </option>
@@ -152,6 +159,7 @@ export default function ManageEventsPage() {
             <thead>
               <tr className="text-left text-xs text-zinc-400 uppercase border-b border-violet-100 rounded-lg bg-white">
                 <th className="px-4 py-3 font-medium">Event</th>
+                <th className="px-4 py-3 font-medium">Organizer</th>
                 <th className="px-4 py-3 font-medium">Date &amp; Time</th>
                 <th className="px-4 py-3 font-medium">Location</th>
                 <th className="px-4 py-3 font-medium">Category</th>
@@ -160,7 +168,7 @@ export default function ManageEventsPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredEvents.map((event) => {
+              {visibleEvents.map((event) => {
                 const dateObj = new Date(event.date);
                 const sold = event.bookedCount ?? 0;
                 const capacity = event.capacity ?? 0;
@@ -183,7 +191,9 @@ export default function ManageEventsPage() {
                         </div>
                       </div>
                     </td>
-
+                    <td className="px-4 py-3 text-zinc-600">
+                      {event.createdBy?.name}
+                    </td>
                     <td className="px-4 py-3 text-zinc-600">
                       <p>
                         {dateObj.toLocaleDateString("en-IN", {
@@ -276,7 +286,7 @@ export default function ManageEventsPage() {
                 );
               })}
 
-              {filteredEvents.length === 0 && (
+              {visibleEvents.length === 0 && (
                 <tr>
                   <td
                     colSpan={7}

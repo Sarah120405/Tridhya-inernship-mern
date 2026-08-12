@@ -40,4 +40,7 @@ const eventSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+eventSchema.index({ category: 1 });
+eventSchema.index({ createdBy: 1 });
+
 export default mongoose.model("Event", eventSchema);

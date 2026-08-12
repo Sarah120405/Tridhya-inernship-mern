@@ -10,13 +10,11 @@ export async function registerUser({ name, email, password }) {
     throw error;
   }
 
-  const passwordHash = await bcrypt.hash(password, 10);
-
   const user = await User.create({
     name,
     email,
-    passwordHash,
-    role: "user", // hardcoded, matching our earlier security discussion
+    passwordHash: password,
+    role: "user",
   });
 
   return user;

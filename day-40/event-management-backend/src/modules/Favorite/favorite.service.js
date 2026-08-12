@@ -1,4 +1,4 @@
-import { Favorite } from "../../models/index.js";
+import { Favorite, Event } from "../../models/index.js";
 
 export async function toggleFavorite(userId, eventId) {
   const existing = await Favorite.findOne({ user: userId, event: eventId });
@@ -13,5 +13,9 @@ export async function toggleFavorite(userId, eventId) {
 }
 
 export async function getMyFavorites(userId) {
+  const result = await Event.find({ category: "Tech" }).explain(
+    "executionStats",
+  );
+  console.log(result.executionStats);
   return Favorite.find({ user: userId }).populate("event");
 }

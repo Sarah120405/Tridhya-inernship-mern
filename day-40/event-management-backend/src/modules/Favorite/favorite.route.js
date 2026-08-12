@@ -15,7 +15,7 @@ const evendIdParamsSchema = z.object({
 router.post(
   "/:id",
   requireAuth,
-  validate(evendIdParamsSchema),
+  validate(evendIdParamsSchema, "params"),
   toggleFavoriteController,
 );
 router.get("/", requireAuth, getMyFavoritesController);
