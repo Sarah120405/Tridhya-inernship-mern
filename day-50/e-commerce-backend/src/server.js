@@ -4,9 +4,10 @@ import { connectDB } from "./config/db.config.js";
 import index_api from "./index_api.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-/* import morgan from "morgan";
 import fs from "fs";
 import path from "path";
+
+/* import morgan from "morgan";
 
 const logStream = fs.createWriteStream(path.join("logs", "access.log"), {
   flags: "a",

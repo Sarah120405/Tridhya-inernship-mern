@@ -18,9 +18,44 @@ export async function createProduct(productData, adminId) {
   return newProduct;
 }
 
-export async function getAllProducts() {
-  const products = await Product.find();
-  return products;
+export async function getAllProducts({
+  category,
+  minPrice,
+  maxPrice,
+  search,
+} = {}) {
+  const filter = {};
+
+  if (category) {
+    filter.category = category;
+  }
+
+  if (minPrice !== undefined || maxPrice !== undefined) {
+    filter.price = {};
+
+    if (minPrice) {
+      filter.price.$gte = Number(minPrice);
+    }
+
+    if (maxPrice) {
+      filter.price.$lte = Number(maxPrice);
+    }
+  }
+  if (search) {
+    filter.name = {
+      $regex: search,
+      $options: "i",
+    };
+  }
+
+  // Temporary verification of compound index
+  const stats = await Product.find({
+    category: "Electronics",
+    price: { $gte: 500 },
+  }).explain("executionStats");
+  console.log(stats.executionStages);
+
+  return await Product.find(filter);
 }
 
 export async function getProductById(productId) {
@@ -58,5 +93,5 @@ export async function deleteProduct(productId) {
     throw error;
   }
   const deletedProduct = await Product.findByIdAndDelete(productId);
-  return { message: "Event deleted successfully" };
+  return { message: "Product deleted successfully" };
 }

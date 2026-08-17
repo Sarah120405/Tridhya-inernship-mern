@@ -34,7 +34,12 @@ export async function createProductController(req, res) {
 
 export async function getAllProductsController(req, res) {
   try {
-    const products = await getAllProducts();
+    const products = await getAllProducts({
+      category: req.query.category,
+      minPrice: req.query.min_price,
+      maxPrice: req.query.max_price,
+      search: req.query.search,
+    });
     res.status(200).json(products);
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message });

@@ -17,7 +17,7 @@ route.post(
   localFileUpload.single("image"),
   createProductController,
 );
-route.get("/", getAllProductsController);
+route.get("/all", getAllProductsController);
 route.get("/:id", getProductByIdController);
 route.put(
   "/:id",

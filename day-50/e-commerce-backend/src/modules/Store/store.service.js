@@ -12,10 +12,19 @@ export async function OrderStatus() {
   ]);
   return orderStatus;
 }
+
 export async function LowStockAlert(threshold) {
   const products = await Product.find({ stock: { $lte: threshold } });
+
+  // Temporary verification of single index
+  /* const stats = await Product.find({ stock: { $lte: 50 } }).explain(
+    "executionStats",
+  );
+  console.log(stats); */
+
   return products;
 }
+
 export async function RevenueOverTime() {
   const orderRevenue = await Order.aggregate([
     {

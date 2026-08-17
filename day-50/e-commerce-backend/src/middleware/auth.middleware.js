@@ -2,9 +2,6 @@
 import jwt from "jsonwebtoken";
 
 export function requireAuth(req, res, next) {
-  console.log("Cookies received:", req.cookies);
-  console.log("Raw cookie header:", req.headers.cookie);
-
   const token = req.cookies?.token;
 
   if (!token) {
