@@ -1,7 +1,7 @@
 import Cart from "../../models/Cart.js";
 
 export async function getOrCreateCart(userId) {
-  let cart = await Cart.findOne({ user: userId });
+  let cart = await Cart.findOne({ user: userId }).populate("items.product");
   if (!cart) {
     cart = await Cart.create({ user: userId, items: [] });
   }

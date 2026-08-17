@@ -1,20 +1,15 @@
 import { useDispatch } from "react-redux";
 import { addItem } from "../store/slice/cartSlice";
-import toast from "react-hot-toast";
-import { memo } from "react";
 
-const ProductCard = memo(function ProductCard({ product }) {
+export default function ProductCard({ product }) {
   const dispatch = useDispatch();
 
   return (
-    <div
-      data-testid={`product-card-${product.id}`}
-      className="bg-white relative rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition flex flex-col"
-    >
+    <div className="bg-white relative rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition">
       <span className="absolute top-1 right-1 border border-purple-500 text-purple-500 shadow-sm text-xs font-medium px-2 py-1 rounded-lg capitalize shadow-sm">
         {product.category}
       </span>
-      <div className="w-full h-40  flex items-center justify-center bg-slate-50 rounded-lg mb-3 p-2">
+      <div className="w-full h-40 flex items-center justify-center bg-slate-50 rounded-lg mb-3 p-2">
         <img
           src={product.image}
           alt={product.name}
@@ -22,7 +17,6 @@ const ProductCard = memo(function ProductCard({ product }) {
           className="max-h-full max-w-full object-contain"
         />
       </div>
-
       <h3 className="font-semibold text-slate-800 line-clamp-1 mb-1">
         {product.name}
       </h3>
@@ -35,22 +29,20 @@ const ProductCard = memo(function ProductCard({ product }) {
         <p className="text-slate-800 font-semibold text-sm">
           ₹{product.price.toLocaleString()}
         </p>
-        <p className="text-slate-500 text-xs flex items-center gap-1">
+        {/* <p className="text-slate-500 text-xs flex items-center gap-1">
           <span className="text-amber-500">★</span>
           {product.rating}
-        </p>
+        </p> */}
       </div>
 
       <button
-        onClick={() => {
-          dispatch(addItem(product));
-          toast.success(`${product.name} added to cart`);
-        }}
+        onClick={() =>
+          dispatch(addItem({ productId: product.id, quantity: 1 }))
+        }
         className="w-full rounded-lg bg-purple-600 text-white text-sm font-medium py-2 hover:bg-purple-700 transition"
       >
         Add to cart
       </button>
     </div>
   );
-});
-export default ProductCard;
+}

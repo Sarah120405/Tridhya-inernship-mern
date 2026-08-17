@@ -26,19 +26,35 @@ export async function LowStockAlert(threshold) {
 }
 
 export async function RevenueOverTime() {
-  const orderRevenue = await Order.aggregate([
+  const results = await Order.aggregate([
     {
       $group: {
-        _id: {
-          year: { $year: "$createdAt" },
-          month: { $month: "$createdAt" },
-        },
+        _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } },
         revenue: { $sum: "$totalAmount" },
       },
     },
     { $sort: { "_id.year": 1, "_id.month": 1 } },
   ]);
-  return orderRevenue;
+
+  const monthNames = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+
+  return results.map((r) => ({
+    month: `${monthNames[r._id.month - 1]} ${r._id.year}`,
+    revenue: r.revenue,
+  }));
 }
 export async function BestSellingProducts() {
   const bestSellingProduct = await Order.aggregate([

@@ -10,27 +10,22 @@ import { requireAuth, requireAdmin } from "../../middleware/auth.middleware.js";
 
 const route = express.Router();
 
-route.get("/orderStatus", requireAuth, requireAdmin, getOrderStatusController);
+route.get("/order-status", requireAuth, requireAdmin, getOrderStatusController);
+route.get("/low-stock", requireAuth, requireAdmin, getLowStockAlertController);
 route.get(
-  "/lowStockAlert",
-  requireAuth,
-  requireAdmin,
-  getLowStockAlertController,
-);
-route.get(
-  "/revenueOverTime",
+  "/revenue-over-time",
   requireAuth,
   requireAdmin,
   getRevenueOverTimeController,
 );
 route.get(
-  "/bestSellingProduct",
+  "/best-sellers",
   requireAuth,
   requireAdmin,
   getBestSellingProductsController,
 );
 route.get(
-  "/revenueByCategory",
+  "/revenue-by-category",
   requireAuth,
   requireAdmin,
   getRevenueByCategoryController,

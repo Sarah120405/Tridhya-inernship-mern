@@ -7,7 +7,7 @@ import {
 import { requireAdmin, requireAuth } from "../../middleware/auth.middleware.js";
 
 const route = express.Router();
-route.post("/", requireAuth, createOrderFromCartController);
-route.get("/", requireAuth, getMyOrdersController);
+route.post("/checkout/", requireAuth, createOrderFromCartController);
+route.get("/my-orders/", requireAuth, getMyOrdersController);
 route.get("/all/", requireAuth, requireAdmin, getAllOrdersController);
 export default route;
