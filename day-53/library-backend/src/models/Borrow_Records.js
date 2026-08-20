@@ -30,5 +30,11 @@ export const BorrowRecord = sequelize.define(
   {
     tableName: "borrow_records",
     timestamps: false,
+    indexes: [
+      {
+        name: "idx_borrow_active",
+        fields: ["book_id", "member_id", "returned"],
+      },
+    ],
   },
 );

@@ -61,3 +61,10 @@ export async function deleteBook(bookId) {
   await Book.destroy({ where: { id: bookId } });
   return { message: "Book deleted successfully" };
 }
+
+export async function getActiveBorrowRecords() {
+  const [results] = await sequelize.query(
+    "SELECT * FROM active_borrow_records",
+  );
+  return results;
+}

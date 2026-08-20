@@ -1,4 +1,10 @@
-import { createAuthor, getAllAuthor, getAuthorById } from "./author.sevice.js";
+import {
+  createAuthor,
+  getAllAuthor,
+  getAuthorById,
+  getAuthorsWithNoBorrowedBooks,
+  getProlificAuthors,
+} from "./author.sevice.js";
 
 export async function createAuthorController(req, res) {
   try {
@@ -18,9 +24,27 @@ export async function getAllAuthorController(req, res) {
   }
 }
 
+export async function getProfilicAuthorController(req, res) {
+  try {
+    const minBooks = req.query.minBooks ? Number(req.query.minBooks) : 2;
+    const authors = await getProlificAuthors(minBooks);
+    res.status(200).json(authors);
+  } catch (error) {
+    res.status(error.status || 500).json(error.message);
+  }
+}
 export async function getAuthorByIdController(req, res) {
   try {
     const author = await getAuthorById(req.params.id);
+    res.status(200).json(author);
+  } catch (error) {
+    res.status(error.status || 500).json(error.message);
+  }
+}
+
+export async function getAuthorsWithNoBorrowedBooksController(req, res) {
+  try {
+    const author = await getAuthorsWithNoBorrowedBooks();
     res.status(200).json(author);
   } catch (error) {
     res.status(error.status || 500).json(error.message);
