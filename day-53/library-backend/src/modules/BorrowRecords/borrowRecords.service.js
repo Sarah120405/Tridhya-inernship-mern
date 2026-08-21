@@ -69,7 +69,7 @@ export async function returnBook(recordId) {
       throw error;
     }
     await BorrowRecord.update(
-      { returned: true, return_date: new Date() },
+      { returned: true },
       { where: { id: recordId }, transaction: t },
     );
     await Book.increment("copies_available", {
@@ -84,4 +84,25 @@ export async function returnBook(recordId) {
     await t.rollback();
     throw error;
   }
+}
+
+export async function getActiveBorrowRecords() {
+  const [results] = await sequelize.query(
+    "SELECT * FROM active_borrow_records",
+  );
+  return results;
+}
+
+export async function borrowingTrends() {
+  const trends = await sequelize.query(
+    `SELECT
+      YEAR(borrowed_at) AS year,
+      MONTH(borrowed_at) AS month,
+      COUNT(*) AS total_borrows
+    FROM borrow_records
+    GROUP BY YEAR(borrowed_at), MONTH(borrowed_at)
+    ORDER BY year, month;`,
+    { type: sequelize.QueryTypes.SELECT },
+  );
+  return trends;
 }

@@ -1,10 +1,11 @@
 import {
+  authorWithMostBorrow,
   createAuthor,
   getAllAuthor,
   getAuthorById,
   getAuthorsWithNoBorrowedBooks,
   getProlificAuthors,
-} from "./author.sevice.js";
+} from "./author.service.js";
 
 export async function createAuthorController(req, res) {
   try {
@@ -48,5 +49,14 @@ export async function getAuthorsWithNoBorrowedBooksController(req, res) {
     res.status(200).json(author);
   } catch (error) {
     res.status(error.status || 500).json(error.message);
+  }
+}
+
+export async function authorWithMostBorrowsController(req, res) {
+  try {
+    const author = await authorWithMostBorrow();
+    res.status(200).json(author);
+  } catch (error) {
+    res.status(error.status || 500).json({ error: error.message });
   }
 }

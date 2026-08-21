@@ -1,5 +1,6 @@
 import { sequelize } from "../../config/db.js";
 import { Member, BorrowRecord } from "../../models/index.js";
+import { QueryTypes } from "sequelize";
 
 export async function createMember(memberData) {
   const existing = await Member.findOne({ where: { email: memberData.email } });
@@ -45,8 +46,26 @@ export async function getMemberById(id) {
 }
 
 export async function getMemberBorrowSummary(memberId) {
-  const borrowSummary = await sequelize.query(
-    "SELECT * FROM member_borrow_summary",
+  const [borrowSummary] = await sequelize.query(
+    "SELECT * FROM member_borrow_summary WHERE id = :memberId",
+    {
+      replacements: { memberId },
+      type: sequelize.QueryTypes.SELECT,
+    },
   );
   return borrowSummary;
+}
+
+export async function activeMembers() {
+  const members = await sequelize.query(
+    `SELECT members.name, count(borrow_records.id) AS times_borrowed
+    FROM members
+    JOIN borrow_records on members.id = borrow_records.member_id
+    GROUP BY members.id
+    ORDER BY times_borrowed DESC
+    LIMIT 5
+     `,
+    { type: sequelize.QueryTypes.SELECT },
+  );
+  return members;
 }

@@ -1,4 +1,5 @@
 import {
+  activeMembers,
   createMember,
   getAllMembers,
   getMemberBorrowSummary,
@@ -34,8 +35,17 @@ export async function getMemberByIdController(req, res) {
 
 export async function getMemberBorrowSummaryController(req, res) {
   try {
-    const borrowSummary = await getMemberBorrowSummary(req.body);
+    const borrowSummary = await getMemberBorrowSummary(req.params.memberId);
     res.status(200).json(borrowSummary);
+  } catch (error) {
+    res.status(error.status || 500).json({ error: error.message });
+  }
+}
+
+export async function activeMembersController(req, res) {
+  try {
+    const members = await activeMembers();
+    res.status(200).json(members);
   } catch (error) {
     res.status(error.status || 500).json({ error: error.message });
   }

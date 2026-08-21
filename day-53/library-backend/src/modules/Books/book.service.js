@@ -1,5 +1,6 @@
+import { sequelize } from "../../config/db.js";
 import { Author, Book } from "../../models/index.js";
-
+import { QueryTypes } from "sequelize";
 export async function CreateBook(data) {
   const existing = await Book.findOne({ where: { title: data.title } });
   if (existing) {
@@ -62,9 +63,27 @@ export async function deleteBook(bookId) {
   return { message: "Book deleted successfully" };
 }
 
-export async function getActiveBorrowRecords() {
+export async function overdueBooks() {
   const [results] = await sequelize.query(
-    "SELECT * FROM active_borrow_records",
+    "SELECT * FROM overdue_books_records",
   );
   return results;
+}
+
+export async function bookStatistics() {
+  const [books] = await sequelize.query("SELECT * FROM book_borrow_statistics");
+  return books;
+}
+
+export async function mostBorrowedBooks() {
+  const books = await sequelize.query(
+    `SELECT books.title, COUNT(borrow_records.id) AS times_borrowed
+    FROM books
+    JOIN borrow_records ON books.id = borrow_records.book_id
+    GROUP BY books.id
+    ORDER BY times_borrowed DESC
+    LIMIT 5;`,
+    { type: sequelize.QueryTypes.SELECT },
+  );
+  return books;
 }

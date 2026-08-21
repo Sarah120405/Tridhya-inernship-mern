@@ -1,4 +1,5 @@
 import {
+  authorWithMostBorrowsController,
   createAuthorController,
   getAllAuthorController,
   getAuthorByIdController,
@@ -11,6 +12,7 @@ const route = express.Router();
 route.post("/", createAuthorController);
 route.get("/profilic_author", getProfilicAuthorController);
 route.get("/no_book_borrowed", getAuthorsWithNoBorrowedBooksController);
+route.get("/author_most_borrow", authorWithMostBorrowsController);
 route.get("/all", getAllAuthorController);
 route.get("/:id", getAuthorByIdController);
 

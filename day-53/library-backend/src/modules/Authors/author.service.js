@@ -1,6 +1,7 @@
 import { literal, Op } from "sequelize";
 import { sequelize } from "../../config/db.js";
 import { Author, Book } from "../../models/index.js";
+import { QueryTypes } from "sequelize";
 
 export async function createAuthor(authorData) {
   const existing = await Author.findOne({ where: { name: authorData.name } });
@@ -76,4 +77,21 @@ export async function getAuthorsWithNoBorrowedBooks() {
       },
     },
   });
+}
+
+export async function authorWithMostBorrow() {
+  const author = await sequelize.query(
+    `
+    SELECT
+      authors.name AS author_name,
+      COUNT(borrow_records.id) AS borrow_count
+    FROM authors
+    LEFT JOIN books ON authors.id = books.author_id
+    LEFT JOIN borrow_records ON books.id = borrow_records.book_id
+    GROUP BY authors.id
+    ORDER BY borrow_count DESC
+    LIMIT 5;`,
+    { type: sequelize.QueryTypes.SELECT },
+  );
+  return author;
 }

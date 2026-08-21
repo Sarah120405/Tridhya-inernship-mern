@@ -4,7 +4,9 @@ import {
   getBookById,
   updateBook,
   deleteBook,
-  getActiveBorrowRecords,
+  overdueBooks,
+  bookStatistics,
+  mostBorrowedBooks,
 } from "./book.service.js";
 
 export async function createBookController(req, res) {
@@ -52,10 +54,28 @@ export async function deleteBookController(req, res) {
   }
 }
 
-export async function getActiveBorrowRecordsController(req, res) {
+export async function overdueBooksController(req, res) {
   try {
-    const books = await getActiveBorrowRecords();
+    const books = await overdueBooks();
     res.status(200).json(books);
+  } catch (error) {
+    res.status(error.status || 500).json({ error: error.message });
+  }
+}
+
+export async function bookStatisticsController(req, res) {
+  try {
+    const book = await bookStatistics();
+    res.status(200).json(book);
+  } catch (error) {
+    res.status(error.status || 500).json({ error: error.message });
+  }
+}
+
+export async function mostBorrowedBooksController(req, res) {
+  try {
+    const book = await mostBorrowedBooks();
+    res.status(200).json(book);
   } catch (error) {
     res.status(error.status || 500).json({ error: error.message });
   }
