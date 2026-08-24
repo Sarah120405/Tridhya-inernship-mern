@@ -16,7 +16,7 @@ route.post("/create", createBookController);
 route.get("/", getAllBooksController);
 route.get("/overdue_books", overdueBooksController);
 route.get("/book_statistics", bookStatisticsController);
-route.get("/most-borrowed", mostBorrowedBooksController);
+route.get("/most_borrowed", mostBorrowedBooksController);
 route.get("/:id", getBookByIdController);
 route.put("/:id", updateBookController);
 route.delete("/:id", deleteBookController);
