@@ -154,7 +154,7 @@
   }
   /* ---------- Topbar controls ---------- */
   .search-input {
-    @apply flex-1 flex items-center gap-2 bg-bg border border-border rounded-full px-4 py-2 text-[13px] text-text-muted;
+    @apply flex-1 flex items-center gap-2 bg-[#FAF9FC] border border-border rounded-full px-4 py-2 text-[13px] text-text-muted;
   }
   .search-input input {
     @apply flex-1 border-none outline-none bg-transparent text-[13px] text-text-primary placeholder:text-text-muted;

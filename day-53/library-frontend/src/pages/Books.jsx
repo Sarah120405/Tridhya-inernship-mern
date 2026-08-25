@@ -13,6 +13,7 @@ import { FiBookOpen, FiEdit, FiTrash } from "react-icons/fi";
 import { useState } from "react";
 import BookForm from "../components/BookForm";
 import { fetchAuthors } from "../store/slice/authorSlice";
+import { useSearch } from "../hooks/useSearch";
 
 export default function BooksList() {
   const { items, overdueBooks, mostBorrowed, statistics, loading, error } =
@@ -27,6 +28,11 @@ export default function BooksList() {
     dispatch(fetchMostBorrowedBooks());
     dispatch(fetchAuthors());
   }, [dispatch]);
+
+  const { searchTerm, setSearchTerm, filteredItems } = useSearch(items, [
+    "title",
+    "genre",
+  ]);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingBook, setEditingBook] = useState(null);
@@ -123,6 +129,8 @@ export default function BooksList() {
 
           <div className="flex gap-2">
             <input
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               type="text"
               placeholder="Search books..."
               className="w-full sm:w-56 rounded-xl border border-[#E8E1EF] bg-[#FAF9FC] px-3 py-2 text-sm text-[#29252F] outline-none transition placeholder:text-[#AAA3B2] focus:border-[#8B7CE6] focus:bg-white focus:ring-3 focus:ring-[#8B5CF6]/10"
@@ -153,7 +161,7 @@ export default function BooksList() {
               </thead>
 
               <tbody>
-                {items.map((book) => (
+                {filteredItems.map((book) => (
                   <tr
                     key={book.id}
                     className="border-b border-[#F0EBF3] last:border-0 transition hover:bg-[#FCFAFF]"

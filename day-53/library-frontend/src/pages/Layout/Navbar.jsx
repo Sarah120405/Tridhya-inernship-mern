@@ -13,6 +13,7 @@ function Navbar({ openSidebar, setOpenSidebar }) {
       <div className="search-input">
         <FiSearch size={16} />
         <input
+          className="bg-[#FAF9FC]"
           type="text"
           placeholder="Search books by title, author or ISBN..."
         />

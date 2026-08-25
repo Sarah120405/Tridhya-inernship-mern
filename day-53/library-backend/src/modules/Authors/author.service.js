@@ -1,6 +1,6 @@
 import { literal, Op } from "sequelize";
 import { sequelize } from "../../config/db.js";
-import { Author, Book } from "../../models/index.js";
+import { Author, Book, BorrowRecord } from "../../models/index.js";
 import { QueryTypes } from "sequelize";
 
 export async function createAuthor(authorData) {
@@ -54,9 +54,26 @@ export async function getAuthorById(authorId) {
   const author = await Author.findByPk(authorId, {
     include: {
       model: Book,
-      attributes: ["id", "title", "genre", "published_year"],
+      attributes: [
+        "id",
+        "title",
+        "genre",
+        "published_year",
+        "copies_available",
+        [
+          sequelize.fn("COUNT", sequelize.col("Books->BorrowedRecords.id")),
+          "borrow_count",
+        ],
+      ],
+      include: {
+        model: BorrowRecord,
+        attributes: [],
+      },
     },
+    group: ["Author.id", "Books.id"],
   });
+
+  console.log("Raw author result:", JSON.stringify(author, null, 2)); // temporary
 
   if (!author) {
     const error = new Error("Author not found");
