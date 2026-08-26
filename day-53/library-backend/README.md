@@ -4,9 +4,13 @@ CREATE VIEW active_borrow_records AS
 SELECT
 borrow_records.id,
 books.title,
+books.copies_available,
 members.name AS member_name,
 borrow_records.borrowed_at
-FROM borrow_records;
+FROM borrow_records
+JOIN books ON borrow_records.book_id = books.id
+JOIN members ON borrow_records.member_id = members.id
+WHERE borrow_records.returned = FALSE;
 
 CREATE VIEW member*borrow_summary AS
 SELECT

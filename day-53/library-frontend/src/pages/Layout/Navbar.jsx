@@ -26,7 +26,7 @@ function Navbar({ openSidebar, setOpenSidebar }) {
 
       <button className="flex items-center gap-2.5">
         <img
-          src="/images/avatar-placeholder.jpg"
+          src="/images/avatar-placeholder.webp"
           alt="User avatar"
           className="avatar"
         />

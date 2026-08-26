@@ -1,5 +1,5 @@
 import { sequelize } from "../../config/db.js";
-import { Member, BorrowRecord } from "../../models/index.js";
+import { Member, BorrowRecord, Book } from "../../models/index.js";
 import { QueryTypes } from "sequelize";
 
 export async function createMember(memberData) {
@@ -21,6 +21,7 @@ export async function getAllMembers() {
       "id",
       "name",
       "email",
+      "join_date",
       [
         sequelize.fn("COUNT", sequelize.col("BorrowedRecords.id")),
         "borrow_count",
@@ -36,7 +37,15 @@ export async function getAllMembers() {
 }
 
 export async function getMemberById(id) {
-  const member = await Member.findByPk(id);
+  const member = await Member.findByPk(id, {
+    include: {
+      model: BorrowRecord,
+      include: {
+        model: Book,
+        attributes: ["id", "title", "genre"],
+      },
+    },
+  });
   if (!member) {
     const error = new Error("Member not found");
     error.status = 404;
@@ -58,7 +67,7 @@ export async function getMemberBorrowSummary(memberId) {
 
 export async function activeMembers() {
   const members = await sequelize.query(
-    `SELECT members.name, count(borrow_records.id) AS times_borrowed
+    `SELECT members.id, members.name, count(borrow_records.id) AS times_borrowed
     FROM members
     JOIN borrow_records on members.id = borrow_records.member_id
     GROUP BY members.id

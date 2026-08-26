@@ -13,7 +13,6 @@ import {
   FiArrowLeft,
   FiArrowRight,
 } from "react-icons/fi";
-import AuthorForm from "../components/AuthorForm";
 import {
   fetchAuthors,
   fetchMostBookBorrowedAuthors,
@@ -22,6 +21,7 @@ import {
 } from "../store/slice/authorSlice";
 import { Link } from "react-router-dom";
 import { useSearch } from "../hooks/useSearch";
+import EntityForm from "../components/EntityForm";
 
 export default function AuthorList() {
   const {
@@ -85,7 +85,8 @@ export default function AuthorList() {
 
       {modalOpen && (
         <Modal title="Add Author" onClose={() => setModalOpen(false)}>
-          <AuthorForm
+          <EntityForm
+            entityType="author"
             onSuccess={handleAuthorSaved}
             onCancel={() => setModalOpen(false)}
           />
@@ -118,7 +119,6 @@ export default function AuthorList() {
         />
       </div>
       <section className="overflow-hidden rounded-2xl border border-[#E8E1EF] bg-white shadow-[0_2px_8px_rgba(63,45,82,0.05)] mb-6">
-        {/* Table header */}
         <div className="flex flex-col gap-3 border-b border-[#E8E1EF] p-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-base font-semibold text-[#29252F]">
@@ -147,14 +147,11 @@ export default function AuthorList() {
                 key={author.id}
                 className="w-[85%] shrink-0 sm:w-[45%] lg:w-[30%] xl:w-[23%] rounded-2xl border border-[#E8E1EF] bg-white p-5 shadow-[0_2px_8px_rgba(63,45,82,0.05)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(63,45,82,0.10)]"
               >
-                {/* Author Header */}
                 <div className="flex items-center gap-4">
-                  {/* Avatar */}
                   <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#EDE9FE] to-[#F3E8FF] text-xl font-semibold text-[#6D3FD3]">
                     {author.name?.charAt(0).toUpperCase()}
                   </div>
 
-                  {/* Name + Book Count */}
                   <div className="min-w-0">
                     <h3 className="truncate text-base font-semibold text-[#29252F]">
                       {author.name}
@@ -167,15 +164,12 @@ export default function AuthorList() {
                   </div>
                 </div>
 
-                {/* Bio */}
                 <p className="mt-5 line-clamp-3 min-h-[66px] text-sm leading-5 text-[#6F6878]">
                   {author.bio || "No biography available for this author."}
                 </p>
 
-                {/* Divider */}
                 <div className="my-4 h-px bg-[#E8E1EF]" />
 
-                {/* View Profile */}
                 <Link
                   to={`/author/${author.id}`}
                   className="mt-auto flex items-center justify-between rounded-xl bg-[#FAF9FC] px-4 py-2.5 text-sm font-medium text-[#6D3FD3] transition-all duration-200 hover:bg-[#EDE9FE]"
@@ -192,8 +186,7 @@ export default function AuthorList() {
           </div>
         )}
       </section>
-      <div className="grid lg:grid-cols-3 grid-cols-1 gap-2 h-full">
-        {/* Most Borrowed Authors */}
+      <div className="grid lg:grid-cols-2 grid-cols-1 gap-2 h-full">
         <section className="rounded-2xl border border-[#E8E1EF] bg-white p-5 shadow-[0_2px_8px_rgba(63,45,82,0.05)]">
           <div className="flex items-start justify-between mb-4">
             <div>
@@ -229,46 +222,6 @@ export default function AuthorList() {
                   <span className="shrink-0 rounded-full bg-[#FCEBED] px-2.5 py-1 text-xs font-medium text-[#DC6477]">
                     {record.borrow_count}{" "}
                     {record.borrow_count === 1 ? "borrow" : "borrows"}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* Prolific Authors */}
-        <section className="rounded-2xl border border-[#E8E1EF] bg-white p-5 shadow-[0_2px_8px_rgba(63,45,82,0.05)]">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <h2 className="text-base font-semibold text-[#29252F]">
-                Prolific Authors
-              </h2>
-              <p className="mt-1 text-xs text-[#9A93A3]">
-                Authors with 2 or more published books.
-              </p>
-            </div>
-            <div className="rounded-xl bg-[#EDE9FE] p-2.5 text-[#6C5DD3]">
-              <FiAward />
-            </div>
-          </div>
-
-          {profilicAuthors.length === 0 ? (
-            <p className="rounded-xl bg-[#FAF7FF] px-4 py-6 text-center text-sm text-[#9A93A3]">
-              No prolific authors yet.
-            </p>
-          ) : (
-            <div className="flex flex-col gap-2">
-              {profilicAuthors.map((author) => (
-                <div
-                  key={author.id}
-                  className="flex items-center justify-between rounded-xl border border-violet-100 bg-white px-4 py-3 shadow-sm hover:shadow-md transition"
-                >
-                  <span className="font-medium text-slate-800">
-                    {author.name}
-                  </span>
-                  <span className="rounded-full bg-purple-50 px-3 py-1 text-xs font-semibold text-purple-600">
-                    {author.book_count}{" "}
-                    {author.book_count === 1 ? "book" : "books"}
                   </span>
                 </div>
               ))}

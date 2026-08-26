@@ -22,7 +22,6 @@ export const borrowBook = createAsyncThunk(
 export const returnBook = createAsyncThunk(
   "borrow/returnBook",
   async (recordId) => {
-    // PUT/POST to your real return endpoint
     const res = await fetch(
       `http://localhost:5000/api/borrow_record/return/${recordId}`,
       {
@@ -74,14 +73,19 @@ const borrowSlice = createSlice({
     activeBorrowRecords: [],
     borrowingTrends: [],
   },
-  reducers: {},
+  reducers: {
+    clearMessage(state) {
+      state.message = null;
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(borrowBook.pending, (state, action) => {
         state.loading = true;
       })
       .addCase(borrowBook.fulfilled, (state, action) => {
-        state.message = action.payload;
+        state.activeBorrowRecords.push(action.payload);
+        state.message = "Book Borrowed Successfully";
         state.loading = false;
       })
       .addCase(borrowBook.rejected, (state, action) => {
@@ -89,7 +93,7 @@ const borrowSlice = createSlice({
         state.loading = false;
       })
       .addCase(returnBook.fulfilled, (state, action) => {
-        state.message = action.payload;
+        state.message = action.payload.message;
       })
       .addCase(fetchActiveBorrowRecords.fulfilled, (state, action) => {
         state.activeBorrowRecords = action.payload;
@@ -99,3 +103,6 @@ const borrowSlice = createSlice({
       });
   },
 });
+
+export default borrowSlice.reducer;
+export const { clearMessage } = borrowSlice.actions;

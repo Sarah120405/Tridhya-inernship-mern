@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { FiHome, FiBookOpen, FiUser } from "react-icons/fi";
+import { FiHome, FiBookOpen, FiEdit3, FiUsers, FiRepeat } from "react-icons/fi";
 
 function Sidebar({ openSidebar, setOpenSidebar }) {
   const getNavLinkClass = ({ isActive }) =>
@@ -35,7 +35,13 @@ function Sidebar({ openSidebar, setOpenSidebar }) {
             <FiBookOpen className="w-4.5 h-4.5" /> Books
           </NavLink>
           <NavLink to="/author" className={getNavLinkClass}>
-            <FiUser className="w-4.5 h-4.5" /> Authors
+            <FiEdit3 className="w-4.5 h-4.5" /> Authors
+          </NavLink>
+          <NavLink to="/members" className={getNavLinkClass}>
+            <FiUsers className="w-4.5 h-4.5" /> Members
+          </NavLink>
+          <NavLink to="/borrow_record" className={getNavLinkClass}>
+            <FiRepeat className="w-4.5 h-4.5" /> Borrow Records
           </NavLink>
         </nav>
       </aside>

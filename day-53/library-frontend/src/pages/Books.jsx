@@ -147,7 +147,7 @@ export default function BooksList() {
         </div>
 
         {!loading && (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto max-h-[500px] overflow-y-auto scrollbar-none">
             <table className="w-full min-w-[800px] text-sm">
               <thead>
                 <tr className="bg-[#FAF7FF] text-left text-[11px] uppercase tracking-wider text-[#8C8395]">
@@ -364,7 +364,7 @@ export default function BooksList() {
             No statistics available.
           </p>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto max-h-[300px] overflow-y-auto scrollbar-none">
             <table className="w-full min-w-[650px] text-sm">
               <thead>
                 <tr className="border-b border-[#E8E1EF] text-left text-[11px] uppercase tracking-wider text-[#8C8395]">
