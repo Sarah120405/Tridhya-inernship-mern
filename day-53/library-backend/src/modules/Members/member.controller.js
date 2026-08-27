@@ -1,6 +1,7 @@
 import {
   activeMembers,
   createMember,
+  editMember,
   getAllMembers,
   getMemberBorrowSummary,
   getMemberById,
@@ -46,6 +47,15 @@ export async function activeMembersController(req, res) {
   try {
     const members = await activeMembers();
     res.status(200).json(members);
+  } catch (error) {
+    res.status(error.status || 500).json({ error: error.message });
+  }
+}
+
+export async function editMemberController(req, res) {
+  try {
+    const member = await editMember(req.params.id, req.body);
+    res.status(200).json(member);
   } catch (error) {
     res.status(error.status || 500).json({ error: error.message });
   }

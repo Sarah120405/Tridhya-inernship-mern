@@ -1,18 +1,27 @@
 import { useState } from "react";
 import { useDispatch } from "react-redux";
-import { createAuthor } from "../store/slice/authorSlice";
-import { createMembers } from "../store/slice/memberSlice";
+import { createAuthor, editAuthors } from "../store/slice/authorSlice";
+import { createMembers, editMembers } from "../store/slice/memberSlice";
 
-export default function EntityForm({ entityType, onSuccess, onCancel }) {
+export default function EntityForm({
+  entityType,
+  existingEntity,
+  onSuccess,
+  onCancel,
+}) {
   const dispatch = useDispatch();
   const isAuthor = entityType === "author";
+  const isEditMode = Boolean(existingEntity);
   const [formData, setFormData] = useState(
     isAuthor
       ? {
-          name: "",
-          bio: "",
+          name: existingEntity?.name || "",
+          bio: existingEntity?.bio || "",
         }
-      : { name: "", email: "" },
+      : {
+          name: existingEntity?.name || "",
+          email: existingEntity?.email || "",
+        },
   );
 
   const [fieldErrors, setFieldErrors] = useState({});
@@ -45,24 +54,29 @@ export default function EntityForm({ entityType, onSuccess, onCancel }) {
     if (Object.keys(validationErrors).length > 0) return;
 
     setSubmitting(true);
+    const thunk = isAuthor
+      ? isEditMode
+        ? editAuthors
+        : createAuthor
+      : isEditMode
+        ? editMembers
+        : createMembers;
 
-    const resultAction = isAuthor
-      ? await dispatch(createAuthor(formData))
-      : await dispatch(createMembers(formData));
+    const payload = isEditMode
+      ? isAuthor
+        ? { authorId: existingEntity.id, authorData: formData }
+        : { memberId: existingEntity.id, memberData: formData }
+      : formData;
 
+    const resultAction = await dispatch(thunk(payload));
     setSubmitting(false);
-    if (isAuthor) {
-      if (createAuthor.fulfilled.match(resultAction)) {
-        onSuccess(resultAction.payload);
-      } else {
-        setError(resultAction.error?.message || "Failed to create author");
-      }
+    if (thunk.fulfilled.match(resultAction)) {
+      onSuccess(resultAction.payload);
     } else {
-      if (createMembers.fulfilled.match(resultAction)) {
-        onSuccess(resultAction.payload);
-      } else {
-        setError(resultAction.error?.message || "Failed to create member");
-      }
+      setError(
+        resultAction.error?.message ||
+          `Failed to ${isEditMode ? "update" : "create"} ${entityType}`,
+      );
     }
   }
 
@@ -123,7 +137,9 @@ export default function EntityForm({ entityType, onSuccess, onCancel }) {
           disabled={submitting}
           className="flex-1 rounded-xl bg-purple-600 text-white font-semibold py-2.5 hover:bg-purple-700 transition disabled:opacity-50"
         >
-          {submitting ? "Saving..." : isAuthor ? "Add Author" : "Add Member"}
+          {submitting
+            ? "Saving..."
+            : `${isEditMode ? "Update" : "Add"} ${isAuthor ? "Author" : "Member"}`}
         </button>
       </div>
     </form>

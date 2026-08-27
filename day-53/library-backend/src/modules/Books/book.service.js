@@ -44,9 +44,7 @@ export async function updateBook(bookId, bookData) {
     error.status = 404;
     throw error;
   }
-  console.log("bookData received:", bookData);
   const updatedRow = await Book.update(bookData, { where: { id: bookId } });
-  console.log("Effected Row: ", updatedRow);
 
   const updatedBook = await Book.findByPk(bookId, {
     include: { model: Author, attributes: ["id", "name"] },

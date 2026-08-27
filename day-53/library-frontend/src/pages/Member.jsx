@@ -4,6 +4,7 @@ import { fetchActiveMembers, fetchMembers } from "../store/slice/memberSlice";
 import {
   FiArrowRight,
   FiBookOpen,
+  FiEdit,
   FiPlus,
   FiSearch,
   FiUser,
@@ -17,6 +18,7 @@ import { MetricCard } from "../components/MetricCard";
 import { Link } from "react-router-dom";
 import Modal from "../components/Modal";
 import EntityForm from "../components/EntityForm";
+import PageHeader from "../components/PageHeader";
 export default function MemberList() {
   const { members, loading, error, activeMembers } = useSelector(
     (state) => state.memberSlice,
@@ -28,9 +30,11 @@ export default function MemberList() {
   }, [dispatch]);
 
   const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
 
   function handleMemberSaved() {
     setModalOpen(false);
+    setEditing(null);
     dispatch(fetchMembers());
   }
 
@@ -41,42 +45,33 @@ export default function MemberList() {
 
   return (
     <div className="min-h-full bg-[#FAF9FC] p-2">
-      <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#EDE9FE] text-[#8B5CF6]">
-              <FiUsers size={20} />
-            </div>
-
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight text-[#29252F]">
-                Members
-              </h1>
-
-              <p className="mt-0.5 text-sm text-[#6F6878]">
-                Manage library members and monitor their borrowing activity.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <button
-          onClick={() => setModalOpen(true)}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#8B5CF6] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-[#7C4FE0] hover:shadow-md"
+      <PageHeader
+        icon={<FiUsers />}
+        title="Members"
+        description=" Manage library members and monitor their borrowing activity."
+        action={
+          <button
+            onClick={() => setModalOpen(true)}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#8B5CF6] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-[#7C4FE0] hover:shadow-md"
+          >
+            <FiPlus size={17} />
+            Add New Member
+          </button>
+        }
+      />
+      {modalOpen && (
+        <Modal
+          title={editing ? "Edit Member" : "Add Member"}
+          onClose={() => setModalOpen(false)}
         >
-          <FiPlus size={17} />
-          Add Member
-        </button>
-        {modalOpen && (
-          <Modal title="Add Member" onClose={() => setModalOpen(false)}>
-            <EntityForm
-              entityType="member"
-              onSuccess={handleMemberSaved}
-              onCancel={() => setModalOpen(false)}
-            />
-          </Modal>
-        )}
-      </div>
+          <EntityForm
+            entityType="member"
+            existingEntity={editing || null}
+            onSuccess={handleMemberSaved}
+            onCancel={() => setModalOpen(false)}
+          />
+        </Modal>
+      )}
       <div className="mb-7 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <MetricCard
           icon={<FiUser />}
@@ -190,17 +185,31 @@ export default function MemberList() {
                     </p>
                   </div>
                 </div>
-
-                <Link
-                  to={`/members/${member.id}`}
-                  className="flex gap-2 items-center text-sm font-medium text-[#8B5CF6] hover:text-[#6D3FD3]"
-                >
-                  View
-                  <FiArrowRight
-                    size={14}
-                    className="transition-transform group-hover:translate-x-0.5"
-                  />
-                </Link>
+                <div className="flex flex-col items-start gap-1">
+                  <button
+                    onClick={() => {
+                      setEditing(member);
+                      setModalOpen(true);
+                    }}
+                    className="flex gap-2 items-center text-sm font-medium text-[#8B5CF6] hover:text-[#6D3FD3]"
+                  >
+                    Edit
+                    <FiEdit
+                      size={14}
+                      className="transition-transform group-hover:translate-x-0.5"
+                    />
+                  </button>
+                  <Link
+                    to={`/members/${member.id}`}
+                    className="flex gap-2 items-center text-sm font-medium text-[#8B5CF6] hover:text-[#6D3FD3]"
+                  >
+                    View
+                    <FiArrowRight
+                      size={14}
+                      className="transition-transform group-hover:translate-x-0.5"
+                    />
+                  </Link>
+                </div>
               </div>
             ))}
           </div>

@@ -7,6 +7,7 @@ import {
   FiTrendingUp,
   FiClock,
   FiUser,
+  FiHome,
 } from "react-icons/fi";
 import {
   LineChart,
@@ -25,6 +26,7 @@ import {
   fetchActiveBorrowRecords,
   fetchBorrowingTrends,
 } from "../store/slice/borrowSlice";
+import PageHeader from "../components/PageHeader";
 
 export default function Dashboard() {
   const dispatch = useDispatch();
@@ -53,16 +55,13 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-full bg-[#FAF9FC] p-2">
-      <header className="mb-7">
-        <h1 className="text-3xl font-semibold tracking-tight text-[#29252F]">
-          Dashboard
-        </h1>
-        <p className="mt-1 text-sm text-[#6F6878]">
-          An overview of your library's activity.
-        </p>
-      </header>
+      <PageHeader
+        breadcrumb={false}
+        icon={<FiHome />}
+        title="Dashboard"
+        description="An overview of your library's activity."
+      />
 
-      {/* Top-level metrics */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-7">
         <MetricCard
           icon={<FiBookOpen />}

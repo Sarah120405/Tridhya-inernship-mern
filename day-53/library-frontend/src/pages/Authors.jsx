@@ -12,6 +12,9 @@ import {
   FiAlertCircle,
   FiArrowLeft,
   FiArrowRight,
+  FiEdit3,
+  FiBook,
+  FiXCircle,
 } from "react-icons/fi";
 import {
   fetchAuthors,
@@ -22,6 +25,10 @@ import {
 import { Link } from "react-router-dom";
 import { useSearch } from "../hooks/useSearch";
 import EntityForm from "../components/EntityForm";
+import PageHeader from "../components/PageHeader";
+import LoadingState from "../components/States/LoadingState";
+import ErrorState from "../components/States/ErrorState";
+import EmptyState from "../components/States/EmptyState";
 
 export default function AuthorList() {
   const {
@@ -45,48 +52,42 @@ export default function AuthorList() {
     "name",
   ]);
   const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
 
   function handleAuthorSaved() {
     setModalOpen(false);
+    setEditing(null);
     dispatch(fetchAuthors());
   }
 
-  if (loading) return <p>Loading authors...</p>;
-  if (error) return <p>Error: {error}</p>;
+  if (loading) return <LoadingState message="Loading authors..." />;
+  if (error) return <ErrorState error={error} />;
   return (
     <div className="min-h-full bg-[#FAF9FC] p-2">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-7">
-        <div>
-          <div className="flex items-center gap-2 text-xs text-[#9A93A3] mb-2">
-            <span>Dashboard</span>
-            <span>›</span>
-            <span className="text-[#6F6878]">Authors</span>
-          </div>
-
-          <h1 className="text-3xl font-semibold tracking-tight text-[#29252F]">
-            Author
-          </h1>
-
-          <p className="mt-1 text-sm text-[#6F6878]">
-            Manage and organize all Authors in the library.
-          </p>
-        </div>
-
-        <button
-          onClick={() => {
-            setModalOpen(true);
-          }}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#6C5DD3] px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-[#5949BE] hover:shadow-md"
-        >
-          <span className="text-lg leading-none">+</span>
-          Add New Author
-        </button>
-      </header>
-
+      <PageHeader
+        icon={<FiEdit3 />}
+        title="Author"
+        description="Manage and organize all Authors in the library."
+        action={
+          <button
+            onClick={() => {
+              setModalOpen(true);
+            }}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#8B5CF6] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-[#7C4FE0] hover:shadow-md"
+          >
+            <span className="text-lg leading-none">+</span>
+            Add New Author
+          </button>
+        }
+      />
       {modalOpen && (
-        <Modal title="Add Author" onClose={() => setModalOpen(false)}>
+        <Modal
+          title={editing ? "Edit Author" : "Add Author"}
+          onClose={() => setModalOpen(false)}
+        >
           <EntityForm
             entityType="author"
+            existingEntity={editing || null}
             onSuccess={handleAuthorSaved}
             onCancel={() => setModalOpen(false)}
           />
@@ -170,19 +171,41 @@ export default function AuthorList() {
 
                 <div className="my-4 h-px bg-[#E8E1EF]" />
 
-                <Link
-                  to={`/author/${author.id}`}
-                  className="mt-auto flex items-center justify-between rounded-xl bg-[#FAF9FC] px-4 py-2.5 text-sm font-medium text-[#6D3FD3] transition-all duration-200 hover:bg-[#EDE9FE]"
-                >
-                  <span>View Profile</span>
+                <div className="grid grid-cols-3 items-center gap-2">
+                  <button
+                    onClick={() => {
+                      setEditing(author);
+                      setModalOpen(true);
+                    }}
+                    className="col-span-1 mt-auto flex items-center justify-between rounded-xl bg-[#FAF9FC] px-4 py-2.5 text-sm font-medium text-[#6D3FD3] transition-all duration-200 hover:bg-[#EDE9FE]"
+                  >
+                    Edit
+                    <FiEdit
+                      size={16}
+                      className="transition-transform duration-200 group-hover:translate-x-1"
+                    />
+                  </button>
+                  <Link
+                    to={`/author/${author.id}`}
+                    className="col-span-2 mt-auto flex items-center justify-between rounded-xl bg-[#FAF9FC] px-4 py-2.5 text-sm font-medium text-[#6D3FD3] transition-all duration-200 hover:bg-[#EDE9FE]"
+                  >
+                    <span>View Profile</span>
 
-                  <FiArrowRight
-                    size={16}
-                    className="transition-transform duration-200 group-hover:translate-x-1"
-                  />
-                </Link>
+                    <FiArrowRight
+                      size={16}
+                      className="transition-transform duration-200 group-hover:translate-x-1"
+                    />
+                  </Link>
+                </div>
               </div>
             ))}
+            {filteredItems.length === 0 && (
+              <EmptyState
+                message={`No Author Found`}
+                icon={<FiEdit3 />}
+                description={`Try searching with different name`}
+              />
+            )}
           </div>
         )}
       </section>
@@ -203,9 +226,7 @@ export default function AuthorList() {
           </div>
           {mostBookBorrowedAuthors.length === 0 ? (
             <div className="rounded-xl bg-[#E8F7F0] px-4 py-5 text-center">
-              <p className="text-sm font-medium text-[#277E5B]">
-                No borrow data yet
-              </p>
+              <EmptyState message="No borrow data yet" icon={<FiBook />} />
             </div>
           ) : (
             <div className="flex flex-col gap-2">
@@ -244,11 +265,10 @@ export default function AuthorList() {
             </div>
           </div>
           {noBookBorrowedAuthors.length === 0 ? (
-            <div className="rounded-xl bg-[#E8F7F0] px-4 py-5 text-center">
-              <p className="text-sm font-medium text-[#277E5B]">
-                Every author has been borrowed
-              </p>
-            </div>
+            <EmptyState
+              message={`Every author has been borrowed`}
+              icon={<FiBook />}
+            />
           ) : (
             <div className="flex flex-col gap-2">
               {noBookBorrowedAuthors.map((author) => (

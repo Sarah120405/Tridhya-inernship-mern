@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { createBook, updateBook } from "../store/slice/bookSlice";
-
+import SelectField from "./SelectField";
 export default function BookForm({
   existingBook,
   authors,
@@ -91,19 +91,17 @@ export default function BookForm({
       </div>
 
       <div>
-        <label className="text-sm font-medium text-slate-600">Author</label>
-        <select
+        <SelectField
+          label="Author"
           name="author_id"
           value={formData.author_id}
           onChange={handleChange}
-          className="w-full rounded-lg border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-purple-400 focus:ring-4 focus:ring-purple-100 transition bg-white"
-        >
-          {authors.map((author) => (
-            <option key={author.id} value={author.id}>
-              {author.name}
-            </option>
-          ))}
-        </select>
+          options={authors.map((author) => ({
+            value: author.id,
+            label: author.name,
+          }))}
+          placeholder="Select Author"
+        />
         {fieldErrors.author_id && (
           <span className="text-rose-600 text-xs">{fieldErrors.author_id}</span>
         )}

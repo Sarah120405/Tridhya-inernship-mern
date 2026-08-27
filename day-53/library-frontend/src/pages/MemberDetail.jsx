@@ -26,8 +26,6 @@ export default function MemberDetail() {
   }, [dispatch, id]);
 
   const borrowRecords = memberById.BorrowedRecords || [];
-  console.log("Member data: ", memberById);
-  console.log("Borrow SUmmary: ", membersBorrowSummary);
 
   if (loading) return <p>Loading authors...</p>;
   if (error) return <p>Error: {error}</p>;
@@ -109,7 +107,7 @@ export default function MemberDetail() {
           {borrowRecords.map((record) => (
             <div
               key={record.id}
-              className="group flex flex-col gap-4 p-5 transition hover:bg-[#FCFAFF] sm:flex-row sm:item-center"
+              className="group flex flex-col gap-4 p-5 transition hover:bg-[#FCFAFF] sm:flex-row sm:items-center"
             >
               <div className=" flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#F3EEFF] text-[#8B5CF6]">
                 <FiBookOpen size={20} />

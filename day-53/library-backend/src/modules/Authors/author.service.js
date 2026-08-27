@@ -112,3 +112,17 @@ export async function authorWithMostBorrow() {
   );
   return author;
 }
+
+export async function editAuthor(authorId, authorData) {
+  const exists = await Author.findByPk(authorId);
+  if (!exists) {
+    const error = new Error("This Author doesn't exists");
+    error.status = 409;
+    throw error;
+  }
+  const updatedRow = await Author.update(authorData, {
+    where: { id: authorId },
+  });
+  const updatedMember = await Author.findByPk(authorId);
+  return updatedMember;
+}

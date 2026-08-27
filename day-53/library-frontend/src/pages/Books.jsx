@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   deleteBook,
@@ -9,11 +9,15 @@ import {
 } from "../store/slice/bookSlice";
 import { MetricCard } from "../components/MetricCard";
 import Modal from "../components/Modal";
-import { FiBookOpen, FiEdit, FiTrash } from "react-icons/fi";
+import { FiBookOpen, FiEdit, FiTrash, FiUsers } from "react-icons/fi";
 import { useState } from "react";
 import BookForm from "../components/BookForm";
 import { fetchAuthors } from "../store/slice/authorSlice";
 import { useSearch } from "../hooks/useSearch";
+import PageHeader from "../components/PageHeader";
+import LoadingState from "../components/States/LoadingState";
+import ErrorState from "../components/States/ErrorState";
+import EmptyState from "../components/States/EmptyState";
 
 export default function BooksList() {
   const { items, overdueBooks, mostBorrowed, statistics, loading, error } =
@@ -28,11 +32,22 @@ export default function BooksList() {
     dispatch(fetchMostBorrowedBooks());
     dispatch(fetchAuthors());
   }, [dispatch]);
-
+  const genreOptions = useMemo(() => {
+    const uniqueGenres = new Set(
+      items.map((book) => book.genre).filter(Boolean),
+    );
+    return ["All Genres", ...Array.from(uniqueGenres)];
+  }, [items]);
   const { searchTerm, setSearchTerm, filteredItems } = useSearch(items, [
     "title",
-    "genre",
+    "Author.name",
   ]);
+  const [genreFilter, setGenreFilter] = useState("All Genres");
+
+  const genreFilteredItems = useMemo(() => {
+    if (genreFilter === "All Genres") return filteredItems;
+    return filteredItems.filter((book) => book.genre === genreFilter);
+  }, [filteredItems, genreFilter]);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingBook, setEditingBook] = useState(null);
@@ -43,39 +58,28 @@ export default function BooksList() {
     dispatch(fetchBooks());
   }
 
-  if (loading) return <p>Loading books...</p>;
-  if (error) return <p>Error: {error}</p>;
+  if (loading) return <LoadingState message="Loading Books..." />;
+  if (error) return <ErrorState error={error} />;
   return (
     <div className="min-h-full bg-[#FAF9FC] p-2">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-7">
-        <div>
-          <div className="flex items-center gap-2 text-xs text-[#9A93A3] mb-2">
-            <span>Dashboard</span>
-            <span>›</span>
-            <span className="text-[#6F6878]">Books</span>
-          </div>
-
-          <h1 className="text-3xl font-semibold tracking-tight text-[#29252F]">
-            Books
-          </h1>
-
-          <p className="mt-1 text-sm text-[#6F6878]">
-            Manage and organize all books in the library.
-          </p>
-        </div>
-
-        <button
-          onClick={() => {
-            setEditingBook(null);
-            setModalOpen(true);
-          }}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#6C5DD3] px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-[#5949BE] hover:shadow-md"
-        >
-          <span className="text-lg leading-none">+</span>
-          Add New Book
-        </button>
-      </header>
-
+      <PageHeader
+        icon={<FiUsers />}
+        title="Books"
+        description="Manage and organize all books in the library.
+          "
+        action={
+          <button
+            onClick={() => {
+              setEditingBook(null);
+              setModalOpen(true);
+            }}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#8B5CF6] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-[#7C4FE0] hover:shadow-md"
+          >
+            <span className="text-lg leading-none">+</span>
+            Add New Book
+          </button>
+        }
+      />
       {modalOpen && (
         <Modal
           title={editingBook ? "Edit Book" : "Add Book"}
@@ -132,16 +136,19 @@ export default function BooksList() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               type="text"
-              placeholder="Search books..."
+              placeholder="Search books and authors..."
               className="w-full sm:w-56 rounded-xl border border-[#E8E1EF] bg-[#FAF9FC] px-3 py-2 text-sm text-[#29252F] outline-none transition placeholder:text-[#AAA3B2] focus:border-[#8B7CE6] focus:bg-white focus:ring-3 focus:ring-[#8B5CF6]/10"
             />
 
-            <select className="rounded-xl border border-[#E8E1EF] bg-white px-3 py-2 text-sm text-[#6F6878] outline-none focus:border-[#8B7CE6]">
-              <option>All Genres</option>
-              <option>Fiction</option>
-              <option>Fantasy</option>
-              <option>Romance</option>
-              <option>Science</option>
+            <select
+              onChange={(e) => setGenreFilter(e.target.value)}
+              className="rounded-xl border border-[#E8E1EF] bg-white px-3 py-2 text-sm text-[#6F6878] outline-none focus:border-[#8B7CE6]"
+            >
+              {genreOptions.map((genre) => (
+                <option key={genre} value={genre}>
+                  {genre}
+                </option>
+              ))}
             </select>
           </div>
         </div>
@@ -161,12 +168,11 @@ export default function BooksList() {
               </thead>
 
               <tbody>
-                {filteredItems.map((book) => (
+                {genreFilteredItems.map((book) => (
                   <tr
                     key={book.id}
                     className="border-b border-[#F0EBF3] last:border-0 transition hover:bg-[#FCFAFF]"
                   >
-                    {/* Book */}
                     <td className="px-5 py-4">
                       <div>
                         <p className="font-medium text-[#29252F]">
@@ -185,14 +191,12 @@ export default function BooksList() {
                       </span>
                     </td>
 
-                    {/* Genre */}
                     <td className="px-5 py-4">
                       <span className="inline-flex rounded-full bg-[#EDE9FE] px-2.5 py-1 text-xs font-medium text-[#6C5DD3]">
                         {book.genre}
                       </span>
                     </td>
 
-                    {/* Copies */}
                     <td className="px-5 py-4">
                       <span
                         className={`font-medium ${
@@ -207,7 +211,6 @@ export default function BooksList() {
                       </span>
                     </td>
 
-                    {/* Year */}
                     <td className="px-5 py-4 text-[#6F6878]">
                       {book.published_year}
                     </td>
@@ -227,18 +230,14 @@ export default function BooksList() {
                   </tr>
                 ))}
 
-                {items.length === 0 && (
+                {genreFilteredItems.length === 0 && (
                   <tr>
                     <td colSpan={6} className="px-5 py-12 text-center">
-                      <FiBookOpen className="mx-auto mb-2 text-2xl text-[#C9C1D0]" />
-
-                      <p className="text-sm font-medium text-[#6F6878]">
-                        No books found
-                      </p>
-
-                      <p className="mt-1 text-xs text-[#9A93A3]">
-                        Try changing your search or filters.
-                      </p>
+                      <EmptyState
+                        icon={<FiBookOpen />}
+                        message="No books found"
+                        description="Try changing your search or filters."
+                      />
                     </td>
                   </tr>
                 )}
@@ -248,7 +247,6 @@ export default function BooksList() {
         )}
       </section>
       <div className="grid lg:grid-cols-2 grid-cols-1 gap-2 h-full">
-        {/* Overdue Books */}
         <section className="rounded-2xl border border-[#E8E1EF] bg-white p-5 shadow-[0_2px_8px_rgba(63,45,82,0.05)]">
           <div className="flex items-start justify-between mb-4">
             <div>
@@ -298,7 +296,6 @@ export default function BooksList() {
           )}
         </section>
 
-        {/* Most Borrowed */}
         <section className="rounded-2xl border border-[#E8E1EF] bg-white p-5 shadow-[0_2px_8px_rgba(63,45,82,0.05)]">
           <div className="flex items-start justify-between mb-4">
             <div>

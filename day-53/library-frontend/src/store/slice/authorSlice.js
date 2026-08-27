@@ -75,6 +75,22 @@ export const createAuthor = createAsyncThunk(
   },
 );
 
+export const editAuthors = createAsyncThunk(
+  "members/editAuthors",
+  async ({ authorId, authorData }) => {
+    const res = await fetch(`http://localhost:5000/api/author/${authorId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(authorData),
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || "Failed to update author");
+    }
+    return res.json();
+  },
+);
+
 const authorSlice = createSlice({
   name: "authorSlice",
   initialState: {
@@ -115,6 +131,14 @@ const authorSlice = createSlice({
       })
       .addCase(fetchAuthorById.fulfilled, (state, action) => {
         state.authorById = action.payload;
+      })
+      .addCase(editAuthors.fulfilled, (state, action) => {
+        const index = state.authors.findIndex(
+          (b) => b.id === action.payload.id,
+        );
+        if (index !== -1) {
+          state.authors[index] = action.payload;
+        }
       });
   },
 });

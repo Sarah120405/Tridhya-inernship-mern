@@ -1,6 +1,7 @@
 import {
   authorWithMostBorrowsController,
   createAuthorController,
+  editAuthorController,
   getAllAuthorController,
   getAuthorByIdController,
   getAuthorsWithNoBorrowedBooksController,
@@ -15,5 +16,5 @@ route.get("/no_book_borrowed", getAuthorsWithNoBorrowedBooksController);
 route.get("/author_most_borrow", authorWithMostBorrowsController);
 route.get("/all", getAllAuthorController);
 route.get("/:id", getAuthorByIdController);
-
+route.put("/:id", editAuthorController);
 export default route;

@@ -66,6 +66,22 @@ export const createMembers = createAsyncThunk(
   },
 );
 
+export const editMembers = createAsyncThunk(
+  "members/editMembers",
+  async ({ memberId, memberData }) => {
+    const res = await fetch(`http://localhost:5000/api/member/${memberId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(memberData),
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || "Failed to update member");
+    }
+    return res.json();
+  },
+);
+
 const memberSlice = createSlice({
   name: "memberSlice",
   initialState: {
@@ -105,6 +121,14 @@ const memberSlice = createSlice({
       })
       .addCase(createMembers.fulfilled, (state, action) => {
         state.members.push(action.payload);
+      })
+      .addCase(editMembers.fulfilled, (state, action) => {
+        const index = state.members.findIndex(
+          (b) => b.id === action.payload.id,
+        );
+        if (index !== -1) {
+          state.members[index] = action.payload;
+        }
       });
   },
 });

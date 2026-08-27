@@ -77,6 +77,9 @@ const borrowSlice = createSlice({
     clearMessage(state) {
       state.message = null;
     },
+    clearError(state) {
+      state.error = null;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -105,4 +108,4 @@ const borrowSlice = createSlice({
 });
 
 export default borrowSlice.reducer;
-export const { clearMessage } = borrowSlice.actions;
+export const { clearMessage, clearError } = borrowSlice.actions;

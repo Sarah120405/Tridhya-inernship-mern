@@ -5,17 +5,21 @@ import {
   returnBook,
   fetchActiveBorrowRecords,
   clearMessage,
+  clearError,
 } from "../store/slice/borrowSlice";
 import { fetchBooks } from "../store/slice/bookSlice";
 import { fetchMembers } from "../store/slice/memberSlice";
 import Modal from "../components/Modal";
-
+import SelectField from "../components/SelectField";
+import ConfirmModal from "../components/ConfirmModal";
+import Toast from "../components/Toast";
 import {
   FiBookOpen,
   FiCalendar,
   FiCheckCircle,
   FiPlus,
   FiRefreshCw,
+  FiRepeat,
   FiSearch,
   FiUser,
   FiX,
@@ -23,6 +27,7 @@ import {
 import { MetricCard } from "../components/MetricCard";
 import { useSearch } from "../hooks/useSearch";
 import { useAutoDismiss } from "../hooks/useAutoDismiss";
+import PageHeader from "../components/PageHeader";
 
 export default function BorrowRecords() {
   const { loading, error, message, activeBorrowRecords } = useSelector(
@@ -38,6 +43,8 @@ export default function BorrowRecords() {
   const [selectedBookId, setSelectedBookId] = useState("");
   const [selectedMemberId, setSelectedMemberId] = useState("");
   const [returningId, setReturningId] = useState(null);
+  const [confirmAction, setConfirmAction] = useState(null);
+
   useEffect(() => {
     dispatch(fetchActiveBorrowRecords());
     dispatch(fetchBooks());
@@ -53,7 +60,25 @@ export default function BorrowRecords() {
     ["title", "member_name"],
   );
   useAutoDismiss(message, () => dispatch(clearMessage()));
+  useAutoDismiss(error, () => dispatch(clearError()), 4000);
 
+  function requestBorrow() {
+    if (!selectedBookId || !selectedMemberId) return;
+    setConfirmAction({ type: "borrow" });
+  }
+
+  function requestReturn(recordId) {
+    setConfirmAction({ type: "return", recordId });
+  }
+
+  async function confirmActionHandler() {
+    if (confirmAction.type === "borrow") {
+      await handleBorrow();
+    } else {
+      await handleReturn(confirmAction.recordId);
+    }
+    setConfirmAction(null);
+  }
   function openBorrowModal() {
     setSelectedBookId("");
     setSelectedMemberId("");
@@ -66,9 +91,7 @@ export default function BorrowRecords() {
     setSelectedMemberId("");
   }
 
-  async function handleBorrow(e) {
-    e.preventDefault();
-
+  async function handleBorrow() {
     if (!selectedBookId || !selectedMemberId) return;
 
     const resultAction = await dispatch(
@@ -88,12 +111,6 @@ export default function BorrowRecords() {
   }
 
   async function handleReturn(recordId) {
-    const confirmed = window.confirm(
-      "Are you sure you want to mark this book as returned?",
-    );
-
-    if (!confirmed) return;
-
     setReturningId(recordId);
 
     const resultAction = await dispatch(returnBook(recordId));
@@ -107,25 +124,20 @@ export default function BorrowRecords() {
 
   return (
     <div className="min-h-full bg-[#FAF9FC] p-2">
-      <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-[#29252F]">
-            Borrow Records
-          </h1>
-
-          <p className="mt-1 text-sm text-[#6F6878]">
-            Manage active book loans and keep track of borrowed books.
-          </p>
-        </div>
-
-        <button
-          onClick={openBorrowModal}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#8B5CF6] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-[#7C4FE0] hover:shadow-md"
-        >
-          <FiPlus size={17} />
-          New Borrow Record
-        </button>
-      </div>
+      <PageHeader
+        icon={<FiRepeat />}
+        title="Borrow Records"
+        description="Manage active book loans and keep track of borrowed books."
+        action={
+          <button
+            onClick={openBorrowModal}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#8B5CF6] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-[#7C4FE0] hover:shadow-md"
+          >
+            <FiPlus size={17} />
+            Add Borrow Record
+          </button>
+        }
+      />
 
       <div className="mb-7 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <MetricCard
@@ -160,7 +172,6 @@ export default function BorrowRecords() {
             </p>
           </div>
 
-          {/* Search */}
           <div className="relative w-full sm:w-72">
             <FiSearch
               size={17}
@@ -299,7 +310,7 @@ export default function BorrowRecords() {
 
                     <td className="px-5 py-4 text-right">
                       <button
-                        onClick={() => handleReturn(record.id)}
+                        onClick={() => requestReturn(record.id)}
                         disabled={returningId === record.id}
                         className="inline-flex items-center gap-2 rounded-lg border border-[#E8E1EF] bg-white px-3 py-2 text-sm font-medium text-[#6D3FD3] transition hover:border-[#C4B5FD] hover:bg-[#EDE9FE] disabled:cursor-not-allowed disabled:opacity-50"
                       >
@@ -326,14 +337,13 @@ export default function BorrowRecords() {
 
       {message && (
         <div className="mt-4 flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-          <FiCheckCircle size={17} />
-          {message}
+          <Toast message={message} error={error} />
         </div>
       )}
 
       {error && !borrowFormActive && (
         <div className="mt-4 rounded-xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-600">
-          {error}
+          <Toast message={message} error={error} />
         </div>
       )}
 
@@ -341,41 +351,28 @@ export default function BorrowRecords() {
         <Modal title="Borrow Book" onClose={closeBorrowModal}>
           <form type="submit" className="space-y-5">
             <div>
-              <label className="mb-2 block text-sm font-medium text-[#4A4451]">
-                Member
-              </label>
-
-              <select
+              <SelectField
+                label="Member"
                 value={selectedMemberId}
                 onChange={(e) => setSelectedMemberId(e.target.value)}
-                className="w-full rounded-xl border border-[#E8E1EF] bg-white px-3 py-2.5 text-sm text-[#29252F] outline-none transition focus:border-[#C4B5FD] focus:ring-2 focus:ring-[#EDE9FE]"
-              >
-                <option value="">Select a member</option>
-                {members.map((member) => (
-                  <option key={member.id} value={member.id}>
-                    {member.name}
-                  </option>
-                ))}
-              </select>
+                placeholder="Select a member"
+                options={members.map((m) => ({ value: m.id, label: m.name }))}
+              />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-[#4A4451]">
-                Book
-              </label>
-
-              <select
+              <SelectField
+                label="Book"
                 value={selectedBookId}
                 onChange={(e) => setSelectedBookId(e.target.value)}
-                className="w-full rounded-xl border border-[#E8E1EF] bg-white px-3 py-2.5 text-sm text-[#29252F] outline-none transition focus:border-[#C4B5FD] focus:ring-2 focus:ring-[#EDE9FE]"
-              >
-                <option value="">Select a book</option>
-                {availableBooks.map((book) => (
-                  <option key={book.id} value={book.id}>
-                    {book.title} — {book.copies_available} available
-                  </option>
-                ))}
-              </select>
+                placeholder="Select a book"
+                options={books
+                  .filter((b) => b.copies_available > 0)
+                  .map((b) => ({
+                    value: b.id,
+                    label: `${b.title} (${b.copies_available} available)`,
+                  }))}
+              />
             </div>
 
             {error && (
@@ -395,7 +392,8 @@ export default function BorrowRecords() {
               </button>
 
               <button
-                onClick={handleBorrow}
+                type="button"
+                onClick={requestBorrow}
                 disabled={!selectedBookId || !selectedMemberId || loading}
                 className="inline-flex items-center gap-2 rounded-xl bg-[#8B5CF6] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#7C4FE0] disabled:cursor-not-allowed disabled:opacity-50"
               >
@@ -414,6 +412,23 @@ export default function BorrowRecords() {
             </div>
           </form>
         </Modal>
+      )}
+
+      {confirmAction && (
+        <ConfirmModal
+          title={
+            confirmAction.type === "borrow"
+              ? "Confirm Borrow"
+              : "Confirm Return"
+          }
+          message={
+            confirmAction.type === "borrow"
+              ? "Are you sure you want to borrow this book?"
+              : "Are you sure this book has been returned?"
+          }
+          onConfirm={confirmActionHandler}
+          onCancel={() => setConfirmAction(null)}
+        />
       )}
     </div>
   );

@@ -78,3 +78,17 @@ export async function activeMembers() {
   );
   return members;
 }
+
+export async function editMember(memberId, memberData) {
+  const exists = await Member.findByPk(memberId);
+  if (!exists) {
+    const error = new Error("This Member doesn't exists");
+    error.status = 409;
+    throw error;
+  }
+  const updatedRow = await Member.update(memberData, {
+    where: { id: memberId },
+  });
+  const updatedMember = await Member.findByPk(memberId);
+  return updatedMember;
+}

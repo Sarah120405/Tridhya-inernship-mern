@@ -1,6 +1,7 @@
 import {
   activeMembersController,
   createMemberController,
+  editMemberController,
   getAllMembersController,
   getMemberBorrowSummaryController,
   getMemberByIdController,
@@ -14,4 +15,5 @@ route.get("/all", getAllMembersController);
 route.get("/borrow_summary/:memberId", getMemberBorrowSummaryController);
 route.get("/active_members", activeMembersController);
 route.get("/:id", getMemberByIdController);
+route.put("/:id", editMemberController);
 export default route;
