@@ -1,0 +1,177 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                       String           @id @default(cuid())
+  name                     String
+  email                    String           @unique
+  password                 String
+  role                     Role             @default(Customer)
+  isActive                 Boolean          @default(true)
+  createdAt                DateTime         @default(now())
+  updatedAt                DateTime         @updatedAt
+  messages                 Message[]
+  assignedTickets          Ticket[]         @relation("AgentTickets")
+  assignedDeveloperTickets Ticket[]         @relation("DeveloperTickets")
+  createdTickets           Ticket[]         @relation("CustomerTickets")
+  ticketActivities         TicketActivity[]
+  internalNotes            InternalNote[]
+}
+
+model Ticket {
+  id                  String           @id @default(cuid())
+  ticketNumber        Int              @unique @default(autoincrement())
+  title               String
+  description         String
+  attachments         Json?
+  customerId          String
+  assignedAgentId     String?
+  assignedDeveloperId String?
+  category            TicketCategory
+  priority            TicketPriority   @default(MEDIUM)
+  status              TicketStatus     @default(OPEN)
+  resolvedAt          DateTime?
+  closedAt            DateTime?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  aiAnalysis          AIAnalysis?
+  messages            Message[]
+  sla                 SLA?
+  assignedAgent       User?            @relation("AgentTickets", fields: [assignedAgentId], references: [id])
+  assignedDeveloper   User?            @relation("DeveloperTickets", fields: [assignedDeveloperId], references: [id])
+  customer            User             @relation("CustomerTickets", fields: [customerId], references: [id])
+  activities          TicketActivity[]
+  internalNotes       InternalNote[]
+
+  @@index([customerId])
+  @@index([assignedAgentId])
+  @@index([assignedDeveloperId])
+  @@index([status])
+  @@index([priority])
+  @@index([category])
+}
+
+model Message {
+  id            String   @id @default(cuid())
+  ticketId      String
+  senderId      String
+  content       String
+  isAIGenerated Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  sender        User     @relation(fields: [senderId], references: [id])
+  ticket        Ticket   @relation(fields: [ticketId], references: [id])
+
+  @@index([ticketId])
+  @@index([senderId])
+}
+
+model TicketActivity {
+  id        String               @id @default(cuid())
+  ticketId  String
+  userId    String
+  action    TicketActivityAction
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+  ticket    Ticket               @relation(fields: [ticketId], references: [id])
+  user      User                 @relation(fields: [userId], references: [id])
+
+  @@index([ticketId])
+  @@index([userId])
+}
+
+model InternalNote {
+  id        String   @id @default(cuid())
+  ticketId  String
+  authorId  String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ticket    Ticket   @relation(fields: [ticketId], references: [id])
+  author    User     @relation(fields: [authorId], references: [id])
+
+  @@index([ticketId])
+  @@index([authorId])
+}
+
+model SLA {
+  id                    String    @id @default(cuid())
+  ticketId              String    @unique
+  dueAt                 DateTime
+  breached              Boolean   @default(false)
+  breachedAt            DateTime?
+  firstResponseDueAt    DateTime?
+  firstRespondedAt      DateTime?
+  resolutionDueAt       DateTime?
+  resolutionCompletedAt DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  ticket                Ticket    @relation(fields: [ticketId], references: [id])
+}
+
+model AIAnalysis {
+  id                  String          @id @default(cuid())
+  ticketId            String          @unique
+  suggestedCategory   TicketCategory?
+  suggestedPriority   TicketPriority?
+  suggestedDepartment String?
+  suggestedEscalation Boolean?
+  confidence          Float?
+  reasoning           String?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  ticket              Ticket          @relation(fields: [ticketId], references: [id])
+}
+
+enum Role {
+  Customer
+  SupportAgent
+  Developer
+  Admin
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_FOR_CUSTOMER
+  ESCALATED
+  IN_DEVELOPMENT
+  RESOLVED
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TicketCategory {
+  TECHNICAL
+  BILLING
+  ACCOUNT
+  FEATURE_REQUEST
+  GENERAL_INQUIRY
+  OTHER
+}
+
+enum TicketActivityAction {
+  TICKET_CREATED
+  STATUS_CHANGED
+  PRIORITY_CHANGED
+  AGENT_ASSIGNED
+  AGENT_REASSIGNED
+  DEVELOPER_ASSIGNED
+  DEVELOPER_REASSIGNED
+  TICKET_ESCALATED
+  DEVELOPER_UPDATED
+  TICKET_RESOLVED
+  TICKET_CLOSED
+}
