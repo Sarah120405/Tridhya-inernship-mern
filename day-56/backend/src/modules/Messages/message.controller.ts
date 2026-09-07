@@ -1,0 +1,44 @@
+import { Request, Response, NextFunction } from "express";
+import { createMessages, getMessageByTicketId } from "./message.service";
+import { sendResponse } from "../../utils/response";
+
+export async function createMessageController(
+  req: Request & { user?: any },
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const ticketId = Array.isArray(req.params.id)
+      ? req.params.id[0]
+      : req.params.id;
+    const message = await createMessages(
+      ticketId,
+      req.user.id,
+      req.user.role,
+      req.body.content,
+    );
+    return sendResponse(res, 201, "Message created successfully", message);
+  } catch (err: any) {
+    next(err);
+  }
+}
+
+export async function getMessagesByTicketIdController(
+  req: Request & { user?: any },
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const ticketId = Array.isArray(req.params.id)
+      ? req.params.id[0]
+      : req.params.id;
+    const messages = await getMessageByTicketId(
+      ticketId,
+      req.user.id,
+      req.user.role,
+    );
+    return sendResponse(res, 200, "Messages retrieved successfully", messages);
+  } catch (err: any) {
+    next(err);
+  }
+}
