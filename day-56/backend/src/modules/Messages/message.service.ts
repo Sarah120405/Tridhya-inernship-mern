@@ -6,63 +6,78 @@ export async function createMessages(
   senderRole: string,
   content: string,
 ) {
-  const ticket = await prisma.ticket.findUnique({
-    where: { id: ticketId },
+  const result = await prisma.$transaction(async (tx) => {
+    const ticket = await tx.ticket.findUnique({
+      where: { id: ticketId },
+    });
+
+    if (!ticket) {
+      throw {
+        status: 404,
+        message: "Ticket not found.",
+      };
+    }
+
+    if (!content || content.trim() === "") {
+      throw {
+        status: 400,
+        message: "Message content cannot be empty.",
+      };
+    }
+
+    if (senderRole === "Customer") {
+      if (ticket.customerId !== senderId) {
+        throw {
+          status: 403,
+          message: "Unauthorized: You are not the owner of this ticket.",
+        };
+      }
+    } else if (senderRole === "SupportAgent") {
+      if (ticket.assignedAgentId !== senderId) {
+        throw {
+          status: 403,
+          message:
+            "Unauthorized: You are not the assigned support agent for this ticket.",
+        };
+      }
+    } else if (senderRole === "Developer") {
+      if (ticket.assignedDeveloperId !== senderId) {
+        throw {
+          status: 403,
+          message:
+            "Unauthorized: You are not the assigned developer for this ticket.",
+        };
+      }
+    } else if (senderRole !== "Admin") {
+      throw {
+        status: 403,
+        message: "Unauthorized: Invalid role.",
+      };
+    }
+
+    const message = await tx.message.create({
+      data: {
+        ticketId,
+        senderId,
+        content,
+      },
+    });
+
+    const sla = await tx.sLA.findUnique({
+      where: { ticketId },
+    });
+
+    if (sla && !sla.firstRespondedAt && senderRole === "SupportAgent") {
+      await tx.sLA.update({
+        where: { ticketId },
+        data: {
+          firstRespondedAt: new Date(),
+        },
+      });
+    }
+    return message;
   });
-
-  if (!ticket) {
-    throw {
-      status: 404,
-      message: "Ticket not found.",
-    };
-  }
-
-  if (!content || content.trim() === "") {
-    throw {
-      status: 400,
-      message: "Message content cannot be empty.",
-    };
-  }
-
-  if (senderRole === "Customer") {
-    if (ticket.customerId !== senderId) {
-      throw {
-        status: 403,
-        message: "Unauthorized: You are not the owner of this ticket.",
-      };
-    }
-  } else if (senderRole === "SupportAgent") {
-    if (ticket.assignedAgentId !== senderId) {
-      throw {
-        status: 403,
-        message:
-          "Unauthorized: You are not the assigned support agent for this ticket.",
-      };
-    }
-  } else if (senderRole === "Developer") {
-    if (ticket.assignedDeveloperId !== senderId) {
-      throw {
-        status: 403,
-        message:
-          "Unauthorized: You are not the assigned developer for this ticket.",
-      };
-    }
-  } else if (senderRole !== "Admin") {
-    throw {
-      status: 403,
-      message: "Unauthorized: Invalid role.",
-    };
-  }
-
-  const message = await prisma.message.create({
-    data: {
-      ticketId,
-      senderId,
-      content,
-    },
-  });
-
-  return message;
+  return result;
 }
 
 export async function getMessageByTicketId(

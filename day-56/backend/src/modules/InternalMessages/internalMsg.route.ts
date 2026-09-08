@@ -9,13 +9,13 @@ import { requireRole } from "../../middleware/requireRole.middleware";
 const router = express.Router();
 
 router.post(
-  "/internal-messages/:id",
+  "/tickets/:id",
   requireAuth,
   requireRole(["SupportAgent", "Developer", "Admin"]),
   createMessageController,
 );
 router.get(
-  "/internal-messages/:id",
+  "/tickets/:id/",
   requireAuth,
   requireRole(["SupportAgent", "Developer", "Admin"]),
   getMessagesByTicketIdController,

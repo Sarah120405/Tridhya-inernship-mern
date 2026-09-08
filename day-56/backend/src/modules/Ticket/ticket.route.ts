@@ -1,8 +1,11 @@
 import express from "express";
 import {
+  assignToAgentController,
+  assignToDeveloperController,
   createTicketController,
   getTicketsController,
   getTicketsDetailsController,
+  getTicketActivityController,
 } from "./ticket.controller";
 import { requireAuth } from "../../middleware/requireAuth.middleware";
 import { requireRole } from "../../middleware/requireRole.middleware";
@@ -27,5 +30,22 @@ router.get(
   requireRole(["Customer", "SupportAgent", "Developer", "Admin"]),
   getTicketsDetailsController,
 );
-
+router.patch(
+  "/agent_assign/:id",
+  requireAuth,
+  requireRole(["Admin"]),
+  assignToAgentController,
+);
+router.patch(
+  "/developer_assign/:id",
+  requireAuth,
+  requireRole(["Admin", "SupportAgent"]),
+  assignToDeveloperController,
+);
+router.get(
+  "/:id/activity",
+  requireAuth,
+  requireRole(["Customer", "SupportAgent", "Developer", "Admin"]),
+  getTicketActivityController,
+);
 export default router;
