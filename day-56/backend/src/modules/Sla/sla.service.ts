@@ -47,7 +47,7 @@ export async function getSLAByTicketId(
 
   const sla = await prisma.sLA.findUnique({
     where: {
-      ticketId,
+      ticketId: ticketId,
     },
   });
 
@@ -59,4 +59,73 @@ export async function getSLAByTicketId(
   }
 
   return sla;
+}
+
+export async function slaBreachCheck(ticketId: string) {
+  const slaData = await prisma.sLA.findUnique({
+    where: { ticketId },
+  });
+
+  if (!slaData) return null;
+
+  const {
+    firstRespondedAt,
+    firstResponseDueAt,
+    resolutionCompletedAt,
+    resolutionDueAt,
+    breached: alreadyBreached,
+    breachedAt: existingBreachedAt,
+  } = slaData;
+
+  const now = new Date();
+
+  const breachTimes: Date[] = [];
+
+  // 1. FIRST RESPONSE SLA
+  if (firstResponseDueAt) {
+    if (firstRespondedAt) {
+      // Agent responded, but responded after the deadline
+      if (firstRespondedAt > firstResponseDueAt) {
+        breachTimes.push(firstResponseDueAt);
+      }
+    } else {
+      // Agent has not responded yet and deadline has passed
+      if (now > firstResponseDueAt) {
+        breachTimes.push(firstResponseDueAt);
+      }
+    }
+  }
+
+  // 2. RESOLUTION SLA
+  if (resolutionDueAt) {
+    if (resolutionCompletedAt) {
+      // Ticket was resolved, but after the deadline
+      if (resolutionCompletedAt > resolutionDueAt) {
+        breachTimes.push(resolutionDueAt);
+      }
+    } else {
+      // Ticket is not resolved and deadline has passed
+      if (now > resolutionDueAt) {
+        breachTimes.push(resolutionDueAt);
+      }
+    }
+  }
+  if (breachTimes.length === 0) {
+    return slaData;
+  }
+  const firstBreachAt = breachTimes.reduce((earliest, current) => {
+    return current < earliest ? current : earliest;
+  });
+  const slaUpdate = await prisma.sLA.update({
+    where: { ticketId },
+    data: {
+      breached: true,
+      breachedAt:
+        alreadyBreached && existingBreachedAt
+          ? existingBreachedAt
+          : firstBreachAt,
+    },
+  });
+
+  return slaUpdate;
 }

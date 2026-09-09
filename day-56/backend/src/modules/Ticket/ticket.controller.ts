@@ -6,6 +6,8 @@ import {
   getTicketActivity,
   getTickets,
   getTicketsDetails,
+  ticketInDevelopmentUpdate,
+  ticketResolvedUpdate,
 } from "./ticket.service";
 import { sendResponse } from "../../utils/response";
 import { fileTypeFromFile } from "file-type";
@@ -156,5 +158,48 @@ export async function getTicketActivityController(
     );
   } catch (err) {
     next(err);
+  }
+}
+
+export async function ticketInDevlopmentUpdateController(
+  req: express.Request & { user?: any },
+  res: express.Response,
+  next: express.NextFunction,
+) {
+  try {
+    const ticketId = Array.isArray(req.params.id)
+      ? req.params.id[0]
+      : req.params.id;
+    const ticket = await ticketInDevelopmentUpdate(ticketId, req.user.id);
+
+    return sendResponse(
+      res,
+      200,
+      "Ticket succesfully updated to in development",
+      ticket,
+    );
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function ticketResolvedController(
+  req: express.Request & { user?: any },
+  res: express.Response,
+  next: express.NextFunction,
+) {
+  try {
+    const ticketId = Array.isArray(req.params.id)
+      ? req.params.id[0]
+      : req.params.id;
+    const ticket = await ticketResolvedUpdate(
+      ticketId,
+      req.user.id,
+      req.user.role,
+    );
+
+    return sendResponse(res, 200, "Ticket succesfully resolved", ticket);
+  } catch (error) {
+    next(error);
   }
 }

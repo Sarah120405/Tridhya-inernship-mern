@@ -6,6 +6,8 @@ import {
   getTicketsController,
   getTicketsDetailsController,
   getTicketActivityController,
+  ticketInDevlopmentUpdateController,
+  ticketResolvedController,
 } from "./ticket.controller";
 import { requireAuth } from "../../middleware/requireAuth.middleware";
 import { requireRole } from "../../middleware/requireRole.middleware";
@@ -47,5 +49,18 @@ router.get(
   requireAuth,
   requireRole(["Customer", "SupportAgent", "Developer", "Admin"]),
   getTicketActivityController,
+);
+router.patch(
+  "/developer_update/:id",
+  requireAuth,
+  requireRole(["Developer"]),
+  ticketInDevlopmentUpdateController,
+);
+
+router.patch(
+  "/ticket_resolved/:id",
+  requireAuth,
+  requireRole(["SupportAgent", "Developer", "Admin"]),
+  ticketResolvedController,
 );
 export default router;

@@ -110,6 +110,8 @@ export async function getTickets(userId: string, role: string) {
         },
       },
     };
+  } else {
+    throw { status: 403, message: "Unauthorized to get this data" };
   }
   const tickets = await prisma.ticket.findMany({
     where,
@@ -119,9 +121,6 @@ export async function getTickets(userId: string, role: string) {
     },
   });
 
-  if (tickets.length === 0) {
-    throw { status: 404, message: "No tickets found" };
-  }
   return tickets;
 }
 
@@ -158,22 +157,24 @@ export async function getTicketsDetails(
           name: true,
           email: true,
         },
-        assignedAgent: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
+      },
+      assignedAgent: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
         },
-        assignedDeveloper: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
+      },
+      assignedDeveloper: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
         },
       },
     };
+  } else {
+    throw { status: 403, message: "Unauthorized to get this data" };
   }
   const tickets = await prisma.ticket.findFirst({
     where,
@@ -345,4 +346,98 @@ export async function getTicketActivity(
   });
 
   return ticketActivity;
+}
+
+export async function ticketInDevelopmentUpdate(
+  ticketId: string,
+  developerId: string,
+) {
+  const result = await prisma.$transaction(async (tx) => {
+    const ticket = await tx.ticket.findUnique({ where: { id: ticketId } });
+    if (!ticket) {
+      throw { status: 404, message: "Ticket not found" };
+    }
+    if (ticket.assignedDeveloperId !== developerId) {
+      throw { status: 403, message: "Not authorized to update" };
+    }
+
+    if (ticket.status === "IN_DEVELOPMENT") {
+      throw { status: 409, message: "Ticket is already in development" };
+    }
+    if (ticket.status !== "ESCALATED") {
+      throw {
+        status: 409,
+        message: "Ticket must be escalated before development can begin.",
+      };
+    }
+    const updateTicket = await tx.ticket.update({
+      where: { id: ticketId },
+      data: { status: "IN_DEVELOPMENT" },
+    });
+    const updateTicketActivity = await tx.ticketActivity.create({
+      data: {
+        ticketId: ticketId,
+        action: "DEVELOPER_UPDATED",
+        userId: developerId,
+      },
+    });
+    return { updateTicket, updateTicketActivity };
+  });
+  return result;
+}
+
+export async function ticketResolvedUpdate(
+  ticketId: string,
+  userId: string,
+  userRole: string,
+) {
+  const result = await prisma.$transaction(async (tx) => {
+    const ticket = await tx.ticket.findUnique({ where: { id: ticketId } });
+    if (!ticket) {
+      throw { status: 404, message: "Ticket not found" };
+    }
+    if (userRole === "SupportAgent") {
+      if (ticket.assignedAgentId !== userId) {
+        throw { status: 403, message: "Not authorized to update" };
+      }
+      if (ticket.status !== "IN_PROGRESS") {
+        throw {
+          status: 409,
+          message: "Ticket must be in progress before resloving.",
+        };
+      }
+    } else if (userRole === "Developer") {
+      if (ticket.assignedDeveloperId !== userId) {
+        throw { status: 403, message: "Not authorized to update" };
+      }
+      if (ticket.status !== "IN_DEVELOPMENT") {
+        throw {
+          status: 409,
+          message: "Ticket must be in developement before resolving.",
+        };
+      }
+    } else if (userRole === "Admin") {
+    } else {
+      throw { status: 403, message: "Invalid role" };
+    }
+    const updatedTicket = await tx.ticket.update({
+      where: { id: ticketId },
+      data: { status: "RESOLVED" },
+    });
+    const updateTicketActivity = await tx.ticketActivity.create({
+      data: {
+        ticketId: ticketId,
+        userId: userId,
+        action: "TICKET_RESOLVED",
+      },
+    });
+    const updateSLA = await tx.sLA.update({
+      where: { ticketId: ticketId },
+      data: {
+        resolutionCompletedAt: new Date(),
+      },
+    });
+    return { updatedTicket, updateTicketActivity, updateSLA };
+  });
+  return result;
 }
