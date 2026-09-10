@@ -1,16 +1,20 @@
 import express from "express";
 import authRoute from "./modules/Auth/auth.route";
 import ticketRoute from "./modules/Ticket/ticket.route";
+import ticketAssignmentRoute from "./modules/Ticket_Assignment/assignment.route";
 import messageRoute from "./modules/Messages/message.route";
 import internalMsgRoute from "./modules/InternalMessages/internalMsg.route";
 import slaRoute from "./modules/Sla/sla.route";
 import aiRoute from "./modules/AI/ai.route";
+import reportRoute from "./modules/Report/report.route";
 
 const app = express.Router();
 app.use("/auth", authRoute);
 app.use("/tickets", ticketRoute);
+app.use("/ticket_assigned", ticketAssignmentRoute);
 app.use("/messages", messageRoute);
 app.use("/internal-messages", internalMsgRoute);
 app.use("/sla", slaRoute);
 app.use("/ai", aiRoute);
+app.use("/report", reportRoute);
 export default app;

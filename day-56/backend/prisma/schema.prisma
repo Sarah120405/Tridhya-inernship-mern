@@ -16,12 +16,12 @@ model User {
   isActive                 Boolean          @default(true)
   createdAt                DateTime         @default(now())
   updatedAt                DateTime         @updatedAt
+  internalNotes            InternalNote[]
   messages                 Message[]
   assignedTickets          Ticket[]         @relation("AgentTickets")
   assignedDeveloperTickets Ticket[]         @relation("DeveloperTickets")
   createdTickets           Ticket[]         @relation("CustomerTickets")
   ticketActivities         TicketActivity[]
-  internalNotes            InternalNote[]
 }
 
 model Ticket {
@@ -32,7 +32,6 @@ model Ticket {
   attachments         Json?
   customerId          String
   assignedAgentId     String?
-  assignedDeveloperId String?
   category            TicketCategory
   priority            TicketPriority   @default(MEDIUM)
   status              TicketStatus     @default(OPEN)
@@ -40,14 +39,15 @@ model Ticket {
   closedAt            DateTime?
   createdAt           DateTime         @default(now())
   updatedAt           DateTime         @updatedAt
+  assignedDeveloperId String?
   aiAnalysis          AIAnalysis?
+  internalNotes       InternalNote[]
   messages            Message[]
   sla                 SLA?
   assignedAgent       User?            @relation("AgentTickets", fields: [assignedAgentId], references: [id])
   assignedDeveloper   User?            @relation("DeveloperTickets", fields: [assignedDeveloperId], references: [id])
   customer            User             @relation("CustomerTickets", fields: [customerId], references: [id])
   activities          TicketActivity[]
-  internalNotes       InternalNote[]
 
   @@index([customerId])
   @@index([assignedAgentId])
@@ -93,26 +93,28 @@ model InternalNote {
   content   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  ticket    Ticket   @relation(fields: [ticketId], references: [id])
   author    User     @relation(fields: [authorId], references: [id])
+  ticket    Ticket   @relation(fields: [ticketId], references: [id])
 
   @@index([ticketId])
   @@index([authorId])
 }
 
 model SLA {
-  id                    String    @id @default(cuid())
-  ticketId              String    @unique
-  dueAt                 DateTime
-  breached              Boolean   @default(false)
-  breachedAt            DateTime?
-  firstResponseDueAt    DateTime?
-  firstRespondedAt      DateTime?
-  resolutionDueAt       DateTime?
-  resolutionCompletedAt DateTime?
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-  ticket                Ticket    @relation(fields: [ticketId], references: [id])
+  id                         String    @id @default(cuid())
+  ticketId                   String    @unique
+  dueAt                      DateTime
+  breached                   Boolean   @default(false)
+  breachedAt                 DateTime?
+  createdAt                  DateTime  @default(now())
+  updatedAt                  DateTime  @updatedAt
+  firstRespondedAt           DateTime?
+  firstResponseDueAt         DateTime?
+  resolutionCompletedAt      DateTime?
+  resolutionDueAt            DateTime?
+  firstResponseWarningSentAt DateTime?
+  resolutionWarningSentAt    DateTime?
+  ticket                     Ticket    @relation(fields: [ticketId], references: [id])
 }
 
 model AIAnalysis {
@@ -120,30 +122,30 @@ model AIAnalysis {
   ticketId            String          @unique
   suggestedCategory   TicketCategory?
   suggestedPriority   TicketPriority?
-  suggestedDepartment String?
-  suggestedEscalation Boolean?
   confidence          Float?
   reasoning           String?
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
+  suggestedDepartment String?
+  suggestedEscalation Boolean?
   ticket              Ticket          @relation(fields: [ticketId], references: [id])
 }
 
 enum Role {
   Customer
   SupportAgent
-  Developer
   Admin
+  Developer
 }
 
 enum TicketStatus {
   OPEN
   IN_PROGRESS
   WAITING_FOR_CUSTOMER
-  ESCALATED
-  IN_DEVELOPMENT
   RESOLVED
   CLOSED
+  ESCALATED
+  IN_DEVELOPMENT
 }
 
 enum TicketPriority {
@@ -168,10 +170,10 @@ enum TicketActivityAction {
   PRIORITY_CHANGED
   AGENT_ASSIGNED
   AGENT_REASSIGNED
+  TICKET_RESOLVED
+  TICKET_CLOSED
   DEVELOPER_ASSIGNED
   DEVELOPER_REASSIGNED
   TICKET_ESCALATED
   DEVELOPER_UPDATED
-  TICKET_RESOLVED
-  TICKET_CLOSED
 }

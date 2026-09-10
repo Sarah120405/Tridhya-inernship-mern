@@ -9,6 +9,7 @@ import path from "path";
 import cors from "cors";
 import index_api from "./index_api";
 import { errorHandler } from "./middleware/error.middleware";
+import { startSlaMonitoring } from "./jobs/sla_monitor.job";
 
 const app = express();
 app.use(express.json());
@@ -27,4 +28,5 @@ const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  startSlaMonitoring();
 });

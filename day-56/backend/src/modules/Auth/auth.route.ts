@@ -7,10 +7,12 @@ import {
 import { requireAuth } from "../../middleware/requireAuth.middleware";
 import { sendResponse } from "../../utils/response";
 import prisma from "../../config/db.config";
+import { validate } from "../../middleware/validate.middleware";
+import { loginSchema, registerSchema } from "./auth.validator";
 
 const router = express.Router();
-router.post("/register", registerController);
-router.post("/login", loginController);
+router.post("/register", validate(registerSchema), registerController);
+router.post("/login", validate(loginSchema), loginController);
 router.post("/logout", logoutController);
 router.get(
   "/me",

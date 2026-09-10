@@ -1,4 +1,5 @@
 import prisma from "../../config/db.config";
+import { emailService } from "../../utils/email.service";
 
 export async function createTicket(
   userId: string,
@@ -24,7 +25,7 @@ export async function createTicket(
         action: "TICKET_CREATED",
       },
     });
-    let firstResponseDueAt, resolutionDueAt;
+    let firstResponseDueAt: Date, resolutionDueAt: Date;
     if (ticket.priority === "LOW") {
       firstResponseDueAt = new Date(
         ticket.createdAt.getTime() + 24 * 60 * 60 * 1000,
@@ -68,6 +69,38 @@ export async function createTicket(
 
     return { ticket, ticketActivity, sla };
   });
+
+  const customer = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+  try {
+    if (!customer) {
+      console.error("Customer not found:", userId);
+    } else {
+      await emailService(
+        customer.email,
+        "Your support ticket has been created",
+        `
+    <h2>Ticket Created Successfully</h2>
+    <p>Hello ${customer.name},</p>
+
+    <p>Your support ticket has been created successfully.</p>
+
+    <p><strong>Ticket Number:</strong> #${result.ticket.ticketNumber}</p>
+    <p><strong>Title:</strong> ${result.ticket.title}</p>
+    <p><strong>Priority:</strong> ${result.ticket.priority}</p>
+    <p><strong>Status:</strong> ${result.ticket.status}</p>
+
+    <p>Our support team will review your ticket and get back to you.</p>
+
+    <p>Thank you,<br>
+    Support Desk</p>
+  `,
+      );
+    }
+  } catch (error) {
+    console.log("Error in sending mail: ", error);
+  }
   return result;
 }
 
@@ -187,110 +220,6 @@ export async function getTicketsDetails(
   return tickets;
 }
 
-export async function assignTicketToAgent(
-  ticketId: string,
-  agentId: string,
-  userId: string,
-) {
-  const result = await prisma.$transaction(async (tx) => {
-    const ticket = await tx.ticket.findUnique({
-      where: { id: ticketId },
-    });
-
-    if (!ticket) {
-      throw { status: 404, message: "Ticket not found" };
-    }
-
-    const agent = await tx.user.findUnique({
-      where: { id: agentId },
-    });
-
-    if (!agent) {
-      throw { status: 404, message: "Agent doesn't exist" };
-    }
-    if (agent.role !== "SupportAgent") {
-      throw { status: 403, message: "User is not a support agent" };
-    }
-    if (!agent.isActive) {
-      throw { status: 403, message: "Agent is not active" };
-    }
-
-    if (ticket.assignedAgentId === agentId) {
-      throw { status: 409, message: "Conflict: Agent is already assigned" };
-    }
-    const updatedTicket = await tx.ticket.update({
-      where: { id: ticketId },
-      data: { assignedAgentId: agentId, status: "IN_PROGRESS" },
-    });
-
-    const updatedTicketActivity = await tx.ticketActivity.create({
-      data: {
-        ticketId: ticketId,
-        userId: userId,
-        action:
-          ticket.assignedAgentId === null
-            ? "AGENT_ASSIGNED"
-            : "AGENT_REASSIGNED",
-      },
-    });
-    return { updatedTicket, updatedTicketActivity };
-  });
-  return result;
-}
-
-export async function assignTicketToDeveloper(
-  ticketId: string,
-  developerId: string,
-  userId: string,
-) {
-  const result = await prisma.$transaction(async (tx) => {
-    const ticket = await prisma.ticket.findUnique({
-      where: { id: ticketId },
-    });
-
-    if (!ticket) {
-      throw { status: 404, message: "Ticket not found" };
-    }
-    const developer = await prisma.user.findUnique({
-      where: { id: developerId },
-    });
-
-    if (!developer) {
-      throw { status: 404, message: "Developer doesn't exist" };
-    }
-    if (developer.role !== "Developer") {
-      throw { status: 403, message: "User is not a developer" };
-    }
-    if (!developer.isActive) {
-      throw { status: 403, message: "Developer is not active" };
-    }
-    if (ticket.assignedDeveloperId === developerId) {
-      throw {
-        status: 409,
-        message: "Conflict: This developer is already assigned",
-      };
-    }
-
-    const updatedTicket = await tx.ticket.update({
-      where: { id: ticketId },
-      data: { assignedDeveloperId: developerId, status: "ESCALATED" },
-    });
-
-    const updatedTicketActivity = await tx.ticketActivity.create({
-      data: {
-        ticketId: ticketId,
-        userId: userId,
-        action:
-          ticket.assignedDeveloperId === null
-            ? "DEVELOPER_ASSIGNED"
-            : "DEVELOPER_REASSIGNED",
-      },
-    });
-    return { updatedTicket, updatedTicketActivity };
-  });
-  return result;
-}
-
 export async function getTicketActivity(
   ticketId: string,
   userId: string,
@@ -383,6 +312,38 @@ export async function ticketInDevelopmentUpdate(
     });
     return { updateTicket, updateTicketActivity };
   });
+  const customer = await prisma.user.findUnique({
+    where: { id: result.updateTicket.customerId },
+  });
+  try {
+    if (!customer) {
+      console.error("Customer not found:", result.updateTicket.customerId);
+    } else {
+      await emailService(
+        customer.email,
+        "Your support ticket is escalated to developemnt",
+        `
+    <h2>Ticket In Development</h2>
+    <p>Hello ${customer.name},</p>
+
+    <p>Your support ticket has been escalated to our technical team for investigation.</p>
+
+    <p><strong>Ticket Number:</strong> #${result.updateTicket.ticketNumber}</p>
+    <p><strong>Title:</strong> ${result.updateTicket.title}</p>
+    <p><strong>Priority:</strong> ${result.updateTicket.priority}</p>
+    <p><strong>Status:</strong> ${result.updateTicket.status}</p>
+
+    <p>Our technical team will review your ticket and get back to you.</p>
+
+    <p>Thank you,<br>
+    Support Desk</p>
+  `,
+      );
+    }
+  } catch (error) {
+    console.log("Error in sending mail: ", error);
+  }
+
   return result;
 }
 
@@ -420,9 +381,10 @@ export async function ticketResolvedUpdate(
     } else {
       throw { status: 403, message: "Invalid role" };
     }
+    const resolvedAt = new Date();
     const updatedTicket = await tx.ticket.update({
       where: { id: ticketId },
-      data: { status: "RESOLVED" },
+      data: { status: "RESOLVED", resolvedAt: resolvedAt },
     });
     const updateTicketActivity = await tx.ticketActivity.create({
       data: {
@@ -434,10 +396,42 @@ export async function ticketResolvedUpdate(
     const updateSLA = await tx.sLA.update({
       where: { ticketId: ticketId },
       data: {
-        resolutionCompletedAt: new Date(),
+        resolutionCompletedAt: resolvedAt,
       },
     });
     return { updatedTicket, updateTicketActivity, updateSLA };
   });
+  const customer = await prisma.user.findUnique({
+    where: { id: result.updatedTicket.customerId },
+  });
+  try {
+    if (!customer) {
+      console.error("Customer not found:", result.updatedTicket.customerId);
+    } else {
+      await emailService(
+        customer.email,
+        "Your support ticket has been resolved",
+        `
+    <h2>Ticket Successfully Resolved</h2>
+    <p>Hello ${customer.name},</p>
+
+    <p>Your support ticket has been resolved successfully.</p>
+
+    <p><strong>Ticket Number:</strong> #${result.updatedTicket.ticketNumber}</p>
+    <p><strong>Title:</strong> ${result.updatedTicket.title}</p>
+    <p><strong>Priority:</strong> ${result.updatedTicket.priority}</p>
+    <p><strong>Status:</strong> ${result.updatedTicket.status}</p>
+
+    <p>Our team has successfully resolved your issue. Please review the resolution and let us know if you experience any further problems.</p>
+
+    <p>Thank you,<br>
+    Support Desk</p>
+  `,
+      );
+    }
+  } catch (error) {
+    console.log("Error in sending mail: ", error);
+  }
+
   return result;
 }

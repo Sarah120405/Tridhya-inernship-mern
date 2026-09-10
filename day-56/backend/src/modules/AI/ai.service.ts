@@ -365,9 +365,15 @@ export async function developerAssistance(
           },
           troubleshootingAttempted: {
             type: "array",
+            items: {
+              type: "string",
+            },
           },
           relevantTechnicalDetails: {
             type: "array",
+            items: {
+              type: "string",
+            },
           },
           customerImpact: {
             type: "string",
@@ -412,6 +418,7 @@ export async function developerAssistance(
 
   return {
     issueSummary: result.issueSummary,
+    observedBehavior: result.observedBehavior,
     troubleshootingAttempted: result.troubleshootingAttempted,
     relevantTechnicalDetails: result.relevantTechnicalDetails,
     customerImpact: result.customerImpact,
