@@ -4,13 +4,14 @@ export async function createMessages(
   ticketId: string,
   senderId: string,
   senderRole: string,
-  content: string,
+  messageData: any,
 ) {
   const result = await prisma.$transaction(async (tx) => {
     const ticket = await tx.ticket.findUnique({
       where: { id: ticketId },
     });
 
+    const aiSuggestionUsed = messageData.aiSuggestionUsed;
     if (!ticket) {
       throw {
         status: 404,
@@ -18,13 +19,24 @@ export async function createMessages(
       };
     }
 
-    if (!content || content.trim() === "") {
-      throw {
-        status: 400,
-        message: "Message content cannot be empty.",
-      };
+    if (aiSuggestionUsed) {
+      if (
+        !messageData.aiSuggestion.suggestedResponse ||
+        messageData.aiSuggestion.suggestedResponse.trim() === ""
+      ) {
+        throw {
+          status: 400,
+          message: "AI content cannot be empty.",
+        };
+      }
+    } else {
+      if (!messageData.content || messageData.content.trim() === "") {
+        throw {
+          status: 400,
+          message: "Message content cannot be empty.",
+        };
+      }
     }
-
     if (senderRole === "Customer") {
       if (ticket.customerId !== senderId) {
         throw {
@@ -55,14 +67,35 @@ export async function createMessages(
       };
     }
 
+    if (aiSuggestionUsed && senderRole !== "SupportAgent") {
+      throw {
+        status: 403,
+        message: "Only support agents can use AI response suggestions.",
+      };
+    }
     const message = await tx.message.create({
       data: {
         ticketId,
         senderId,
-        content,
+        content: aiSuggestionUsed
+          ? messageData.aiSuggestion.suggestedResponse
+          : messageData.content,
+        isAIGenerated: aiSuggestionUsed,
       },
     });
 
+    if (aiSuggestionUsed) {
+      await tx.aIAnalysis.create({
+        data: {
+          ticketId: ticketId,
+          type: "AGENT_RESPONSE",
+          suggestedResponse: messageData.aiSuggestion.suggestedResponse,
+          confidence: messageData.aiSuggestion.confidence,
+          reasoning: messageData.aiSuggestion.reasoning,
+          responseUsed: true,
+        },
+      });
+    }
     const sla = await tx.sLA.findUnique({
       where: { ticketId },
     });

@@ -364,16 +364,10 @@ export async function developerAssistance(
             type: "string",
           },
           troubleshootingAttempted: {
-            type: "array",
-            items: {
-              type: "string",
-            },
+            type: "string",
           },
           relevantTechnicalDetails: {
-            type: "array",
-            items: {
-              type: "string",
-            },
+            type: "string",
           },
           customerImpact: {
             type: "string",
@@ -404,7 +398,33 @@ export async function developerAssistance(
       message: "Gemini returned an empty response.",
     };
   }
-  const result = JSON.parse(AIresponse.text);
+  let result;
+
+  try {
+    result = JSON.parse(AIresponse.text);
+  } catch (error) {
+    throw {
+      status: 502,
+      message: "Gemini returned an invalid JSON response.",
+    };
+  }
+  const requiredStringFields = [
+    "issueSummary",
+    "observedBehavior",
+    "troubleshootingAttempted",
+    "relevantTechnicalDetails",
+    "customerImpact",
+    "developerInvestigation",
+  ];
+
+  for (const field of requiredStringFields) {
+    if (typeof result[field] !== "string" || result[field].trim() === "") {
+      throw {
+        status: 502,
+        message: `Gemini returned an invalid ${field}.`,
+      };
+    }
+  }
   if (
     typeof result.confidence !== "number" ||
     result.confidence < 0 ||
@@ -416,13 +436,20 @@ export async function developerAssistance(
     };
   }
 
-  return {
-    issueSummary: result.issueSummary,
-    observedBehavior: result.observedBehavior,
-    troubleshootingAttempted: result.troubleshootingAttempted,
-    relevantTechnicalDetails: result.relevantTechnicalDetails,
-    customerImpact: result.customerImpact,
-    developerInvestigation: result.developerInvestigation,
-    confidence: result.confidence,
-  };
+  const aiSummary = await prisma.aIAnalysis.create({
+    data: {
+      ticketId: ticket.id,
+      type: "DEVELOPER_SUMMARY",
+      issueSummary: result.issueSummary,
+      observedBehavior: result.observedBehavior,
+      troubleshootingAttempted: result.troubleshootingAttempted,
+      relevantTechnicalDetails: result.relevantTechnicalDetails,
+      customerImpact: result.customerImpact,
+      developerInvestigation: result.developerInvestigation,
+      confidence: result.confidence,
+      summaryUsed: true,
+    },
+  });
+
+  return aiSummary;
 }

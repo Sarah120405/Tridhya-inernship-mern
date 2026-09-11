@@ -8,16 +8,34 @@ export async function createTicket(
 ) {
   const result = await prisma.$transaction(async (tx) => {
     const attachments = files?.map((file) => file.path) || [];
+    const aiSuggestionUsed = ticketData.aiSuggestionUsed;
     const ticket = await tx.ticket.create({
       data: {
         title: ticketData.title,
         description: ticketData.description,
         attachments: attachments,
-        category: ticketData.category,
-        priority: ticketData.priority,
+        category: aiSuggestionUsed
+          ? ticketData.aiSuggestion.suggestedCategory
+          : ticketData.category,
+        priority: aiSuggestionUsed
+          ? ticketData.aiSuggestion.suggestedPriority
+          : ticketData.priority,
         customerId: userId,
       },
     });
+
+    if (aiSuggestionUsed) {
+      await tx.aIAnalysis.create({
+        data: {
+          ticketId: ticket.id,
+          type: "TICKET_SUGGESTION",
+          suggestedCategory: ticketData.aiSuggestion.suggestedCategory,
+          suggestedPriority: ticketData.aiSuggestion.suggestedPriority,
+          confidence: ticketData.aiSuggestion.confidence,
+          reasoning: ticketData.aiSuggestion.reasoning,
+        },
+      });
+    }
     const ticketActivity = await tx.ticketActivity.create({
       data: {
         ticketId: ticket.id,
@@ -66,7 +84,6 @@ export async function createTicket(
         dueAt: resolutionDueAt,
       },
     });
-
     return { ticket, ticketActivity, sla };
   });
 

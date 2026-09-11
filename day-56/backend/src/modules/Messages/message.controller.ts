@@ -15,7 +15,7 @@ export async function createMessageController(
       ticketId,
       req.user.id,
       req.user.role,
-      req.body.content,
+      req.body,
     );
     return sendResponse(res, 201, "Message created successfully", message);
   } catch (err: any) {

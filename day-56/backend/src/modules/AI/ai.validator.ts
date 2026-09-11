@@ -3,7 +3,7 @@ import z from "zod";
 const analyzeTicketSchema = z.object({
   title: z.string().trim().min(4).max(100),
   description: z.string().trim().min(1).max(1000),
-  category: z.enum([
+  customerCategory: z.enum([
     "TECHNICAL",
     "BILLING",
     "ACCOUNT",
@@ -13,7 +13,7 @@ const analyzeTicketSchema = z.object({
   ]),
 });
 const aiTicketIdParamsSchema = z.object({
-  ticketId: z.string().min(1),
+  id: z.string().min(1),
 });
 
 export { analyzeTicketSchema, aiTicketIdParamsSchema };

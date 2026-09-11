@@ -8,7 +8,6 @@ export function validate(schema: any, source = "body") {
     try {
       const data = source === "params" ? req.params : req.body;
       const result = schema.safeParse(data);
-
       if (!result.success) {
         const errors = result.error.issues.map((issue: any) => ({
           field: issue.path.join("."),

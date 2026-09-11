@@ -14,14 +14,14 @@ router.patch(
   "/agent/:id",
   requireAuth,
   requireRole(["Admin"]),
-  validate(ticketIdParamsSchema),
+  validate(ticketIdParamsSchema, "params"),
   assignToAgentController,
 );
 router.patch(
   "/developer/:id",
   requireAuth,
   requireRole(["Admin", "SupportAgent"]),
-  validate(ticketIdParamsSchema),
+  validate(ticketIdParamsSchema, "params"),
   assignToDeveloperController,
 );
 

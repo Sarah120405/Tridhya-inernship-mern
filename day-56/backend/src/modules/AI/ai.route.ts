@@ -21,7 +21,7 @@ router.post(
   "/agent_assistance/:id",
   requireAuth,
   requireRole(["SupportAgent"]),
-  validate(aiTicketIdParamsSchema),
+  validate(aiTicketIdParamsSchema, "params"),
   agentAssistanceController,
 );
 router.post(

@@ -80,7 +80,8 @@ export async function assignTicketToAgent(
 export async function assignTicketToDeveloper(
   ticketId: string,
   developerId: string,
-  userId: string,
+  escalationData: any,
+  userRole: string,
 ) {
   const result = await prisma.$transaction(async (tx) => {
     const ticket = await tx.ticket.findUnique({
@@ -88,21 +89,37 @@ export async function assignTicketToDeveloper(
     });
 
     if (!ticket) {
-      throw { status: 404, message: "Ticket not found" };
+      throw {
+        status: 404,
+        message: "Ticket not found",
+      };
     }
+
     const developer = await tx.user.findUnique({
       where: { id: developerId },
     });
 
     if (!developer) {
-      throw { status: 404, message: "Developer doesn't exist" };
+      throw {
+        status: 404,
+        message: "Developer doesn't exist",
+      };
     }
+
     if (developer.role !== "Developer") {
-      throw { status: 403, message: "User is not a developer" };
+      throw {
+        status: 403,
+        message: "User is not a developer",
+      };
     }
+
     if (!developer.isActive) {
-      throw { status: 403, message: "Developer is not active" };
+      throw {
+        status: 403,
+        message: "Developer is not active",
+      };
     }
+
     if (ticket.assignedDeveloperId === developerId) {
       throw {
         status: 409,
@@ -110,23 +127,55 @@ export async function assignTicketToDeveloper(
       };
     }
 
+    if (userRole !== "SupportAgent") {
+      throw {
+        status: 403,
+        message: "Only support agents can escalate tickets.",
+      };
+    }
+
     const updatedTicket = await tx.ticket.update({
       where: { id: ticketId },
-      data: { assignedDeveloperId: developerId, status: "ESCALATED" },
+      data: {
+        assignedDeveloperId: developerId,
+        status: "ESCALATED",
+      },
     });
+
+    const aiRecommendedEscalation =
+      escalationData?.aiSuggestion?.escalationRecommended === true;
+
+    if (aiRecommendedEscalation) {
+      await tx.aIAnalysis.create({
+        data: {
+          ticketId,
+          type: "AGENT_ESCALATION",
+          confidence: escalationData.aiSuggestion.confidence,
+          escalationRecommended: true,
+          escalationAccepted: true,
+          escalationReason: escalationData.aiSuggestion.escalationReason,
+        },
+      });
+    }
 
     const updatedTicketActivity = await tx.ticketActivity.create({
       data: {
-        ticketId: ticketId,
-        userId: userId,
+        ticketId,
+        userId: escalationData.userId,
         action:
           ticket.assignedDeveloperId === null
             ? "DEVELOPER_ASSIGNED"
             : "DEVELOPER_REASSIGNED",
       },
     });
-    return { developer, updatedTicket, updatedTicketActivity };
+
+    return {
+      developer,
+      updatedTicket,
+      updatedTicketActivity,
+    };
   });
+
   try {
     await emailService(
       result.developer.email,
@@ -134,20 +183,23 @@ export async function assignTicketToDeveloper(
       `
       <h2>Ticket Assigned Successfully</h2>
       <p>Hello ${result.developer.name},</p>
-  
-      <p>You have been assigned following ticket: </p>
-  
+
+      <p>You have been assigned the following ticket:</p>
+
       <p><strong>Ticket Number:</strong> #${result.updatedTicket.ticketNumber}</p>
       <p><strong>Title:</strong> ${result.updatedTicket.title}</p>
       <p><strong>Priority:</strong> ${result.updatedTicket.priority}</p>
       <p><strong>Status:</strong> ${result.updatedTicket.status}</p>
-  
-      <p>A support ticket has been escalated to you for technical investigation.
-        Please review the ticket details and investigate the reported issue within the SLA deadline.</p>
-  
+
+      <p>
+        A support ticket has been escalated to you for technical investigation.
+        Please review the ticket details and investigate the reported issue
+        within the SLA deadline.
+      </p>
+
       <p>Thank you,<br>
-      Admin</p>
-    `,
+      Support Desk</p>
+      `,
     );
   } catch (error) {
     console.log("Error in sending mail: ", error);

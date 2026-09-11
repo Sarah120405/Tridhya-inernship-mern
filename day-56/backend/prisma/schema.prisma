@@ -40,7 +40,7 @@ model Ticket {
   createdAt           DateTime         @default(now())
   updatedAt           DateTime         @updatedAt
   assignedDeveloperId String?
-  aiAnalysis          AIAnalysis?
+  aiAnalyses          AIAnalysis[]
   internalNotes       InternalNote[]
   messages            Message[]
   sla                 SLA?
@@ -118,17 +118,43 @@ model SLA {
 }
 
 model AIAnalysis {
-  id                  String          @id @default(cuid())
-  ticketId            String          @unique
-  suggestedCategory   TicketCategory?
-  suggestedPriority   TicketPriority?
-  confidence          Float?
-  reasoning           String?
-  createdAt           DateTime        @default(now())
-  updatedAt           DateTime        @updatedAt
-  suggestedDepartment String?
-  suggestedEscalation Boolean?
-  ticket              Ticket          @relation(fields: [ticketId], references: [id])
+  id                      String          @id @default(cuid())
+  ticketId                String
+  type                    AIAnalysisType
+
+  confidence              Float?
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime        @updatedAt
+
+  suggestedCategory     TicketCategory?
+  suggestedPriority     TicketPriority?
+  reasoning             String?
+
+  suggestedResponse     String?
+  escalationRecommended Boolean?
+  escalationReason      String?
+  responseUsed          Boolean?
+  escalationAccepted    Boolean?
+
+  issueSummary                String?
+  observedBehavior            String?
+  troubleshootingAttempted    String?
+  relevantTechnicalDetails    String?
+  customerImpact              String?
+  developerInvestigation      String?
+  summaryUsed                 Boolean?
+
+  ticket Ticket @relation(fields: [ticketId], references: [id])
+
+  @@index([ticketId])
+  @@index([type])
+}
+
+enum AIAnalysisType {
+  TICKET_SUGGESTION
+  AGENT_RESPONSE
+  AGENT_ESCALATION
+  DEVELOPER_SUMMARY
 }
 
 enum Role {
