@@ -43,7 +43,7 @@ router.patch(
   "/developer_update/:id",
   requireAuth,
   requireRole(["Developer"]),
-  validate(ticketIdParamsSchema),
+  validate(ticketIdParamsSchema, "params"),
   ticketInDevlopmentUpdateController,
 );
 
@@ -51,7 +51,7 @@ router.patch(
   "/ticket_resolved/:id",
   requireAuth,
   requireRole(["SupportAgent", "Developer", "Admin"]),
-  validate(ticketIdParamsSchema),
+  validate(ticketIdParamsSchema, "params"),
   ticketResolvedController,
 );
 export default router;

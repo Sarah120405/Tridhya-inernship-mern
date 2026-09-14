@@ -37,11 +37,13 @@ export async function assignToDeveloperController(
       ? req.params.id[0]
       : req.params.id;
 
+    const user = req.user;
+    console.log("userRole:", req.user.role);
     const ticket = await assignTicketToDeveloper(
       ticketId,
       req.body,
-      req.user.id,
-      req.user.role,
+      user.id,
+      user.role,
     );
 
     return sendResponse(res, 200, "Developer assigned succesfully", ticket);

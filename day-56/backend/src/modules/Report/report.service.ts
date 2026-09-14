@@ -217,7 +217,7 @@ export async function ticketTrends() {
       DATE("closedAt") AS date,
       COUNT(*) AS tickets
     FROM "Ticket"
-    GROUP BY DATE("createdAt")
+    GROUP BY DATE("closedAt")
     ORDER BY date ASC
   `,
   ]);

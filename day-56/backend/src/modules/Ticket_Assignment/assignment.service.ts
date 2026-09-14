@@ -79,8 +79,8 @@ export async function assignTicketToAgent(
 
 export async function assignTicketToDeveloper(
   ticketId: string,
-  developerId: string,
   escalationData: any,
+  userId: string,
   userRole: string,
 ) {
   const result = await prisma.$transaction(async (tx) => {
@@ -94,9 +94,15 @@ export async function assignTicketToDeveloper(
         message: "Ticket not found",
       };
     }
+    if (userRole !== "SupportAgent" && userRole !== "Admin") {
+      throw {
+        status: 403,
+        message: "Only support agents and admins can escalate tickets.",
+      };
+    }
 
     const developer = await tx.user.findUnique({
-      where: { id: developerId },
+      where: { id: escalationData.developerId },
     });
 
     if (!developer) {
@@ -120,24 +126,17 @@ export async function assignTicketToDeveloper(
       };
     }
 
-    if (ticket.assignedDeveloperId === developerId) {
+    if (ticket.assignedDeveloperId === escalationData.developerId) {
       throw {
         status: 409,
         message: "Conflict: This developer is already assigned",
       };
     }
 
-    if (userRole !== "SupportAgent") {
-      throw {
-        status: 403,
-        message: "Only support agents can escalate tickets.",
-      };
-    }
-
     const updatedTicket = await tx.ticket.update({
       where: { id: ticketId },
       data: {
-        assignedDeveloperId: developerId,
+        assignedDeveloperId: escalationData.developerId,
         status: "ESCALATED",
       },
     });
@@ -161,7 +160,7 @@ export async function assignTicketToDeveloper(
     const updatedTicketActivity = await tx.ticketActivity.create({
       data: {
         ticketId,
-        userId: escalationData.userId,
+        userId: userId,
         action:
           ticket.assignedDeveloperId === null
             ? "DEVELOPER_ASSIGNED"

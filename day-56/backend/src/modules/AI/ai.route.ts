@@ -28,7 +28,7 @@ router.post(
   "/developer_assistance/:id",
   requireAuth,
   requireRole(["Developer"]),
-  validate(aiTicketIdParamsSchema),
+  validate(aiTicketIdParamsSchema, "params"),
   developerAssistanceController,
 );
 export default router;
