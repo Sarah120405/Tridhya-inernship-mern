@@ -1,4 +1,5 @@
 import prisma from "../../config/db.config";
+import { getIO } from "../../socket/socket.server";
 
 export async function createInternalMessage(
   ticketId: string,
@@ -54,6 +55,9 @@ export async function createInternalMessage(
       content: content.trim(),
     },
   });
+
+  const io = getIO();
+  io.to(`ticket:${ticketId}`).emit("newInternalMessage", message);
 
   return message;
 }

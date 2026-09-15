@@ -1,4 +1,5 @@
 import prisma from "../../config/db.config";
+import { getIO } from "../../socket/socket.server";
 
 export async function createMessages(
   ticketId: string,
@@ -110,6 +111,9 @@ export async function createMessages(
     }
     return message;
   });
+
+  const io = getIO();
+  io.to(`ticket:${ticketId}`).emit("newMessage", result);
   return result;
 }
 

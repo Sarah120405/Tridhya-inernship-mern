@@ -1,3 +1,5 @@
+import http from "http";
+import { Server } from "socket.io";
 import express from "express";
 import dotenv from "dotenv";
 dotenv.config();
@@ -10,8 +12,25 @@ import cors from "cors";
 import index_api from "./index_api";
 import { errorHandler } from "./middleware/error.middleware";
 import { startSlaMonitoring } from "./jobs/sla_monitor.job";
+import { socketAuthMiddleware } from "./socket/socket.middleware";
+import { registerSocketHandlers } from "./socket/socket.handler";
+import { initSocket } from "./socket/socket.server";
 
 const app = express();
+
+const httpServer = http.createServer(app);
+const io = initSocket(httpServer);
+io.use(socketAuthMiddleware);
+
+io.on("connection", (socket) => {
+  console.log("Socket connected:", socket.id);
+  /* console.log("Authenticated user:", socket.data.user); */
+  registerSocketHandlers(socket);
+
+  socket.on("disconnect", () => {
+    console.log("Socket disconnected:", socket.id);
+  });
+});
 app.use(express.json());
 app.use(cookieParser());
 app.use(
@@ -26,7 +45,13 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+/* app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  startSlaMonitoring();
+});
+ */
+
+httpServer.listen(PORT, () => {
+  console.log("Server running on port: ", PORT);
   startSlaMonitoring();
 });
