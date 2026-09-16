@@ -1,66 +1,199 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
-export const registerUser = createAsyncThunk(
-  "auth/register",
-  async (userData) => {
-    const res = await fetch("http://localhost:5000/api/auth/register", {
+const API_URL = "http://localhost:5000/api";
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: "Customer" | "SupportAgent" | "Developer" | "Admin";
+}
+
+interface AuthState {
+  message: string | null;
+  user: User | null;
+  loading: boolean;
+  error: string | null;
+}
+
+interface RegisterData {
+  name: string;
+  email: string;
+  password: string;
+}
+
+interface LoginData {
+  email: string;
+  password: string;
+}
+
+const initialState: AuthState = {
+  message: null,
+  user: null,
+  loading: false,
+  error: null,
+};
+
+export const registerUser = createAsyncThunk<
+  any,
+  RegisterData,
+  { rejectValue: string }
+>("auth/register", async (userData, { rejectWithValue }) => {
+  try {
+    const res = await fetch(`${API_URL}/auth/register`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
       body: JSON.stringify(userData),
     });
+
+    const data = await res.json();
+
     if (!res.ok) {
-      const data = await res.json();
-      throw new Error(data.error || "Failed to register user");
+      return rejectWithValue(data.error || "Failed to register user");
     }
-    return res.json();
+
+    return data;
+  } catch {
+    return rejectWithValue("Unable to connect to the server");
+  }
+});
+
+export const login = createAsyncThunk<any, LoginData, { rejectValue: string }>(
+  "auth/login",
+  async (userData, { rejectWithValue }) => {
+    try {
+      const res = await fetch(`${API_URL}/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(userData),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        return rejectWithValue(data.error || "Failed to login");
+      }
+
+      return data;
+    } catch {
+      return rejectWithValue("Unable to connect to the server");
+    }
   },
 );
 
-export const login = createAsyncThunk("/auth/login", async (userData) => {
-  const res = await fetch("http://localhost:5000/api/auth/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(userData),
-  });
-  if (!res.ok) {
+export const fetchCurrentUser = createAsyncThunk<
+  User,
+  void,
+  { rejectValue: string }
+>("auth/me", async (_, { rejectWithValue }) => {
+  try {
+    const res = await fetch("http://localhost:5000/api/auth/me", {
+      credentials: "include",
+    });
+
+    if (!res.ok) {
+      return rejectWithValue("Unable to fetch current user");
+    }
+
     const data = await res.json();
-    throw new Error(data.error || "Failed to login user");
+    return data.data;
+  } catch {
+    return rejectWithValue("Unable to connect to the server");
   }
-  return res.json();
 });
 
-export const logOut = createAsyncThunk("/auth/logout", async () => {
-  const res = await fetch("http://localhost:5000/api/auth/logout", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-  });
-  if (!res.ok) {
-    const data = await res.json();
-    throw new Error(data.error || "Failed to logout user");
-  }
-  return res.json();
-});
+export const logOut = createAsyncThunk(
+  "auth/logout",
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await fetch(`${API_URL}/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
 
-const bookSlice = createSlice({
-  name: "bookSlice",
-  initialState: { message: null, user: null, loading: false, error: null },
-  reducers: {},
+      const data = await res.json();
+
+      if (!res.ok) {
+        return rejectWithValue(data.error || "Failed to logout");
+      }
+
+      return data;
+    } catch {
+      return rejectWithValue("Unable to connect to the server");
+    }
+  },
+);
+
+const authSlice = createSlice({
+  name: "auth",
+  initialState,
+  reducers: {
+    clearError: (state) => {
+      state.error = null;
+    },
+
+    clearUser: (state) => {
+      state.user = null;
+    },
+  },
+
   extraReducers: (builder) => {
     builder
-      .addCase(registerUser.fulfilled, (state, action) => {
-        state.message = action.payload;
+
+      // REGISTER
+      .addCase(registerUser.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.message = null;
       })
+
+      .addCase(registerUser.fulfilled, (state, action) => {
+        state.loading = false;
+        state.message = action.payload.message;
+      })
+
+      .addCase(registerUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || "Registration failed";
+      })
+
+      // LOGIN
       .addCase(login.pending, (state) => {
         state.loading = true;
         state.error = null;
+        state.message = null;
       })
+
       .addCase(login.fulfilled, (state, action) => {
         state.loading = false;
-        state.user = action.payload;
+        state.user = action.payload.user;
+        state.message = action.payload.message;
       })
+
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message;
+        state.error = action.payload || "Login failed";
+      })
+      .addCase(fetchCurrentUser.fulfilled, (state, action) => {
+        state.user = action.payload;
+      })
+      .addCase(fetchCurrentUser.rejected, (state) => {
+        state.user = null;
+      })
+      // LOGOUT
+      .addCase(logOut.fulfilled, (state) => {
+        state.user = null;
+        state.message = null;
       });
   },
 });
+
+export const { clearError, clearUser } = authSlice.actions;
+
+export default authSlice.reducer;

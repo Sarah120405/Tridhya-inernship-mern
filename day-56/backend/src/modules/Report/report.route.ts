@@ -1,8 +1,8 @@
 import e from "express";
 import { requireAuth } from "../../middleware/requireAuth.middleware";
 import { requireRole } from "../../middleware/requireRole.middleware";
-import { ticketStatistics } from "./report.service";
 import {
+  customerDashboardController,
   slaPerformanceController,
   teamPerformaceController,
   ticketDistributionController,
@@ -12,6 +12,12 @@ import {
 
 const router = e.Router();
 
+router.get(
+  "/dashboard",
+  requireAuth,
+  requireRole(["Customer"]),
+  customerDashboardController,
+);
 router.get(
   "/ticket_statistics",
   requireAuth,
@@ -42,4 +48,5 @@ router.get(
   requireRole(["Admin"]),
   slaPerformanceController,
 );
+
 export default router;

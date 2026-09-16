@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Provider } from "react-redux";
-import store from "./store/store";
+import ReduxProvider from "./components/ReduxProvider";
 
 export const metadata: Metadata = {
   title: "SupportHub | AI-Powered Customer Support",
   description: "AI-powered customer support and ticket management platform.",
+  icons: {
+    icon: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({
@@ -15,9 +17,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <Provider store={store}>
-        <body className="antialiased">{children}</body>
-      </Provider>
+      <body>
+        <ReduxProvider>{children}</ReduxProvider>
+      </body>
     </html>
   );
 }

@@ -22,6 +22,11 @@ router.get(
       where: {
         id: req.user.id,
       },
+      select: {
+        name: true,
+        email: true,
+        role: true,
+      },
     });
     return sendResponse(res, 200, "User found", user);
   },

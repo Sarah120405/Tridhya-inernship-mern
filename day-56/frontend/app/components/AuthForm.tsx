@@ -1,47 +1,68 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "../store/store";
+import { useRouter } from "next/navigation";
+import { login, registerUser } from "../store/slice/authSlice";
 
 type AuthMode = "login" | "register";
 
 interface AuthFormProps {
   mode: AuthMode;
-  onSubmit?: (data: { name?: string; email: string; password: string }) => void;
   onSwitchMode?: () => void;
 }
 
-export default function AuthForm({
-  mode,
-  onSubmit,
-  onSwitchMode,
-}: AuthFormProps) {
+export default function AuthForm({ mode, onSwitchMode }: AuthFormProps) {
+  const dispatch = useDispatch<AppDispatch>();
+  const router = useRouter();
   const isLogin = mode === "login";
 
+  const { loading, error } = useSelector((state: RootState) => state.auth);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const [error, setError] = useState("");
+  const [fieldError, setFieldError] = useState("");
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError("");
+    setFieldError("");
 
     if (!email.trim() || !password.trim()) {
-      setError("Email and password are required.");
+      setFieldError("Email and password are required.");
       return;
     }
 
     if (!isLogin && !name.trim()) {
-      setError("Name is required.");
+      setFieldError("Name is required.");
+      return;
+    }
+    if (mode === "register") {
+      const result = await dispatch(
+        registerUser({
+          name,
+          email,
+          password,
+        }),
+      );
+
+      if (registerUser.fulfilled.match(result)) {
+        onSwitchMode?.();
+      }
       return;
     }
 
-    onSubmit?.({
-      ...(isLogin ? {} : { name: name.trim() }),
-      email: email.trim(),
-      password,
-    });
+    const result = await dispatch(
+      login({
+        email,
+        password,
+      }),
+    );
+
+    if (login.fulfilled.match(result)) {
+      router.push("/dashboard");
+    }
   };
 
   return (
@@ -96,10 +117,11 @@ export default function AuthForm({
         />
       </div>
 
-      {error && <p className="text-sm text-red-500">{error}</p>}
+      {fieldError && <p className="text-sm text-red-500">{fieldError}</p>}
 
       <button
         type="submit"
+        disabled={loading}
         className="w-full rounded-lg bg-black px-4 py-2.5 font-medium text-white transition hover:bg-gray-800"
       >
         {isLogin ? "Login" : "Register"}

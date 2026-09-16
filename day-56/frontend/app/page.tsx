@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   Sparkles,
   Users,
@@ -20,7 +19,6 @@ type AuthMode = "login" | "register";
 
 export default function Home() {
   const [activeModal, setActiveModal] = useState<AuthMode | null>(null);
-  const router = useRouter();
 
   return (
     <main className="min-h-screen bg-[#fcfaf7] text-[#111a4d]">
@@ -311,9 +309,8 @@ export default function Home() {
         >
           <AuthForm
             mode="login"
-            onSubmit={() => {
-              setActiveModal(null);
-              router.push("/dashboard");
+            onSwitchMode={() => {
+              setActiveModal("register");
             }}
           />
         </Modal>
@@ -327,9 +324,8 @@ export default function Home() {
         >
           <AuthForm
             mode="register"
-            onSubmit={() => {
-              setActiveModal(null);
-              router.push("/dashboard");
+            onSwitchMode={() => {
+              setActiveModal("login");
             }}
           />
         </Modal>

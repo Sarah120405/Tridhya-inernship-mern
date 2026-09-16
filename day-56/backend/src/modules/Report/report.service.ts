@@ -1,5 +1,83 @@
 import prisma from "../../config/db.config";
 
+export async function customerDashboard(customerId: string) {
+  const [totalTickets, openTickets, awaitingReply, resolvedTickets] =
+    await Promise.all([
+      prisma.ticket.count({ where: { customerId: customerId } }),
+      prisma.ticket.count({
+        where: { customerId: customerId, status: "OPEN" },
+      }),
+      prisma.ticket.count({
+        where: { customerId: customerId, status: "WAITING_FOR_CUSTOMER" },
+      }),
+      prisma.ticket.count({
+        where: { customerId: customerId, status: "RESOLVED" },
+      }),
+    ]);
+
+  const [needsAttention, recentTickets, recentNotifications] =
+    await Promise.all([
+      prisma.ticket.findMany({
+        where: {
+          customerId,
+          status: "WAITING_FOR_CUSTOMER",
+        },
+        orderBy: { updatedAt: "desc" },
+        take: 5,
+        select: {
+          id: true,
+          ticketNumber: true,
+          title: true,
+          status: true,
+          updatedAt: true,
+        },
+      }),
+
+      prisma.ticket.findMany({
+        where: { customerId },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+        select: {
+          id: true,
+          ticketNumber: true,
+          title: true,
+          status: true,
+          priority: true,
+          updatedAt: true,
+        },
+      }),
+      prisma.ticketActivity.findMany({
+        where: {
+          ticket: { customerId: customerId },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+        select: {
+          id: true,
+          action: true,
+          createdAt: true,
+          ticket: {
+            select: {
+              id: true,
+              ticketNumber: true,
+              title: true,
+            },
+          },
+        },
+      }),
+    ]);
+  return {
+    metrics: {
+      totalTickets,
+      openTickets,
+      awaitingReply,
+      resolvedTickets,
+    },
+    recentTickets,
+    needsAttention,
+    recentNotifications,
+  };
+}
 export async function ticketStatistics() {
   const [totalTickets, openTickets, inProgress, resolved, closed, escalated] =
     await Promise.all([

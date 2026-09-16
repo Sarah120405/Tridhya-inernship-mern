@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import {
+  customerDashboard,
   SLAPerformance,
   teamPerformance,
   ticketsDistribution,
@@ -8,6 +9,18 @@ import {
 } from "./report.service";
 import { sendResponse } from "../../utils/response";
 
+export async function customerDashboardController(
+  req: Request & { user: any },
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const data = await customerDashboard(req.user.id);
+    return sendResponse(res, 200, "Data retrieved succesfully", data);
+  } catch (error) {
+    next(error);
+  }
+}
 export async function ticketStatisticsController(
   req: Request,
   res: Response,
