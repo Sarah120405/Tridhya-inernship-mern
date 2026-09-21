@@ -83,6 +83,16 @@ export async function createMessages(
           : messageData.content,
         isAIGenerated: aiSuggestionUsed,
       },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            role: true,
+          },
+        },
+      },
     });
 
     if (aiSuggestionUsed) {

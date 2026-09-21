@@ -50,6 +50,19 @@ export default function CreateTicket() {
   >({});
   const [submitError, setSubmitError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [attachments, setAttachments] = useState<File[]>([]);
+
+  const handleFilesChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
+
+    setAttachments((prev) => [...prev, ...files]);
+
+    event.target.value = "";
+  };
+
+  const removeAttachment = (index: number) => {
+    setAttachments((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -102,21 +115,22 @@ export default function CreateTicket() {
 
     try {
       setIsSubmitting(true);
+      const data = new FormData();
+
+      data.append("title", formData.title);
+      data.append("description", formData.description);
+      data.append("category", formData.category);
+      data.append("priority", formData.priority);
+
+      attachments.forEach((file) => {
+        data.append("attachments", file);
+      });
 
       const response = await fetch("http://localhost:5000/api/tickets", {
         method: "POST",
         credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          title: formData.title.trim(),
-          description: formData.description.trim(),
-          category: formData.category,
-          priority: formData.priority,
-        }),
+        body: data,
       });
-
       const result = await response.json();
 
       if (!response.ok) {
@@ -145,19 +159,22 @@ export default function CreateTicket() {
   };
 
   const inputClass = (hasError: boolean) =>
-    `w-full rounded-xl border bg-white px-4 py-3 text-sm text-gray-800 outline-none transition placeholder:text-gray-400 focus:ring-4 ${
+    `w-full rounded-xl border bg-white px-3 py-3 text-sm text-gray-800 outline-none transition placeholder:text-gray-400 focus:ring-2 ${
       hasError
         ? "border-rose-300 focus:border-rose-400 focus:ring-rose-100"
         : "border-gray-200 focus:border-[#8B7ED8] focus:ring-purple-100"
     }`;
 
   return (
-    <form onSubmit={handleSubmit} className="">
+    <form
+      onSubmit={handleSubmit}
+      className="max-w-[500px] overflow-y-auto scrollable-none"
+    >
       {/* Ticket title */}
-      <div>
+      <div className="mb-2">
         <label
           htmlFor="title"
-          className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-700"
+          className="mb-1 flex items-center gap-2 text-sm font-semibold text-gray-700"
         >
           <FiType className="text-[#8B7ED8]" />
           Ticket title <span className="text-rose-500">*</span>
@@ -189,10 +206,10 @@ export default function CreateTicket() {
       </div>
 
       {/* Description */}
-      <div>
+      <div className="mb-2">
         <label
           htmlFor="description"
-          className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-700"
+          className="mb-1 flex items-center gap-2 text-sm font-semibold text-gray-700"
         >
           <FiFileText className="text-[#8B7ED8]" />
           Description <span className="text-rose-500">*</span>
@@ -228,7 +245,7 @@ export default function CreateTicket() {
       </div>
 
       {/* Category and priority */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+      <div className="grid grid-cols-2 gap-5">
         <div>
           <label
             htmlFor="category"
@@ -303,6 +320,55 @@ export default function CreateTicket() {
           <p>{submitError}</p>
         </div>
       )}
+      <div className="space-y-3">
+        <label className="block text-sm font-medium text-gray-700">
+          Attachments
+        </label>
+
+        <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-violet-300 bg-violet-50 p-6 text-center transition hover:bg-violet-100">
+          <span className="text-sm font-medium text-violet-700">
+            Click to upload files
+          </span>
+          <span className="mt-1 text-xs text-gray-500">
+            Attach screenshots or other relevant files
+          </span>
+
+          <input
+            type="file"
+            multiple
+            className="hidden"
+            onChange={handleFilesChange}
+          />
+        </label>
+
+        {attachments.length > 0 && (
+          <ul className="space-y-2">
+            {attachments.map((file, index) => (
+              <li
+                key={`${file.name}-${index}`}
+                className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-3"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-gray-800">
+                    {file.name}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {(file.size / 1024).toFixed(1)} KB
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => removeAttachment(index)}
+                  className="ml-3 text-sm font-medium text-rose-600 hover:text-rose-700"
+                >
+                  Remove
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
       {/* Footer actions */}
       <div className="flex flex-col-reverse gap-3 border-t border-gray-100 pt-6 sm:flex-row sm:justify-end">

@@ -1,9 +1,10 @@
 import z from "zod";
 
 const aiSuggestionSchema = z.object({
-  suggestedResponse: z.string().min(2).max(1000),
-  confidence: z.number().min(0).max(1),
-  reasoning: z.string().trim().min(1),
+  suggestedResponse: z.string(),
+  escalationRecommended: z.boolean(),
+  escalationReason: z.string().nullable(),
+  confidence: z.number(),
 });
 
 export const messageSchema = z

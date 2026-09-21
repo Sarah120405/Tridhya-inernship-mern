@@ -1,8 +1,16 @@
 import { configureStore } from "@reduxjs/toolkit";
 import AuthReducer from "./slice/authSlice";
+import AiReducer from "./slice/aiSlice";
+import TicketReducer from "./slice/ticketSlice";
+import MessageReducer from "./slice/messageSlice";
 
 const store = configureStore({
-  reducer: { auth: AuthReducer },
+  reducer: {
+    auth: AuthReducer,
+    ai: AiReducer,
+    ticket: TicketReducer,
+    message: MessageReducer,
+  },
 });
 
 export type RootState = ReturnType<typeof store.getState>;

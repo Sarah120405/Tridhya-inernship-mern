@@ -17,8 +17,7 @@ import {
 import { AppDispatch, RootState } from "../store/store";
 import { fetchCurrentUser } from "../store/slice/authSlice";
 import { MetricCard } from "../components/MetricCard";
-import Modal from "../components/Modal";
-import CreateTicket from "../components/CreateTicket";
+import Link from "next/link";
 
 export default function Dashboard() {
   const dispatch = useDispatch<AppDispatch>();
@@ -27,7 +26,6 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [dashboardData, setDashboardData] = useState(null);
-  const [openCreateTicket, setOpenCreateTicket] = useState(false);
 
   useEffect(() => {
     async function loadDashboard() {
@@ -146,7 +144,7 @@ export default function Dashboard() {
       .replace(/\b\w/g, (char) => char.toUpperCase());
 
   return (
-    <main className="min-h-screen bg-[#FAF8FF] p-2">
+    <main className="min-h-screen bg-[#EOFFFF] p-2">
       <div className="mx-auto max-w-8xl space-y-6">
         {/* Header */}
         <section className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
@@ -160,25 +158,14 @@ export default function Dashboard() {
             </p>
           </div>
 
-          <button
-            onClick={() => setOpenCreateTicket(true)}
+          <Link
+            href={`dashboard/create-ticket`}
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#6C5DD3] px-5 py-3 text-sm font-semibold text-white shadow-md shadow-violet-200 transition hover:-translate-y-0.5 hover:bg-[#5949C4]"
           >
             <FiPlus />
             Create New Ticket
-          </button>
+          </Link>
         </section>
-
-        {openCreateTicket && (
-          <Modal
-            title={`Create Ticket`}
-            subtitle={`Tell us what you need help with. Our support team will review your
-              request and get back to you.`}
-            onClose={() => setOpenCreateTicket(false)}
-          >
-            <CreateTicket />
-          </Modal>
-        )}
         {/* Metric Cards */}
         <section className="grid grid-cols-1 gap-4 lg:grid-cols-4">
           {metricCards.map((card) => (

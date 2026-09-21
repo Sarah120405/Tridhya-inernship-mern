@@ -29,8 +29,12 @@ interface CommonLayoutProps {
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: House },
-  { name: "Tickets", href: "/tickets", icon: Ticket },
-  { name: "Create Ticket", href: "/tickets/create", icon: Plus },
+  { name: "Tickets", href: "/dashboard/tickets", icon: Ticket },
+  {
+    name: "Create Ticket",
+    href: "/dashboard/create-ticket",
+    icon: Plus,
+  },
   { name: "Messages", href: "/messages", icon: MessageSquare },
   { name: "Knowledge Base", href: "/knowledge-base", icon: BookOpen },
   { name: "Settings", href: "/settings", icon: Settings },
@@ -191,7 +195,9 @@ export default function CommonLayout({ children }: CommonLayoutProps) {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-4">{children}</main>
+        <main className="flex-1 overflow-y-auto p-4 bg-slate-100">
+          {children}
+        </main>
       </div>
     </div>
   );

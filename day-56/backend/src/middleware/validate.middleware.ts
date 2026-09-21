@@ -13,6 +13,7 @@ export function validate(schema: any, source = "body") {
           field: issue.path.join("."),
           message: issue.message,
         }));
+        console.log("Validation errors:", result.error.issues);
         throw { status: 400, message: "Validation failed", details: errors };
       }
       if (source === "params") {

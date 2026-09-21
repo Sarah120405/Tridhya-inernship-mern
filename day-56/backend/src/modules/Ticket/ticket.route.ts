@@ -12,12 +12,14 @@ import { requireRole } from "../../middleware/requireRole.middleware";
 import localFileUpload from "../../middleware/local.fileUpload";
 import { validate } from "../../middleware/validate.middleware";
 import { createTicketSchema, ticketIdParamsSchema } from "./ticket.validator";
+import parseAiSuggestion from "../../middleware/parseAiSuggestion.middleware";
 
 const router = express.Router();
 router.post(
   "/",
   requireAuth,
   localFileUpload.array("attachments", 5),
+  parseAiSuggestion,
   validate(createTicketSchema),
   createTicketController,
 );

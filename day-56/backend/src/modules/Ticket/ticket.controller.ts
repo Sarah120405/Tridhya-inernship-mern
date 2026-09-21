@@ -8,43 +8,71 @@ import {
   ticketResolvedUpdate,
 } from "./ticket.service";
 import { sendResponse } from "../../utils/response";
-import { fileTypeFromFile } from "file-type";
-import fs from "fs";
+import fs from "fs/promises";
+import path from "path";
+import { randomUUID } from "crypto";
+import { fileTypeFromBuffer } from "file-type";
 
 export async function createTicketController(
   req: express.Request & { user?: any },
   res: express.Response,
   next: express.NextFunction,
 ) {
-  try {
-    const files = req.files as Express.Multer.File[];
-    if (files && files.length > 0) {
-      for (const file of files) {
-        const detectedType = await fileTypeFromFile(file.path);
+  const files = (req.files ?? []) as Express.Multer.File[];
+  const savedFilePaths: string[] = [];
 
-        if (
-          !detectedType ||
-          ![
-            "image/jpeg",
-            "image/png",
-            "image/gif",
-            "image/webp",
-            "image/avif",
-          ].includes(detectedType.mime)
-        ) {
-          await fs.promises.unlink(file.path);
-          const error = {
-            status: 400,
-            success: false,
-            message: `Invalid image file: ${file.originalname}`,
-          };
-          return next(error);
-        }
+  try {
+    for (const file of files) {
+      const detectedType = await fileTypeFromBuffer(file.buffer);
+
+      if (
+        !detectedType ||
+        ![
+          "image/jpeg",
+          "image/png",
+          "image/gif",
+          "image/webp",
+          "image/avif",
+        ].includes(detectedType.mime)
+      ) {
+        return next({
+          status: 400,
+          success: false,
+          message: `Invalid image file: ${file.originalname}`,
+        });
       }
     }
-    const ticket = await createTicket(req.user.id, req.body, files);
+
+    const uploadDir = path.join(process.cwd(), "uploads");
+    await fs.mkdir(uploadDir, { recursive: true });
+
+    const savedFiles: Express.Multer.File[] = [];
+
+    for (const file of files) {
+      const filename = `${file.fieldname}-${randomUUID()}${path.extname(file.originalname)}`;
+
+      const filePath = path.join(uploadDir, filename);
+
+      await fs.writeFile(filePath, file.buffer);
+      savedFilePaths.push(filePath);
+
+      savedFiles.push({
+        ...file,
+        filename,
+        path: filePath,
+      });
+    }
+
+    const ticket = await createTicket(req.user.id, req.body, savedFiles);
+
     return sendResponse(res, 201, "Ticket created successfully", ticket);
   } catch (err: any) {
+    await Promise.all(
+      savedFilePaths.map((filePath) =>
+        fs.unlink(filePath).catch(() => undefined),
+      ),
+    );
+
     next(err);
   }
 }

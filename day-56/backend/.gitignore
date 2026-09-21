@@ -1,3 +1,4 @@
+/uploads
 /prisma/migrations
 .env
 .env.*
