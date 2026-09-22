@@ -3,16 +3,29 @@ import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../../store/store";
 import { useEffect, useState } from "react";
 import {
+  developerUpdateTicket,
   fetchTicketDetails,
   fetchTickets,
+  resolveTicket,
 } from "../../store/slice/ticketSlice";
 import Link from "next/link";
+import TicektList from "../../components/Tickets/TicketListItem";
+import {
+  getTicketStatusClass,
+  PRIORITY_STYLES,
+} from "../../utils/ticketStyles";
+import TicketAssignment from "../../components/Tickets/TicketAssignment";
+import {
+  assignAgent,
+  assignDeveloper,
+} from "../../store/slice/assignmentSlice";
+import { getDevelopers, getSupportAgents } from "../../store/slice/userSlice";
 
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
-      <span className="text-sm text-gray-500">{label}</span>
-      <span className="break-all text-sm font-medium text-gray-800 sm:max-w-[65%] sm:text-right">
+      <span className="text-sm text-slate-500">{label}</span>
+      <span className="break-all text-sm font-medium text-slate-800 sm:max-w-[65%] sm:text-right">
         {value}
       </span>
     </div>
@@ -37,12 +50,24 @@ export default function TicketsPage() {
     ticketDetails,
     isDetailsLoading,
     detailsError,
+    isUpdatingStatus,
   } = useSelector((state: RootState) => state.ticket);
+  const user = useSelector((state: RootState) => state.auth.user);
+  const developers = useSelector((state: RootState) => state.user.developers);
+  const agents = useSelector((state: RootState) => state.user.supportAgents);
 
+  const {
+    isAssigningDeveloper,
+    assignmentError,
+    agentAssignmentError,
+    isAssigningAgent,
+  } = useSelector((state: RootState) => state.assignment);
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
 
   useEffect(() => {
     dispatch(fetchTickets());
+    dispatch(getDevelopers());
+    dispatch(getSupportAgents());
   }, [dispatch]);
 
   const selectedTicket = tickets.find(
@@ -62,8 +87,36 @@ export default function TicketsPage() {
     dispatch(fetchTicketDetails(ticketId));
   };
 
+  const handleAssignDeveloper = async (developerId: string) => {
+    if (!ticketDetails) return;
+
+    const result = await dispatch(
+      assignDeveloper({
+        ticketId: ticketDetails.id,
+        developerId,
+      }),
+    );
+
+    if (assignDeveloper.fulfilled.match(result)) {
+      dispatch(fetchTicketDetails(ticketDetails.id));
+    }
+  };
+  const handleAssignAgent = async (agentId: string) => {
+    if (!ticketDetails) return;
+
+    const result = await dispatch(
+      assignAgent({
+        ticketId: ticketDetails.id,
+        agentId,
+      }),
+    );
+
+    if (assignAgent.fulfilled.match(result)) {
+      dispatch(fetchTicketDetails(ticketDetails.id));
+    }
+  };
   return (
-    <div className="h-full min-h-0 p-4 lg:p-6">
+    <div className="h-full min-h-0 p-4 lg:p-4">
       <div
         className={`grid h-full min-h-0 gap-4 ${
           selectedTicketId
@@ -72,60 +125,34 @@ export default function TicketsPage() {
         }`}
       >
         {/* LEFT: Ticket List */}
-        <section className="overflow-hidden rounded-2xl border border-violet-100 bg-white flex min-h-0 flex-col">
-          <div className="border-b border-violet-100 p-5">
-            <h1 className="text-2xl font-bold text-gray-900">Tickets</h1>
-            <p className="mt-1 text-sm text-gray-500">
+        <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-blue-100 bg-white">
+          <div className="border-b border-blue-100 bg-blue-50/40 p-5">
+            <h1 className="text-2xl font-bold text-slate-900">Tickets</h1>
+
+            <p className="mt-1 text-sm text-slate-500">
               Manage and track your support tickets
             </p>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto scrollbar-none p-4">
+          <div className="scrollbar-none min-h-0 flex-1 overflow-y-auto p-4">
             <div className="space-y-3">
               {tickets.map((ticket) => (
-                <button
+                <TicektList
                   key={ticket.id}
-                  type="button"
-                  onClick={() => handleSelectTicket(ticket.id)}
-                  className={`w-full rounded-xl border p-4 text-left transition ${
-                    selectedTicketId === ticket.id
-                      ? "border-[#8B7ED8] bg-violet-50"
-                      : "border-gray-100 hover:border-violet-200 hover:bg-violet-50/50"
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-xs font-medium text-violet-600">
-                        #TK-{ticket.ticketNumber}
-                      </p>
-
-                      <h2 className="mt-1 truncate font-semibold text-gray-800">
-                        {ticket.title}
-                      </h2>
-
-                      <p className="mt-1 line-clamp-2 text-sm text-gray-500">
-                        {ticket.description}
-                      </p>
-                    </div>
-
-                    <span className="shrink-0 rounded-full bg-violet-100 px-2.5 py-1 text-xs text-violet-700">
-                      {ticket.status}
-                    </span>
-                  </div>
-
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <span className="rounded-full bg-sky-50 px-2.5 py-1 text-xs text-sky-700">
-                      {ticket.category}
-                    </span>
-
-                    <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs text-amber-700">
-                      {ticket.priority}
-                    </span>
-                  </div>
-                </button>
+                  ticket={ticket}
+                  selected={selectedTicketId === ticket.id}
+                  userRole={user?.role}
+                  isUpdatingStatus={isUpdatingStatus}
+                  onSelect={() => handleSelectTicket(ticket.id)}
+                  onStartDevelopment={() =>
+                    dispatch(developerUpdateTicket(ticket.id))
+                  }
+                  onResolve={() => dispatch(resolveTicket(ticket.id))}
+                />
               ))}
+
               {tickets.length === 0 && (
-                <p className="py-8 text-center text-sm text-gray-500">
+                <p className="py-8 text-center text-sm text-slate-500">
                   No tickets found.
                 </p>
               )}
@@ -134,19 +161,34 @@ export default function TicketsPage() {
         </section>
         {/* RIGHT: Selected Ticket */}
         {selectedTicketId && (
-          <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-violet-100 bg-white">
-            <div className="shrink-0 border-b border-violet-100 p-5">
-              <button
-                type="button"
-                onClick={() => setSelectedTicketId(null)}
-                className="mb-1 text-sm font-medium text-violet-600 hover:text-violet-800"
-              >
-                ← Back to Tickets
-              </button>
+          <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-blue-100 bg-white">
+            <div className="shrink-0 border-b border-blue-100 bg-blue-50/30 p-5 flex justify-between items-center">
+              <div className="flex flex-col">
+                <button
+                  type="button"
+                  onClick={() => setSelectedTicketId(null)}
+                  className="mb-1 text-sm font-medium text-blue-600 transition hover:text-blue-800"
+                >
+                  ← Back to Tickets
+                </button>
 
-              <h3 className="text-xl font-semibold text-gray-900">
-                Ticket Details
-              </h3>
+                <div className="min-w-0">
+                  <h3 className="mt-1 text-xl font-bold text-slate-900">
+                    Ticket Details
+                  </h3>
+                </div>
+              </div>
+              <div>
+                {ticketDetails && (
+                  <Link
+                    href={`/dashboard/tickets/${ticketDetails.id}/messages`}
+                    className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-blue-600 px-3 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+                  >
+                    <span>Message</span>
+                    <span aria-hidden="true">→</span>
+                  </Link>
+                )}
+              </div>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto p-5 lg:p-6 scrollbar-none">
               {isDetailsLoading ? (
@@ -157,110 +199,96 @@ export default function TicketsPage() {
                 <p className="p-6 text-sm text-rose-600">{detailsError}</p>
               ) : ticketDetails ? (
                 <div className="space-y-6">
-                  <div className="flex flex-row justify-between">
-                    <div>
-                      <h2 className="mt-2 text-2xl font-bold text-gray-900">
-                        {ticketDetails.title}
-                      </h2>
+                  <div className="rounded-2xl border border-blue-100 bg-blue-50/30 p-5">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
+                          Ticket #{ticketDetails.ticketNumber}
+                        </p>
 
-                      <p className="mt-2 text-sm text-gray-500">
-                        Created{" "}
-                        {new Date(ticketDetails.createdAt).toLocaleString()}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-violet-600">
-                        Ticket #{ticketDetails.ticketNumber}
-                      </p>
-                      <Link
-                        href={`/dashboard/tickets/${ticketDetails.id}/messages`}
+                        <h2 className="mt-2 text-2xl font-bold text-slate-900">
+                          {ticketDetails.title}
+                        </h2>
+
+                        <p className="mt-2 text-sm text-slate-500">
+                          Created{" "}
+                          {new Date(ticketDetails.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                      <span
+                        className={`w-fit rounded-full px-2.5 py-1 text-xs font-medium ${getTicketStatusClass(
+                          ticketDetails.status,
+                        )}`}
                       >
-                        Message
-                      </Link>
+                        {ticketDetails.status.replaceAll("_", " ")}
+                      </span>
                     </div>
                   </div>
-
-                  {/* Status / priority / category */}
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                    <div className="rounded-xl border border-violet-100 bg-violet-50/60 p-4">
-                      <p className="text-xs font-medium text-gray-500">
-                        Status
-                      </p>
-                      <p className="mt-2 font-semibold text-violet-700">
-                        {ticketDetails.status}
-                      </p>
-                    </div>
-
-                    <div className="rounded-xl border border-amber-100 bg-amber-50/60 p-4">
-                      <p className="text-xs font-medium text-gray-500">
+                  {/*  priority / category */}
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div className="rounded-xl border border-blue-100 bg-white p-4">
+                      <p className="text-xs font-medium text-slate-500">
                         Priority
                       </p>
-                      <p className="mt-2 font-semibold text-amber-700">
+                      <span
+                        className={`mt-2 inline-block rounded-full px-2.5 py-1 text-xs font-medium ${
+                          PRIORITY_STYLES[ticketDetails.priority] ??
+                          "bg-slate-100 text-slate-600"
+                        }`}
+                      >
                         {ticketDetails.priority}
-                      </p>
+                      </span>
                     </div>
 
-                    <div className="rounded-xl border border-sky-100 bg-sky-50/60 p-4">
-                      <p className="text-xs font-medium text-gray-500">
+                    <div className="rounded-xl border border-blue-100 bg-white p-4">
+                      <p className="text-xs font-medium text-slate-500">
                         Category
                       </p>
-                      <p className="mt-2 font-semibold text-sky-700">
+                      <p className="mt-2 font-semibold text-slate-800">
                         {ticketDetails.category}
                       </p>
                     </div>
                   </div>
-
                   {/* Description */}
-                  <div className="rounded-2xl border border-gray-100 p-5">
-                    <h3 className="font-semibold text-gray-900">Description</h3>
-                    <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-gray-600">
+                  <div className="rounded-2xl border border-blue-100 bg-white p-5">
+                    <h3 className="font-semibold text-slate-900">
+                      Description
+                    </h3>
+                    <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-600">
                       {ticketDetails.description}
                     </p>
                   </div>
 
-                  {/* People / assignment */}
-                  <div className="rounded-2xl border border-gray-100 p-5">
-                    <h3 className="font-semibold text-gray-900">
-                      People & Assignment
-                    </h3>
+                  {/* People / Assignment */}
+                  <div className="rounded-2xl border border-blue-100 bg-white p-5">
+                    <div>
+                      <h3 className="font-semibold text-slate-900">
+                        People & Assignment
+                      </h3>
 
-                    <div className="mt-4 space-y-4">
-                      <DetailRow
-                        label="Customer"
-                        value={
-                          ticketDetails.customer?.name ??
-                          ticketDetails.customerId ??
-                          "Not available"
-                        }
-                      />
-
-                      <DetailRow
-                        label="Assigned Agent"
-                        value={
-                          ticketDetails.assignedAgent?.name ??
-                          ticketDetails.assignedAgentId ??
-                          "Not assigned"
-                        }
-                      />
-
-                      <DetailRow
-                        label="Assigned Developer"
-                        value={
-                          ticketDetails.assignedDeveloper?.name ??
-                          ticketDetails.assignedDeveloperId ??
-                          "Not assigned"
-                        }
-                      />
+                      <p className="mt-1 text-xs text-slate-500">
+                        Manage the people responsible for this ticket.
+                      </p>
                     </div>
-                  </div>
 
+                    <TicketAssignment
+                      ticket={ticketDetails}
+                      user={user}
+                      agents={agents}
+                      developers={developers}
+                      isAssigning={isAssigningDeveloper}
+                      onAssign={handleAssignDeveloper}
+                      isAssigningAgent={isAssigningAgent}
+                      onAgentAssign={handleAssignAgent}
+                    />
+                  </div>
                   {/* Attachments */}
 
                   {ticketDetails.attachments &&
                     Array.isArray(ticketDetails.attachments) &&
                     ticketDetails.attachments.length > 0 && (
-                      <section className="rounded-xl border border-[#EAE5F5] bg-white p-5">
-                        <h3 className="mb-4 font-semibold text-[#29243A]">
+                      <section className="rounded-xl border border-blue-100 bg-white p-5">
+                        <h3 className="mb-4 font-semibold text-slate-900">
                           Attachments
                         </h3>
 
@@ -280,7 +308,6 @@ export default function TicketsPage() {
                                         "path" in attachment
                                       ? String(attachment.path)
                                       : "";
-                              console.log("FILE PATH: ", filePath);
 
                               if (!filePath) return null;
 
@@ -323,7 +350,7 @@ export default function TicketsPage() {
                                       href={fileUrl}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="block overflow-hidden rounded-lg border border-[#EAE5F5]"
+                                      className="block overflow-hidden rounded-lg border border-blue-100"
                                     >
                                       <img
                                         src={fileUrl}
@@ -336,16 +363,13 @@ export default function TicketsPage() {
                                       href={fileUrl}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="flex items-center gap-3 rounded-lg border border-[#EAE5F5] p-3 transition hover:bg-[#FAF8FF]"
+                                      className="flex items-center gap-3 rounded-lg border border-blue-100 p-3 transition hover:bg-blue-50/40"
                                     >
-                                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[#F0ECFF] text-sm font-bold text-[#6C5DD3]">
+                                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-sm font-bold text-blue-700">
                                         {isPdf ? "PDF" : "FILE"}
                                       </span>
-
-                                      <span className="min-w-0">
-                                        <span className="text-xs text-[#817A94]">
-                                          Open attachment
-                                        </span>
+                                      <span className="text-xs text-slate-500">
+                                        Open attachment
                                       </span>
                                     </a>
                                   )}
@@ -358,8 +382,8 @@ export default function TicketsPage() {
                     )}
 
                   {/* Timeline */}
-                  <div className="rounded-2xl border border-gray-100 p-5">
-                    <h3 className="font-semibold text-gray-900">Timeline</h3>
+                  <div className="rounded-2xl border border-blue-100 p-5">
+                    <h3 className="font-semibold text-slate-900">Timeline</h3>
 
                     <div className="mt-4 space-y-3">
                       <DetailRow

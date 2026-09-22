@@ -7,7 +7,7 @@ interface TicketPerson {
   email: string;
 }
 
-interface Ticket {
+export interface Ticket {
   id: string;
   ticketNumber: number;
   title: string;
@@ -41,6 +41,9 @@ interface TicketState {
   isCreating: boolean;
   createError: string | null;
   createdTicketId: string | null;
+
+  isUpdatingStatus: boolean;
+  statusUpdateError: string | null;
 }
 
 interface CreateTicketResponse {
@@ -73,6 +76,9 @@ const initialState: TicketState = {
   isCreating: false,
   createError: null,
   createdTicketId: null,
+
+  isUpdatingStatus: false,
+  statusUpdateError: null,
 };
 
 export const createTicket = createAsyncThunk<
@@ -170,6 +176,56 @@ export const fetchTicketDetails = createAsyncThunk<
   }
 });
 
+export const developerUpdateTicket = createAsyncThunk(
+  "ticket/developer_update",
+  async (ticketId: string, { rejectWithValue }) => {
+    try {
+      const response = await fetch(
+        `${API_URL}/tickets/developer_update/${ticketId}`,
+        {
+          method: "PATCH",
+          credentials: "include",
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return rejectWithValue(data.message || "Failed to update ticket.");
+      }
+
+      return data.data.updateTicket;
+    } catch (error) {
+      return rejectWithValue("Something went wrong.");
+    }
+  },
+);
+
+export const resolveTicket = createAsyncThunk(
+  "ticket/resolve_ticket",
+  async (ticketId: string, { rejectWithValue }) => {
+    try {
+      const response = await fetch(
+        `${API_URL}/tickets/ticket_resolved/${ticketId}`,
+        {
+          method: "PATCH",
+          credentials: "include",
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return rejectWithValue(data.message || "Failed to resolve ticket.");
+      }
+
+      return data.data.updatedTicket;
+    } catch (error) {
+      return rejectWithValue("Something went wrong.");
+    }
+  },
+);
+
 const ticketSlice = createSlice({
   name: "ticketSlice",
   initialState,
@@ -223,6 +279,61 @@ const ticketSlice = createSlice({
           action.payload ||
           action.error.message ||
           "Failed to fetch ticket details.";
+      })
+      .addCase(developerUpdateTicket.pending, (state) => {
+        state.isUpdatingStatus = true;
+        state.statusUpdateError = null;
+      })
+
+      .addCase(developerUpdateTicket.fulfilled, (state, action) => {
+        state.isUpdatingStatus = false;
+        state.statusUpdateError = null;
+
+        const updatedTicket = action.payload;
+
+        state.ticketDetails = updatedTicket;
+
+        const index = state.tickets.findIndex(
+          (ticket) => ticket.id === updatedTicket.id,
+        );
+
+        if (index !== -1) {
+          state.tickets[index] = updatedTicket;
+        }
+      })
+
+      .addCase(developerUpdateTicket.rejected, (state, action) => {
+        state.isUpdatingStatus = false;
+        state.statusUpdateError =
+          (action.payload as string) || "Failed to update ticket.";
+      })
+
+      .addCase(resolveTicket.pending, (state) => {
+        state.isUpdatingStatus = true;
+        state.statusUpdateError = null;
+      })
+
+      .addCase(resolveTicket.fulfilled, (state, action) => {
+        state.isUpdatingStatus = false;
+        state.statusUpdateError = null;
+
+        const updatedTicket = action.payload;
+
+        state.ticketDetails = updatedTicket;
+
+        const index = state.tickets.findIndex(
+          (ticket) => ticket.id === updatedTicket.id,
+        );
+
+        if (index !== -1) {
+          state.tickets[index] = updatedTicket;
+        }
+      })
+
+      .addCase(resolveTicket.rejected, (state, action) => {
+        state.isUpdatingStatus = false;
+        state.statusUpdateError =
+          (action.payload as string) || "Failed to resolve ticket.";
       });
   },
 });

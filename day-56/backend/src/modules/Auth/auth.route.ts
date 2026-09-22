@@ -27,6 +27,7 @@ router.get(
         name: true,
         email: true,
         role: true,
+        isActive: true,
       },
     });
     return sendResponse(res, 200, "User found", user);

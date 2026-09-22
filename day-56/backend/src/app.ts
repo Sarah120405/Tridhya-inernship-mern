@@ -24,7 +24,7 @@ io.use(socketAuthMiddleware);
 
 io.on("connection", (socket) => {
   console.log("Socket connected:", socket.id);
-  /* console.log("Authenticated user:", socket.data.user); */
+  console.log("Authenticated user:", socket.data.user);
   registerSocketHandlers(socket);
 
   socket.on("disconnect", () => {

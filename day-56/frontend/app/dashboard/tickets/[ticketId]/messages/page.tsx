@@ -4,8 +4,10 @@ import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../../../../store/store";
 import { useEffect, useRef, useState } from "react";
 import {
+  addMessage,
   createTicketMessage,
   fetchTicketMessage,
+  Message,
 } from "../../../../store/slice/messageSlice";
 import { useParams } from "next/navigation";
 import { fetchTicketDetails } from "../../../../store/slice/ticketSlice";
@@ -13,6 +15,7 @@ import {
   agentAssistance,
   clearAgentAssistance,
 } from "../../../../store/slice/aiSlice";
+import { socket } from "../../../../lib/socket";
 
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
@@ -86,6 +89,44 @@ export default function MessagePage() {
     dispatch(fetchTicketDetails(ticketId));
     dispatch(fetchTicketMessage(ticketId));
   }, [dispatch, ticketId]);
+
+  useEffect(() => {
+    if (!ticketId) return;
+
+    const handleTicketJoined = (data: { ticketId: string; room: string }) => {
+      console.log("🔥 JOINED TICKET ROOM:", data);
+    };
+
+    const handleTicketError = (error: { message: string }) => {
+      console.error("🔥 SOCKET TICKET ERROR:", error.message);
+    };
+
+    const handleNewMessage = (message: Message) => {
+      console.log("🔥 NEW MESSAGE RECEIVED:", message);
+
+      dispatch(addMessage(message));
+    };
+
+    socket.on("ticketJoined", handleTicketJoined);
+    socket.on("ticketError", handleTicketError);
+    socket.on("newMessage", handleNewMessage);
+
+    console.log("🔥 CONNECTING SOCKET...");
+
+    socket.connect();
+
+    console.log("🔥 EMITTING JOIN TICKET:", ticketId);
+
+    socket.emit("joinTicket", ticketId);
+
+    return () => {
+      socket.off("ticketJoined", handleTicketJoined);
+      socket.off("ticketError", handleTicketError);
+      socket.off("newMessage", handleNewMessage);
+
+      socket.disconnect();
+    };
+  }, [ticketId, dispatch]);
 
   const listRef = useRef<HTMLDivElement>(null);
   useEffect(() => {

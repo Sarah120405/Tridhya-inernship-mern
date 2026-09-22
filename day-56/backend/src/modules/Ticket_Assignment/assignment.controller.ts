@@ -17,7 +17,7 @@ export async function assignToAgentController(
 
     const ticket = await assignTicketToAgent(
       ticketId,
-      req.body.userId,
+      req.body.agentId,
       req.user.id,
     );
 

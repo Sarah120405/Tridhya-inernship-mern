@@ -2,11 +2,12 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 const API_URL = "http://localhost:5000/api";
 
-interface User {
+export interface User {
   id: string;
   name: string;
   email: string;
   role: "Customer" | "SupportAgent" | "Developer" | "Admin";
+  isActive: boolean;
 }
 
 interface AuthState {

@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 const API_URL = "http://localhost:5000/api";
 
-interface Message {
+export interface Message {
   id: string;
   ticketId: string;
   senderId: string;
@@ -128,10 +128,25 @@ const initialState: MessageState = {
   isSending: false,
   sendError: null,
 };
+
+function addMessageIfNotExists(messages: Message[], message: Message) {
+  const alreadyExists = messages.some(
+    (existingMsg) => existingMsg.id === message.id,
+  );
+
+  if (!alreadyExists) {
+    messages.push(message);
+  }
+}
+
 const messageSlice = createSlice({
   name: "messageSlice",
   initialState,
-  reducers: {},
+  reducers: {
+    addMessage: (state, action) => {
+      addMessageIfNotExists(state.messages, action.payload as Message);
+    },
+  },
   extraReducers(builder) {
     builder
       .addCase(fetchTicketMessage.pending, (state) => {
@@ -153,8 +168,10 @@ const messageSlice = createSlice({
       })
 
       .addCase(createTicketMessage.fulfilled, (state, action) => {
+        addMessageIfNotExists(state.messages, action.payload as Message);
+
         state.isSending = false;
-        state.messages.push(action.payload);
+        state.sendError = null;
       })
 
       .addCase(createTicketMessage.rejected, (state, action) => {
@@ -165,4 +182,5 @@ const messageSlice = createSlice({
   },
 });
 
+export const { addMessage } = messageSlice.actions;
 export default messageSlice.reducer;
