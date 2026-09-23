@@ -5,6 +5,8 @@ import TicketReducer from "./slice/ticketSlice";
 import MessageReducer from "./slice/messageSlice";
 import UserReducer from "./slice/userSlice";
 import AssignmentReducer from "./slice/assignmentSlice";
+import ActivityReducer from "./slice/activitySlice";
+import SlaReducer from "./slice/slaSlice";
 const store = configureStore({
   reducer: {
     auth: AuthReducer,
@@ -13,6 +15,8 @@ const store = configureStore({
     message: MessageReducer,
     user: UserReducer,
     assignment: AssignmentReducer,
+    activity: ActivityReducer,
+    sla: SlaReducer,
   },
 });
 

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Ticket } from "../../store/slice/ticketSlice";
 import { User } from "../../store/slice/userSlice";
+import { AgentAssistance } from "../../store/slice/aiSlice";
 
 interface TicketAssignmentProps {
   ticket: Ticket;
@@ -9,10 +10,11 @@ interface TicketAssignmentProps {
   developers: User[];
   isAssigning: boolean;
   onAssign: (developerId: string) => void;
-
   isAssigningAgent: boolean;
   onAgentAssign: (agentId: string) => void;
+  agentAssistance: AgentAssistance | null;
 }
+
 export default function TicketAssignment({
   ticket,
   user,
@@ -22,12 +24,26 @@ export default function TicketAssignment({
   onAssign,
   isAssigningAgent,
   onAgentAssign,
+  agentAssistance,
 }: TicketAssignmentProps) {
   const [selectedDeveloperId, setSelectedDeveloperId] = useState("");
   const [selectedAgentId, setSelectedAgentId] = useState("");
+
+  const canAssignDeveloper =
+    (user?.role === "SupportAgent" || user?.role === "Admin") &&
+    !ticket.assignedDeveloperId &&
+    agentAssistance?.escalationRecommended &&
+    ["OPEN", "IN_PROGRESS"].includes(ticket.status);
+
+  const canReassignDeveloper =
+    (user?.role === "SupportAgent" || user?.role === "Admin") &&
+    !!ticket.assignedDeveloperId &&
+    ["ESCALATED", "IN_DEVELOPMENT"].includes(ticket.status);
+  console.log(ticket.assignedDeveloper?.name);
+
   return (
     <>
-      <div className="mt-5 space-y-4">
+      <div className="space-y-4">
         <div className="rounded-xl border border-blue-100 bg-blue-50/40 p-4">
           <p className="text-xs font-medium text-slate-500">Customer</p>
           <p className="mt-1 font-semibold text-slate-800">
@@ -47,7 +63,7 @@ export default function TicketAssignment({
                   "Not assigned"}
               </p>
             </div>
-            {user?.role === "Admin" && !ticket.assignedAgentId && (
+            {user?.role === "Admin" && (
               <div className="flex flex-col gap-3 sm:flex-row">
                 <select
                   value={selectedAgentId}
@@ -70,12 +86,45 @@ export default function TicketAssignment({
                   onClick={() => onAgentAssign(selectedAgentId)}
                   className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {isAssigningAgent ? "Assigning..." : "Assign Support Agent"}
+                  {isAssigningAgent
+                    ? ticket.assignedAgentId
+                      ? "Reassigning..."
+                      : "Assigning..."
+                    : ticket.assignedAgentId
+                      ? "Reassign Agent"
+                      : "Assign Support Agent"}
                 </button>
               </div>
             )}
           </div>
         </div>
+        {agentAssistance?.escalationRecommended &&
+          (user?.role === "SupportAgent" || user?.role === "Admin") &&
+          ["OPEN", "IN_PROGRESS"].includes(ticket.status) && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+              <div className="flex items-start gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+                  ⚠
+                </div>
+
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-amber-900">
+                    AI recommends escalation
+                  </p>
+
+                  {agentAssistance.escalationReason && (
+                    <p className="mt-1 text-sm leading-6 text-amber-800">
+                      {agentAssistance.escalationReason}
+                    </p>
+                  )}
+
+                  <p className="mt-2 text-xs font-medium text-amber-700">
+                    Confidence: {Math.round(agentAssistance.confidence * 100)}%
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
         {/* Developer */}
         <div className="rounded-xl border border-blue-100 bg-blue-50/40 p-4">
@@ -90,34 +139,39 @@ export default function TicketAssignment({
               </p>
             </div>
 
-            {(user?.role === "SupportAgent" || user?.role === "Admin") &&
-              !ticket.assignedDeveloperId && (
-                <div className="flex flex-col gap-3 sm:flex-row">
-                  <select
-                    value={selectedDeveloperId}
-                    onChange={(e) => setSelectedDeveloperId(e.target.value)}
-                    disabled={isAssigning}
-                    className="flex-1 rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-500"
-                  >
-                    <option value="">Select developer</option>
+            {(canAssignDeveloper || canReassignDeveloper) && (
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <select
+                  value={selectedDeveloperId}
+                  onChange={(e) => setSelectedDeveloperId(e.target.value)}
+                  disabled={isAssigning}
+                  className="flex-1 rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-500"
+                >
+                  <option value="">Select developer</option>
 
-                    {developers.map((developer) => (
-                      <option key={developer.id} value={developer.id}>
-                        {developer.name}
-                      </option>
-                    ))}
-                  </select>
+                  {developers.map((developer) => (
+                    <option key={developer.id} value={developer.id}>
+                      {developer.name}
+                    </option>
+                  ))}
+                </select>
 
-                  <button
-                    type="button"
-                    disabled={!selectedDeveloperId || isAssigning}
-                    onClick={() => onAssign(selectedDeveloperId)}
-                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {isAssigning ? "Assigning..." : "Assign Developer"}
-                  </button>
-                </div>
-              )}
+                <button
+                  type="button"
+                  disabled={!selectedDeveloperId || isAssigning}
+                  onClick={() => onAssign(selectedDeveloperId)}
+                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isAssigning
+                    ? ticket.assignedDeveloperId
+                      ? "Reassigning..."
+                      : "Assigning..."
+                    : ticket.assignedDeveloperId
+                      ? "Reassign Developer"
+                      : "Assign Developer"}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

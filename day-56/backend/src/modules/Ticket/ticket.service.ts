@@ -186,10 +186,28 @@ export async function getTicketsDetails(
       id: ticketId,
       assignedDeveloperId: userId,
     };
+    include = {
+      assignedDeveloper: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    };
   } else if (role === "SupportAgent") {
     where = {
       id: ticketId,
       assignedAgentId: userId,
+    };
+    include = {
+      assignedDeveloper: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
     };
   } else if (role === "Customer") {
     where = {
@@ -288,6 +306,15 @@ export async function getTicketActivity(
     },
     orderBy: {
       createdAt: "asc",
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          role: true,
+        },
+      },
     },
   });
 

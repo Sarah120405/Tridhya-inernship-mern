@@ -1,14 +1,15 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { Ticket } from "./ticketSlice";
 import { User } from "./authSlice";
+import { AgentAssistance } from "./aiSlice";
 
 const API_URL = "http://localhost:5000/api";
 
 interface AssignDeveloperPayload {
   ticketId: string;
   developerId: string;
+  aiSuggestion: AgentAssistance | null;
 }
-
 interface AssignDeveloperResponse {
   success: boolean;
   message: string;
@@ -63,7 +64,7 @@ export const assignDeveloper = createAsyncThunk<
   { rejectValue: string }
 >(
   "assignment/assignDeveloper",
-  async ({ ticketId, developerId }, { rejectWithValue }) => {
+  async ({ ticketId, developerId, aiSuggestion }, { rejectWithValue }) => {
     try {
       const response = await fetch(
         `${API_URL}/ticket_assigned/developer/${ticketId}`,
@@ -75,6 +76,7 @@ export const assignDeveloper = createAsyncThunk<
           },
           body: JSON.stringify({
             developerId,
+            aiSuggestion,
           }),
         },
       );

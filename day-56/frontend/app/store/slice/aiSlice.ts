@@ -9,7 +9,7 @@ interface AiSuggestion {
   reasoning: string;
 }
 
-interface AgentAssistance {
+export interface AgentAssistance {
   suggestedResponse: string;
   escalationRecommended: boolean;
   escalationReason: string | null;
@@ -19,6 +19,7 @@ interface AgentAssistance {
 interface AiState {
   suggestion: AiSuggestion | null;
   agentAssistance: AgentAssistance | null;
+  agentAssistanceTicketId: string | null;
 
   isLoading: boolean;
   isAgentAssistanceLoading: boolean;
@@ -32,6 +33,7 @@ interface AiState {
 const initialState: AiState = {
   suggestion: null,
   agentAssistance: null,
+  agentAssistanceTicketId: null,
 
   isLoading: false,
   isAgentAssistanceLoading: false,
@@ -46,6 +48,11 @@ interface TicketSuggestionInput {
   title: string;
   description: string;
   customerCategory: string;
+}
+
+interface AgentAssistanceResult {
+  ticketId: string;
+  assistance: AgentAssistance;
 }
 
 export const ticketSuggestion = createAsyncThunk<
@@ -79,7 +86,7 @@ export const ticketSuggestion = createAsyncThunk<
 );
 
 export const agentAssistance = createAsyncThunk<
-  AgentAssistance,
+  AgentAssistanceResult,
   string,
   { rejectValue: string }
 >("ai/agent_assistance", async (ticketId, { rejectWithValue }) => {
@@ -98,7 +105,7 @@ export const agentAssistance = createAsyncThunk<
       return rejectWithValue(res.message || "Unable to get AI assistance.");
     }
 
-    return res.data as AgentAssistance;
+    return { ticketId, assistance: res.data as AgentAssistance };
   } catch {
     return rejectWithValue("Network error. Please try again.");
   }
@@ -125,6 +132,7 @@ const aiSlice = createSlice({
     },
     clearAgentAssistance: (state) => {
       state.agentAssistance = null;
+      state.agentAssistanceTicketId = null;
       state.agentAssistanceError = null;
     },
   },
@@ -150,15 +158,19 @@ const aiSlice = createSlice({
         state.isAgentAssistanceLoading = true;
         state.agentAssistanceError = null;
         state.agentAssistance = null;
+        state.agentAssistanceTicketId = null;
       })
 
       .addCase(agentAssistance.fulfilled, (state, action) => {
         state.isAgentAssistanceLoading = false;
-        state.agentAssistance = action.payload;
+        state.agentAssistanceTicketId = action.payload.ticketId;
+        state.agentAssistance = action.payload.assistance;
       })
 
       .addCase(agentAssistance.rejected, (state, action) => {
         state.isAgentAssistanceLoading = false;
+        state.agentAssistance = null;
+        state.agentAssistanceTicketId = null;
         state.agentAssistanceError =
           action.payload ?? "Unable to get AI assistance.";
       });

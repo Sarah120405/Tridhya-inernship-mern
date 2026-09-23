@@ -30,6 +30,95 @@ function calculateRemainingTime(dueAt: Date, now: Date = new Date()) {
   return timeRemaining;
 }
 
+export async function getSLA(
+  userId: string,
+  userRole: string,
+  page: number,
+  limit: number,
+  priority?: string,
+  search?: string,
+) {
+  const skip = (page - 1) * limit;
+  let whereCondition: any = {};
+
+  if (userRole === "Customer") {
+    whereCondition.ticket = {
+      customerId: userId,
+    };
+  } else if (userRole === "SupportAgent") {
+    whereCondition.ticket = {
+      assignedAgentId: userId,
+    };
+  } else if (userRole === "Developer") {
+    whereCondition.ticket = {
+      assignedDeveloperId: userId,
+    };
+  } else if (userRole !== "Admin") {
+    throw {
+      status: 403,
+      message: "Unauthorized.",
+    };
+  }
+  if (priority && priority !== "ALL") {
+    whereCondition.ticket = {
+      ...(whereCondition.ticket || {}),
+      priority,
+    };
+  }
+
+  if (search) {
+    whereCondition.ticket = {
+      ...(whereCondition.ticket || {}),
+      OR: [
+        {
+          title: {
+            contains: search,
+            mode: "insensitive",
+          },
+        },
+        ...(Number.isNaN(Number(search))
+          ? []
+          : [{ ticketNumber: Number(search) }]),
+      ],
+    };
+  }
+  const [sla, total] = await prisma.$transaction([
+    prisma.sLA.findMany({
+      where: whereCondition,
+      include: {
+        ticket: {
+          select: {
+            id: true,
+            ticketNumber: true,
+            title: true,
+            priority: true,
+            status: true,
+            customerId: true,
+            assignedAgentId: true,
+            assignedDeveloperId: true,
+          },
+        },
+      },
+      skip,
+      take: limit,
+    }),
+
+    prisma.sLA.count({
+      where: whereCondition,
+    }),
+  ]);
+
+  return {
+    data: sla,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+}
+
 export async function getSLAByTicketId(
   ticketId: string,
   userId: string,

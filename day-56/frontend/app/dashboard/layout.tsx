@@ -20,6 +20,7 @@ import {
   Menu,
   X,
   Headset,
+  AlertCircleIcon,
 } from "lucide-react";
 import { fetchCurrentUser, logOut } from "../store/slice/authSlice";
 
@@ -36,7 +37,7 @@ const navigation = [
     icon: Plus,
   },
   { name: "Messages", href: "/messages", icon: MessageSquare },
-  { name: "Knowledge Base", href: "/knowledge-base", icon: BookOpen },
+  { name: "SLA Breach", href: "dashboard/sla", icon: AlertCircleIcon },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 

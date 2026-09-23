@@ -10,16 +10,24 @@ import {
 } from "../../store/slice/ticketSlice";
 import Link from "next/link";
 import TicektList from "../../components/Tickets/TicketListItem";
-import {
-  getTicketStatusClass,
-  PRIORITY_STYLES,
-} from "../../utils/ticketStyles";
 import TicketAssignment from "../../components/Tickets/TicketAssignment";
 import {
   assignAgent,
   assignDeveloper,
 } from "../../store/slice/assignmentSlice";
 import { getDevelopers, getSupportAgents } from "../../store/slice/userSlice";
+import {
+  agentAssistance,
+  clearAgentAssistance,
+} from "../../store/slice/aiSlice";
+import TicketSummary from "../../components/Tickets/TicketSummary";
+import TicketMetaCards from "../../components/Tickets/TicketMetaCards";
+import TicketAttachments from "../../components/Tickets/TicketAttachments";
+import {
+  clearActivity,
+  fetchTicketActivity,
+} from "../../store/slice/activitySlice";
+import TicketTimeline from "../../components/Tickets/TicketTimeline";
 
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
@@ -32,17 +40,12 @@ function DetailRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-function formatDate(value?: string | Date | null) {
-  if (!value) return "—";
-
-  const date = new Date(value);
-
-  return Number.isNaN(date.getTime()) ? "—" : date.toLocaleString();
-}
-
 export default function TicketsPage() {
+  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<
+    "overview" | "people" | "attachments" | "activity"
+  >("overview");
   const dispatch = useDispatch<AppDispatch>();
-
   const {
     tickets,
     isLoading,
@@ -55,24 +58,41 @@ export default function TicketsPage() {
   const user = useSelector((state: RootState) => state.auth.user);
   const developers = useSelector((state: RootState) => state.user.developers);
   const agents = useSelector((state: RootState) => state.user.supportAgents);
-
+  const {
+    agentAssistance: aiAssistance,
+    agentAssistanceTicketId,
+    agentAssistanceError,
+    isAgentAssistanceLoading,
+  } = useSelector((state: RootState) => state.ai);
   const {
     isAssigningDeveloper,
     assignmentError,
     agentAssignmentError,
     isAssigningAgent,
   } = useSelector((state: RootState) => state.assignment);
-  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
-
+  const {
+    activities,
+    isLoading: activityLoading,
+    error,
+  } = useSelector((state: RootState) => state.activity);
   useEffect(() => {
     dispatch(fetchTickets());
-    dispatch(getDevelopers());
-    dispatch(getSupportAgents());
-  }, [dispatch]);
 
-  const selectedTicket = tickets.find(
-    (ticket) => ticket.id === selectedTicketId,
-  );
+    if (user?.role === "Admin") {
+      dispatch(getDevelopers());
+      dispatch(getSupportAgents());
+    }
+
+    if (user?.role === "SupportAgent") {
+      dispatch(getDevelopers());
+    }
+  }, [dispatch, user?.role]);
+
+  useEffect(() => {
+    if (!ticketDetails?.id) return;
+
+    dispatch(fetchTicketActivity(ticketDetails.id));
+  }, [dispatch, ticketDetails?.id]);
 
   if (isLoading && tickets.length === 0) {
     return <div className="p-6 text-gray-500">Loading tickets...</div>;
@@ -84,16 +104,28 @@ export default function TicketsPage() {
 
   const handleSelectTicket = (ticketId: string) => {
     setSelectedTicketId(ticketId);
+    setActiveTab("overview");
     dispatch(fetchTicketDetails(ticketId));
+    dispatch(clearAgentAssistance());
+    dispatch(clearActivity());
+    const selectedTicket = tickets.find((ticket) => ticket.id === ticketId);
+    if (
+      selectedTicket &&
+      ["OPEN", "IN_PROGRESS"].includes(selectedTicket.status)
+    ) {
+      dispatch(agentAssistance(ticketId));
+    }
   };
 
   const handleAssignDeveloper = async (developerId: string) => {
     if (!ticketDetails) return;
 
+    const isReassignment = Boolean(ticketDetails.assignedDeveloperId);
     const result = await dispatch(
       assignDeveloper({
         ticketId: ticketDetails.id,
         developerId,
+        aiSuggestion: isReassignment ? null : aiAssistance,
       }),
     );
 
@@ -101,6 +133,9 @@ export default function TicketsPage() {
       dispatch(fetchTicketDetails(ticketDetails.id));
     }
   };
+
+  const currentTicketAiAssistance =
+    agentAssistanceTicketId === ticketDetails?.id ? aiAssistance : null;
   const handleAssignAgent = async (agentId: string) => {
     if (!ticketDetails) return;
 
@@ -116,9 +151,9 @@ export default function TicketsPage() {
     }
   };
   return (
-    <div className="h-full min-h-0 p-4 lg:p-4">
+    <div className="min-h-0 h-[calc(120vh-5rem)] space-y-2 px-2 flex flex-col gap-4">
       <div
-        className={`grid h-full min-h-0 gap-4 ${
+        className={`shrink-0 grid h-full min-h-0 gap-4 ${
           selectedTicketId
             ? "grid-cols-1 lg:grid-cols-[minmax(320px,0.9fr)_minmax(0,1.6fr)]"
             : "grid-cols-1"
@@ -190,221 +225,110 @@ export default function TicketsPage() {
                 )}
               </div>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto p-5 lg:p-6 scrollbar-none">
+            {ticketDetails && (
+              <div className="shrink-0 border-b border-blue-100 p-3 pb-0">
+                <div className="rounded-2xl border border-blue-100 bg-blue-50/30 p-3">
+                  <TicketSummary ticketDetails={ticketDetails} />
+                </div>
+
+                <div className="mt-4 flex gap-4 overflow-x-auto">
+                  {[
+                    { key: "overview", label: "Overview" },
+                    { key: "people", label: "People & Assignment" },
+                    {
+                      key: "attachments",
+                      label: "Attachments",
+                      count: ticketDetails.attachments?.length,
+                    },
+                    {
+                      key: "activity",
+                      label: "Activity",
+                      count: activities.length,
+                    },
+                  ].map((tab) => (
+                    <button
+                      key={tab.key}
+                      type="button"
+                      onClick={() => setActiveTab(tab.key as typeof activeTab)}
+                      className={`shrink-0 border-b-2 px-1 pb-3 text-sm font-medium transition ${
+                        activeTab === tab.key
+                          ? "border-blue-600 text-blue-700"
+                          : "border-transparent text-slate-500 hover:text-slate-700"
+                      }`}
+                    >
+                      {tab.label}
+                      {tab.count != null && tab.count > 0 && (
+                        <span className="ml-1.5 rounded-full bg-slate-100 px-1.5 py-0.5 text-xs text-slate-600">
+                          {tab.count}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Scrollable: active tab only */}
+            <div className="min-h-0 flex-1 overflow-y-auto p-3 scrollbar-none">
               {isDetailsLoading ? (
-                <p className="p-6 text-sm text-gray-500">
+                <p className="p-6 text-sm text-slate-500">
                   Loading ticket details...
                 </p>
               ) : detailsError ? (
                 <p className="p-6 text-sm text-rose-600">{detailsError}</p>
               ) : ticketDetails ? (
-                <div className="space-y-6">
-                  <div className="rounded-2xl border border-blue-100 bg-blue-50/30 p-5">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                      <div className="min-w-0">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
-                          Ticket #{ticketDetails.ticketNumber}
-                        </p>
+                <>
+                  {activeTab === "overview" && (
+                    <TicketMetaCards ticketDetails={ticketDetails} />
+                  )}
 
-                        <h2 className="mt-2 text-2xl font-bold text-slate-900">
-                          {ticketDetails.title}
-                        </h2>
-
-                        <p className="mt-2 text-sm text-slate-500">
-                          Created{" "}
-                          {new Date(ticketDetails.createdAt).toLocaleString()}
-                        </p>
-                      </div>
-                      <span
-                        className={`w-fit rounded-full px-2.5 py-1 text-xs font-medium ${getTicketStatusClass(
-                          ticketDetails.status,
-                        )}`}
-                      >
-                        {ticketDetails.status.replaceAll("_", " ")}
-                      </span>
-                    </div>
-                  </div>
-                  {/*  priority / category */}
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <div className="rounded-xl border border-blue-100 bg-white p-4">
-                      <p className="text-xs font-medium text-slate-500">
-                        Priority
-                      </p>
-                      <span
-                        className={`mt-2 inline-block rounded-full px-2.5 py-1 text-xs font-medium ${
-                          PRIORITY_STYLES[ticketDetails.priority] ??
-                          "bg-slate-100 text-slate-600"
-                        }`}
-                      >
-                        {ticketDetails.priority}
-                      </span>
-                    </div>
-
-                    <div className="rounded-xl border border-blue-100 bg-white p-4">
-                      <p className="text-xs font-medium text-slate-500">
-                        Category
-                      </p>
-                      <p className="mt-2 font-semibold text-slate-800">
-                        {ticketDetails.category}
-                      </p>
-                    </div>
-                  </div>
-                  {/* Description */}
-                  <div className="rounded-2xl border border-blue-100 bg-white p-5">
-                    <h3 className="font-semibold text-slate-900">
-                      Description
-                    </h3>
-                    <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-600">
-                      {ticketDetails.description}
-                    </p>
-                  </div>
-
-                  {/* People / Assignment */}
-                  <div className="rounded-2xl border border-blue-100 bg-white p-5">
-                    <div>
-                      <h3 className="font-semibold text-slate-900">
-                        People & Assignment
-                      </h3>
-
-                      <p className="mt-1 text-xs text-slate-500">
-                        Manage the people responsible for this ticket.
-                      </p>
-                    </div>
-
-                    <TicketAssignment
-                      ticket={ticketDetails}
-                      user={user}
-                      agents={agents}
-                      developers={developers}
-                      isAssigning={isAssigningDeveloper}
-                      onAssign={handleAssignDeveloper}
-                      isAssigningAgent={isAssigningAgent}
-                      onAgentAssign={handleAssignAgent}
-                    />
-                  </div>
-                  {/* Attachments */}
-
-                  {ticketDetails.attachments &&
-                    Array.isArray(ticketDetails.attachments) &&
-                    ticketDetails.attachments.length > 0 && (
-                      <section className="rounded-xl border border-blue-100 bg-white p-5">
-                        <h3 className="mb-4 font-semibold text-slate-900">
-                          Attachments
+                  {activeTab === "people" && (
+                    <div className="rounded-2xl border border-blue-100 bg-white p-3">
+                      {/* <div>
+                        <h3 className="font-semibold text-slate-900">
+                          People & Assignment
                         </h3>
+                        <p className="mt-1 text-xs text-slate-500">
+                          Manage the people responsible for this ticket.
+                        </p>
+                      </div> */}
+                      <TicketAssignment
+                        ticket={ticketDetails}
+                        user={user}
+                        agents={agents}
+                        developers={developers}
+                        isAssigning={isAssigningDeveloper}
+                        onAssign={handleAssignDeveloper}
+                        isAssigningAgent={isAssigningAgent}
+                        onAgentAssign={handleAssignAgent}
+                        agentAssistance={currentTicketAiAssistance}
+                      />
+                    </div>
+                  )}
 
+                  {activeTab === "attachments" &&
+                    (ticketDetails.attachments?.length ? (
+                      <section className="rounded-xl border border-blue-100 bg-white p-5">
                         <div className="flex gap-4 overflow-x-auto pb-2">
-                          {ticketDetails.attachments.map(
-                            (attachment, index) => {
-                              // Supports either a string path or an object with a URL/path.
-                              const filePath =
-                                typeof attachment === "string"
-                                  ? attachment
-                                  : typeof attachment === "object" &&
-                                      attachment !== null &&
-                                      "url" in attachment
-                                    ? String(attachment.url)
-                                    : typeof attachment === "object" &&
-                                        attachment !== null &&
-                                        "path" in attachment
-                                      ? String(attachment.path)
-                                      : "";
-
-                              if (!filePath) return null;
-
-                              // Normalize Windows backslashes to forward slashes
-                              const normalizedPath = filePath.replace(
-                                /\\/g,
-                                "/",
-                              );
-
-                              // Get only the filename, not the full disk path
-                              const fileName =
-                                normalizedPath.split("/").pop() ||
-                                `Attachment ${index + 1}`;
-
-                              // Build a URL to the Express static uploads route
-                              const fileUrl = `http://localhost:5000/uploads/${encodeURIComponent(fileName)}`;
-
-                              const extension = fileName
-                                .split(".")
-                                .pop()
-                                ?.toLowerCase();
-
-                              const isImage = [
-                                "jpg",
-                                "jpeg",
-                                "png",
-                                "webp",
-                                "gif",
-                              ].includes(extension || "");
-
-                              const isPdf = extension === "pdf";
-
-                              return (
-                                <div
-                                  key={`${filePath}-${index}`}
-                                  className="w-64 shrink-0"
-                                >
-                                  {isImage ? (
-                                    <a
-                                      href={fileUrl}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="block overflow-hidden rounded-lg border border-blue-100"
-                                    >
-                                      <img
-                                        src={fileUrl}
-                                        alt={fileName}
-                                        className="h-48 w-full object-cover transition hover:scale-[1.02]"
-                                      />
-                                    </a>
-                                  ) : (
-                                    <a
-                                      href={fileUrl}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="flex items-center gap-3 rounded-lg border border-blue-100 p-3 transition hover:bg-blue-50/40"
-                                    >
-                                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-sm font-bold text-blue-700">
-                                        {isPdf ? "PDF" : "FILE"}
-                                      </span>
-                                      <span className="text-xs text-slate-500">
-                                        Open attachment
-                                      </span>
-                                    </a>
-                                  )}
-                                </div>
-                              );
-                            },
-                          )}
+                          <TicketAttachments
+                            attachments={ticketDetails.attachments}
+                          />
                         </div>
                       </section>
-                    )}
+                    ) : (
+                      <p className="py-8 text-center text-sm text-slate-500">
+                        No attachments on this ticket.
+                      </p>
+                    ))}
 
-                  {/* Timeline */}
-                  <div className="rounded-2xl border border-blue-100 p-5">
-                    <h3 className="font-semibold text-slate-900">Timeline</h3>
-
-                    <div className="mt-4 space-y-3">
-                      <DetailRow
-                        label="Created"
-                        value={formatDate(ticketDetails.createdAt)}
-                      />
-                      <DetailRow
-                        label="Last updated"
-                        value={formatDate(ticketDetails.updatedAt)}
-                      />
-                      <DetailRow
-                        label="Resolved"
-                        value={formatDate(ticketDetails.resolvedAt)}
-                      />
-                      <DetailRow
-                        label="Closed"
-                        value={formatDate(ticketDetails.closedAt)}
-                      />
-                    </div>
-                  </div>
-                </div>
+                  {activeTab === "activity" && (
+                    <TicketTimeline
+                      activities={activities}
+                      isLoading={activityLoading}
+                      error={error}
+                    />
+                  )}
+                </>
               ) : null}
             </div>
           </section>

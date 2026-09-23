@@ -180,7 +180,7 @@ export default function CreateTicket() {
     }`;
 
   return (
-    <div className="min-h-screen bg-[#EOFFFF] px-4 py-8 sm:px-6 lg:py-12">
+    <div className="min-h-screen bg-[#EOFFFF] px-2 py-8 sm:px-6 lg:py-2">
       <form
         onSubmit={handleSubmit}
         className="mx-auto w-full max-w-3xl space-y-6 rounded-2xl border border-violet-100 bg-white p-5 shadow-sm sm:p-8 lg:p-10"

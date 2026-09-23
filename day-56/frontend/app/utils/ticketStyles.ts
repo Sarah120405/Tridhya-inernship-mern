@@ -1,3 +1,5 @@
+import { TicketActivity } from "../store/slice/activitySlice";
+
 export function getTicketStatusClass(status: string) {
   switch (status) {
     case "OPEN":
@@ -28,4 +30,63 @@ export const PRIORITY_STYLES: Record<string, string> = {
   MEDIUM: "bg-amber-50 text-amber-700",
   HIGH: "bg-orange-50 text-orange-700",
   URGENT: "bg-red-50 text-red-700",
+};
+
+export const formatActivityAction = (action: string) => {
+  switch (action) {
+    case "TICKET_CREATED":
+      return "Ticket Created";
+
+    case "AGENT_ASSIGNED":
+      return "Agent Assigned";
+
+    case "AGENT_REASSIGNED":
+      return "Agent Reassigned";
+
+    case "DEVELOPER_ASSIGNED":
+      return "Developer Assigned";
+
+    case "DEVELOPER_REASSIGNED":
+      return "Developer Reassigned";
+
+    case "DEVELOPER_UPDATED":
+      return "Developer Updated";
+
+    case "TICKET_RESOLVED":
+      return "Ticket Resolved";
+
+    default:
+      return action
+        .replace(/_/g, " ")
+        .toLowerCase()
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+  }
+};
+
+export const getActivityDescription = (activity: TicketActivity) => {
+  switch (activity.action) {
+    case "TICKET_CREATED":
+      return "This ticket was created.";
+
+    case "AGENT_ASSIGNED":
+      return "A support agent was assigned to this ticket.";
+
+    case "AGENT_REASSIGNED":
+      return "The support agent assigned to this ticket was changed.";
+
+    case "DEVELOPER_ASSIGNED":
+      return "A developer was assigned to this ticket.";
+
+    case "DEVELOPER_REASSIGNED":
+      return "The developer assigned to this ticket was changed.";
+
+    case "DEVELOPER_UPDATED":
+      return "The developer updated the ticket.";
+
+    case "TICKET_RESOLVED":
+      return "This ticket was marked as resolved.";
+
+    default:
+      return "Ticket activity was updated.";
+  }
 };
