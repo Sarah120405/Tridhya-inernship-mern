@@ -14,39 +14,39 @@ const router = e.Router();
 
 router.get(
   "/dashboard",
-  requireAuth,
-  requireRole(["Customer"]),
-  customerDashboardController,
+  requireAuth as any,
+  requireRole(["Customer", "SupportAgent", "Developer", "Admin"]) as any,
+  customerDashboardController as any,
 );
 router.get(
   "/ticket_statistics",
-  requireAuth,
-  requireRole(["Admin"]),
-  ticketStatisticsController,
+  requireAuth as any,
+  requireRole(["Admin"]) as any,
+  ticketStatisticsController as any,
 );
 router.get(
   "/ticket_trends",
-  requireAuth,
-  requireRole(["Admin"]),
-  ticketTrendsController,
+  requireAuth as any,
+  requireRole(["Admin"]) as any,
+  ticketTrendsController as any,
 );
 router.get(
   "/ticket_distribution",
-  requireAuth,
-  requireRole(["Admin"]),
-  ticketDistributionController,
+  requireAuth as any,
+  requireRole(["Admin"]) as any,
+  ticketDistributionController as any,
 );
 router.get(
   "/team_performace",
-  requireAuth,
-  requireRole(["Admin"]),
-  teamPerformaceController,
+  requireAuth as any,
+  requireRole(["Admin"]) as any,
+  teamPerformaceController as any,
 );
 router.get(
   "/sla_performance",
-  requireAuth,
-  requireRole(["Admin"]),
-  slaPerformanceController,
+  requireAuth as any,
+  requireRole(["Admin"]) as any,
+  slaPerformanceController as any,
 );
 
 export default router;

@@ -36,3 +36,14 @@ export const formatRole = (role: TicketActivityUser["role"]) => {
       return role;
   }
 };
+
+export const formatHours = (hours: number) => {
+  if (hours < 24) {
+    return `${hours.toFixed(1)} hrs`;
+  }
+
+  const days = Math.floor(hours / 24);
+  const remainingHours = Math.round(hours % 24);
+
+  return `${days}d ${remainingHours}h`;
+};

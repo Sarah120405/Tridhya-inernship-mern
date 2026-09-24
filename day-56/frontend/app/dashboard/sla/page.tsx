@@ -160,7 +160,7 @@ export default function SLAMonitoringPage() {
           Monitor ticket response and resolution deadlines.
         </p>
       </div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <MetricCard
           title="Total Active SLAs"
           description="Currently monitored"
@@ -250,7 +250,7 @@ export default function SLAMonitoringPage() {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto overflow-y-auto max-h-[500px] relative">
+            <div className="overflow-auto max-h-[500px] relative [scrollbar-color:#cbd5e1_transparent] [scrollbar-width:thin]">
               {isLoading && (
                 <div className="absolute inset-0 z-20 bg-white/70 backdrop-blur-[1px]">
                   <div className="flex h-full items-center justify-center">

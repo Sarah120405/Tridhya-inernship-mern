@@ -169,7 +169,7 @@ export default function TicketsPage() {
             </p>
           </div>
 
-          <div className="scrollbar-none min-h-0 flex-1 overflow-y-auto p-4">
+          <div className="min-h-0 flex-1 overflow-y-auto p-4 [scrollbar-color:#cbd5e1_transparent] [scrollbar-width:thin]">
             <div className="space-y-3">
               {tickets.map((ticket) => (
                 <TicektList
@@ -284,14 +284,6 @@ export default function TicketsPage() {
 
                   {activeTab === "people" && (
                     <div className="rounded-2xl border border-blue-100 bg-white p-3">
-                      {/* <div>
-                        <h3 className="font-semibold text-slate-900">
-                          People & Assignment
-                        </h3>
-                        <p className="mt-1 text-xs text-slate-500">
-                          Manage the people responsible for this ticket.
-                        </p>
-                      </div> */}
                       <TicketAssignment
                         ticket={ticketDetails}
                         user={user}

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import {
-  customerDashboard,
+  Dashboard,
   SLAPerformance,
   teamPerformance,
   ticketsDistribution,
@@ -15,7 +15,7 @@ export async function customerDashboardController(
   next: NextFunction,
 ) {
   try {
-    const data = await customerDashboard(req.user.id);
+    const data = await Dashboard(req.user.id, req.user.role);
     return sendResponse(res, 200, "Data retrieved succesfully", data);
   } catch (error) {
     next(error);

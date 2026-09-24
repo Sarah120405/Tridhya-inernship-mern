@@ -190,7 +190,7 @@ const authSlice = createSlice({
       // LOGOUT
       .addCase(logOut.fulfilled, (state) => {
         state.user = null;
-        state.message = null;
+        state.error = null;
       });
   },
 });

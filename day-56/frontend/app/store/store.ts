@@ -7,6 +7,8 @@ import UserReducer from "./slice/userSlice";
 import AssignmentReducer from "./slice/assignmentSlice";
 import ActivityReducer from "./slice/activitySlice";
 import SlaReducer from "./slice/slaSlice";
+import ReportReducer from "./slice/reportSlice";
+
 const store = configureStore({
   reducer: {
     auth: AuthReducer,
@@ -17,6 +19,7 @@ const store = configureStore({
     assignment: AssignmentReducer,
     activity: ActivityReducer,
     sla: SlaReducer,
+    report: ReportReducer,
   },
 });
 

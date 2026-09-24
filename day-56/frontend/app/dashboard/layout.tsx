@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import type { ReactNode } from "react";
 import type { AppDispatch, RootState } from "../store/store";
@@ -23,28 +23,56 @@ import {
   AlertCircleIcon,
 } from "lucide-react";
 import { fetchCurrentUser, logOut } from "../store/slice/authSlice";
+import { FiFile } from "react-icons/fi";
 
 interface CommonLayoutProps {
   children: ReactNode;
 }
 
 const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: House },
-  { name: "Tickets", href: "/dashboard/tickets", icon: Ticket },
+  {
+    name: "Dashboard",
+    href: "/dashboard",
+    icon: House,
+    roles: ["Customer", "SupportAgent", "Developer", "Admin"],
+  },
+  {
+    name: "Tickets",
+    href: "/dashboard/tickets",
+    icon: Ticket,
+    roles: ["Customer", "SupportAgent", "Developer", "Admin"],
+  },
   {
     name: "Create Ticket",
     href: "/dashboard/create-ticket",
     icon: Plus,
+    roles: ["Customer"],
   },
-  { name: "Messages", href: "/messages", icon: MessageSquare },
-  { name: "SLA Breach", href: "dashboard/sla", icon: AlertCircleIcon },
-  { name: "Settings", href: "/settings", icon: Settings },
+  {
+    name: "SLA Monitoring",
+    href: "/dashboard/sla",
+    icon: AlertCircleIcon,
+    roles: ["SupportAgent", "Developer", "Admin"],
+  },
+  {
+    name: "Reports",
+    href: "/dashboard/report",
+    icon: FiFile,
+    roles: ["Admin"],
+  },
+  {
+    name: "Settings",
+    href: "/settings",
+    icon: Settings,
+    roles: ["Customer", "SupportAgent", "Developer", "Admin"],
+  },
 ];
 
 export default function CommonLayout({ children }: CommonLayoutProps) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  const router = useRouter();
   const user = useSelector((state: RootState) => state.auth.user);
   const dispatch = useDispatch<AppDispatch>();
   useEffect(() => {
@@ -71,27 +99,29 @@ export default function CommonLayout({ children }: CommonLayoutProps) {
 
       {/* Navigation */}
       <nav className="flex-1 space-y-2 px-3 py-5">
-        {navigation.map(({ name, href, icon: Icon }) => {
-          const isActive =
-            pathname === href ||
-            (href !== "/dashboard" && pathname.startsWith(`${href}/`));
+        {navigation
+          .filter((item) => user && item.roles.includes(user.role))
+          .map(({ name, href, icon: Icon }) => {
+            const isActive =
+              pathname === href ||
+              (href !== "/dashboard" && pathname.startsWith(`${href}/`));
 
-          return (
-            <Link
-              key={name}
-              href={href}
-              onClick={() => setMobileMenuOpen(false)}
-              className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors ${
-                isActive
-                  ? "bg-indigo-600 text-white shadow-md shadow-indigo-950/20"
-                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
-              }`}
-            >
-              <Icon className="h-5 w-5 shrink-0" />
-              <span>{name}</span>
-            </Link>
-          );
-        })}
+            return (
+              <Link
+                key={name}
+                href={href}
+                onClick={() => setMobileMenuOpen(false)}
+                className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors ${
+                  isActive
+                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-950/20"
+                    : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                }`}
+              >
+                <Icon className="h-5 w-5 shrink-0" />
+                <span>{name}</span>
+              </Link>
+            );
+          })}
       </nav>
 
       {/* Logout */}
@@ -99,9 +129,8 @@ export default function CommonLayout({ children }: CommonLayoutProps) {
         <button
           type="button"
           onClick={() => {
-            console.log("Log out");
-
             dispatch(logOut());
+            router.push("/");
           }}
           className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-300 transition-colors hover:bg-rose-500/10 hover:text-rose-300"
         >

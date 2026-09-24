@@ -1,41 +1,116 @@
 import prisma from "../../config/db.config";
 
-export async function customerDashboard(customerId: string) {
-  const [totalTickets, openTickets, awaitingReply, resolvedTickets] =
-    await Promise.all([
-      prisma.ticket.count({ where: { customerId: customerId } }),
-      prisma.ticket.count({
-        where: { customerId: customerId, status: "OPEN" },
-      }),
-      prisma.ticket.count({
-        where: { customerId: customerId, status: "WAITING_FOR_CUSTOMER" },
-      }),
-      prisma.ticket.count({
-        where: { customerId: customerId, status: "RESOLVED" },
-      }),
-    ]);
+export async function Dashboard(userId: string, userRole: string) {
+  let where: any = {};
+  let whereNeedsAttention: any = {};
+
+  if (userRole === "Customer") {
+    where = {
+      customerId: userId,
+    };
+
+    whereNeedsAttention = {
+      customerId: userId,
+      status: "WAITING_FOR_CUSTOMER",
+    };
+  } else if (userRole === "SupportAgent") {
+    where = {
+      assignedAgentId: userId,
+    };
+
+    whereNeedsAttention = {
+      assignedAgentId: userId,
+      OR: [
+        {
+          priority: "HIGH",
+        },
+        {
+          priority: "URGENT",
+        },
+        {
+          status: "WAITING_FOR_CUSTOMER",
+        },
+      ],
+    };
+  } else if (userRole === "Developer") {
+    where = {
+      assignedDeveloperId: userId,
+    };
+
+    whereNeedsAttention = {
+      assignedDeveloperId: userId,
+      status: "ESCALATED",
+    };
+  } else if (userRole === "Admin") {
+    // Admin can see all tickets
+    where = {};
+
+    whereNeedsAttention = {
+      OR: [
+        {
+          priority: "HIGH",
+        },
+        {
+          priority: "URGENT",
+        },
+        {
+          status: "ESCALATED",
+        },
+      ],
+    };
+  } else {
+    throw {
+      status: 403,
+      message: "Unauthorized.",
+    };
+  }
+
+  const [
+    totalTickets,
+    openTickets,
+    awaitingReply,
+    resolvedTickets,
+    escalatedTickets,
+  ] = await Promise.all([
+    prisma.ticket.count({
+      where,
+    }),
+
+    prisma.ticket.count({
+      where: {
+        ...where,
+        status: "OPEN",
+      },
+    }),
+
+    prisma.ticket.count({
+      where: {
+        ...where,
+        status: "WAITING_FOR_CUSTOMER",
+      },
+    }),
+
+    prisma.ticket.count({
+      where: {
+        ...where,
+        status: "RESOLVED",
+      },
+    }),
+    prisma.ticket.count({
+      where: {
+        ...where,
+        status: "ESCALATED",
+      },
+    }),
+  ]);
 
   const [needsAttention, recentTickets, recentNotifications] =
     await Promise.all([
       prisma.ticket.findMany({
-        where: {
-          customerId,
-          status: "WAITING_FOR_CUSTOMER",
+        where: whereNeedsAttention,
+        orderBy: {
+          updatedAt: "desc",
         },
-        orderBy: { updatedAt: "desc" },
-        take: 5,
-        select: {
-          id: true,
-          ticketNumber: true,
-          title: true,
-          status: true,
-          updatedAt: true,
-        },
-      }),
-
-      prisma.ticket.findMany({
-        where: { customerId },
-        orderBy: { createdAt: "desc" },
         take: 5,
         select: {
           id: true,
@@ -46,11 +121,30 @@ export async function customerDashboard(customerId: string) {
           updatedAt: true,
         },
       }),
+
+      prisma.ticket.findMany({
+        where,
+        orderBy: {
+          createdAt: "desc",
+        },
+        take: 5,
+        select: {
+          id: true,
+          ticketNumber: true,
+          title: true,
+          status: true,
+          priority: true,
+          updatedAt: true,
+        },
+      }),
+
       prisma.ticketActivity.findMany({
         where: {
-          ticket: { customerId: customerId },
+          ticket: where,
         },
-        orderBy: { createdAt: "desc" },
+        orderBy: {
+          createdAt: "desc",
+        },
         take: 5,
         select: {
           id: true,
@@ -66,18 +160,21 @@ export async function customerDashboard(customerId: string) {
         },
       }),
     ]);
+
   return {
     metrics: {
       totalTickets,
       openTickets,
       awaitingReply,
       resolvedTickets,
+      escalatedTickets,
     },
     recentTickets,
     needsAttention,
     recentNotifications,
   };
 }
+
 export async function ticketStatistics() {
   const [totalTickets, openTickets, inProgress, resolved, closed, escalated] =
     await Promise.all([

@@ -16,10 +16,29 @@ export interface AgentAssistance {
   confidence: number;
 }
 
+export interface DeveloperAssistance {
+  id: string;
+  ticketId: string;
+  type: "DEVELOPER_SUMMARY";
+  issueSummary: string;
+  observedBehavior: string;
+  troubleshootingAttempted: string;
+  relevantTechnicalDetails: string;
+  customerImpact: string;
+  developerInvestigation: string;
+  confidence: number;
+  summaryUsed: boolean;
+  createdAt: string;
+}
+
 interface AiState {
   suggestion: AiSuggestion | null;
   agentAssistance: AgentAssistance | null;
   agentAssistanceTicketId: string | null;
+
+  developerAssistance: DeveloperAssistance | null;
+  isLoadingDeveloperAssistance: boolean;
+  developerAssistanceError: string | null;
 
   isLoading: boolean;
   isAgentAssistanceLoading: boolean;
@@ -35,6 +54,9 @@ const initialState: AiState = {
   agentAssistance: null,
   agentAssistanceTicketId: null,
 
+  developerAssistance: null,
+  isLoadingDeveloperAssistance: false,
+  developerAssistanceError: null,
   isLoading: false,
   isAgentAssistanceLoading: false,
 
@@ -111,6 +133,38 @@ export const agentAssistance = createAsyncThunk<
   }
 });
 
+export const fetchDeveloperAssistance = createAsyncThunk<
+  DeveloperAssistance,
+  string,
+  { rejectValue: string }
+>("ai/fetchDeveloperAssistance", async (ticketId, { rejectWithValue }) => {
+  try {
+    const response = await fetch(
+      `${API_URL}/ai/developer_assistance/${ticketId}`,
+      {
+        method: "POST",
+        credentials: "include",
+      },
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return rejectWithValue(
+        data.message || "Failed to generate developer summary.",
+      );
+    }
+
+    return data.data;
+  } catch (error) {
+    console.error("Developer assistance error:", error);
+
+    return rejectWithValue(
+      "Unable to generate developer summary. Please try again.",
+    );
+  }
+});
+
 const aiSlice = createSlice({
   name: "aiSlice",
   initialState,
@@ -134,6 +188,10 @@ const aiSlice = createSlice({
       state.agentAssistance = null;
       state.agentAssistanceTicketId = null;
       state.agentAssistanceError = null;
+    },
+    clearDeveloperAssistance: (state) => {
+      state.developerAssistance = null;
+      state.developerAssistanceError = null;
     },
   },
   extraReducers: (builder) => {
@@ -174,6 +232,21 @@ const aiSlice = createSlice({
         state.agentAssistanceError =
           action.payload ?? "Unable to get AI assistance.";
       });
+    builder
+      .addCase(fetchDeveloperAssistance.pending, (state) => {
+        state.isLoadingDeveloperAssistance = true;
+        state.developerAssistanceError = null;
+      })
+      .addCase(fetchDeveloperAssistance.fulfilled, (state, action) => {
+        state.isLoadingDeveloperAssistance = false;
+        state.developerAssistance = action.payload;
+        state.developerAssistanceError = null;
+      })
+      .addCase(fetchDeveloperAssistance.rejected, (state, action) => {
+        state.isLoadingDeveloperAssistance = false;
+        state.developerAssistanceError =
+          action.payload || "Failed to generate developer summary.";
+      });
   },
 });
 
@@ -182,5 +255,6 @@ export const {
   markSuggestionUsed,
   resetSuggestionUsed,
   clearAgentAssistance,
+  clearDeveloperAssistance,
 } = aiSlice.actions;
 export default aiSlice.reducer;
