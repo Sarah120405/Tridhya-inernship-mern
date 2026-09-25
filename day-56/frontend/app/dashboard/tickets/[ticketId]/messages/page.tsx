@@ -1,5 +1,5 @@
 "use client";
-import { FiMessageSquare, FiRefreshCw, FiSend, FiZap } from "react-icons/fi";
+import { FiMessageSquare, FiRefreshCw, FiZap } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../../../../store/store";
 import { useEffect, useRef, useState } from "react";
@@ -17,67 +17,48 @@ import {
   fetchDeveloperAssistance,
 } from "../../../../store/slice/aiSlice";
 import { socket } from "../../../../lib/socket";
+import TicketSummary from "../../../../components/Tickets/TicketSummary";
+import TicketAssignment from "../../../../components/Tickets/TicketAssignment";
+import {
+  getTicketStatusClass,
+  PRIORITY_STYLES,
+} from "../../../../utils/ticketStyles";
+import MessagePanel from "../../../../components/Message/MessagePanel";
+import AgentAssistance from "../../../../components/Message/AgentAssistance";
+import DeveloperAssistance from "../../../../components/Message/DeveloperAssistance";
+import MessageComposer from "../../../../components/Message/MessageComposer";
+import MessageTabs, {
+  MessageMode,
+} from "../../../../components/Message/MessageTabs";
+import {
+  addInternalMsg,
+  createTicketInternalMsg,
+  fetchTicketInternalMsg,
+  InternalMsg,
+} from "../../../../store/slice/internalMsgSlice";
 
-function DetailRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
-      <span className="text-sm text-slate-500">{label}</span>
-      <span className="break-words text-sm font-medium text-slate-800 sm:max-w-[65%] sm:text-right">
-        {value}
-      </span>
-    </div>
-  );
-}
-
-function getMessageDateKey(date: string | Date) {
-  const messageDate = new Date(date);
-
-  return [
-    messageDate.getFullYear(),
-    messageDate.getMonth(),
-    messageDate.getDate(),
-  ].join("-");
-}
-
-function formatMessageDate(date: string | Date) {
-  return new Date(date).toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-}
-
-function formatMessageTime(date: string | Date) {
-  return new Date(date).toLocaleTimeString("en-IN", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  });
-}
-
-const STATUS_STYLES: Record<string, string> = {
-  OPEN: "bg-blue-50 text-blue-700",
-  IN_PROGRESS: "bg-violet-50 text-violet-700",
-  RESOLVED: "bg-emerald-50 text-emerald-700",
-  CLOSED: "bg-slate-100 text-slate-600",
-};
-const PRIORITY_STYLES: Record<string, string> = {
-  LOW: "bg-slate-100 text-slate-600",
-  MEDIUM: "bg-amber-50 text-amber-700",
-  HIGH: "bg-orange-50 text-orange-700",
-  URGENT: "bg-red-50 text-red-700",
-};
 const CHIP = "rounded-full px-3 py-1 text-xs font-medium";
 const FALLBACK = "bg-slate-100 text-slate-600";
 
 export default function MessagePage() {
   const [messageContent, setMessageContent] = useState("");
   const [isAiDraftUsed, setIsAiDraftUsed] = useState(false);
+  const [messageMode, setMessageMode] = useState<MessageMode | "INTERNAL">(
+    "EXTERNAL",
+  );
+
   const params = useParams<{ ticketId: string }>();
   const ticketId = params.ticketId;
   const { messages, isLoading, fetchError, isSending, sendError } = useSelector(
     (state: RootState) => state.message,
   );
+  const {
+    messages: internalMessages,
+    isLoading: isInternalLoading,
+    fetchError: internalFetchError,
+    sendError: internalSendError,
+    isSending: isInternalSending,
+  } = useSelector((state: RootState) => state.internalMsg);
   const { user } = useSelector((state: RootState) => state.auth);
   const { ticketDetails } = useSelector((state: RootState) => state.ticket);
   const aiDraft = useSelector((state: RootState) => state.ai.agentAssistance);
@@ -90,10 +71,27 @@ export default function MessagePage() {
   } = useSelector((state: RootState) => state.ai);
   const dispatch = useDispatch<AppDispatch>();
   const currentUserId = user?.id;
+  const canViewInternal =
+    user?.role === "SupportAgent" ||
+    user?.role === "Developer" ||
+    user?.role === "Admin";
+
+  const effectiveMode: MessageMode = canViewInternal ? messageMode : "EXTERNAL";
+
+  console.log(effectiveMode);
+
+  const displayedMessages =
+    effectiveMode === "EXTERNAL" ? messages : internalMessages;
+
+  console.log(displayedMessages);
+
   useEffect(() => {
     dispatch(fetchTicketDetails(ticketId));
     dispatch(fetchTicketMessage(ticketId));
-  }, [dispatch, ticketId]);
+    if (messageMode === "INTERNAL") {
+      dispatch(fetchTicketInternalMsg(ticketId));
+    }
+  }, [dispatch, ticketId, messageMode]);
 
   useEffect(() => {
     if (!ticketId) return;
@@ -106,15 +104,24 @@ export default function MessagePage() {
       console.error("🔥 SOCKET TICKET ERROR:", error.message);
     };
 
+    // External/customer conversation message
     const handleNewMessage = (message: Message) => {
-      console.log("🔥 NEW MESSAGE RECEIVED:", message);
+      console.log("🔥 NEW EXTERNAL MESSAGE RECEIVED:", message);
 
       dispatch(addMessage(message));
+    };
+
+    // Internal staff-only message
+    const handleNewInternalMessage = (message: InternalMsg) => {
+      console.log("🔥 NEW INTERNAL MESSAGE RECEIVED:", message);
+
+      dispatch(addInternalMsg(message));
     };
 
     socket.on("ticketJoined", handleTicketJoined);
     socket.on("ticketError", handleTicketError);
     socket.on("newMessage", handleNewMessage);
+    socket.on("newInternalMessage", handleNewInternalMessage);
 
     console.log("🔥 CONNECTING SOCKET...");
 
@@ -128,11 +135,11 @@ export default function MessagePage() {
       socket.off("ticketJoined", handleTicketJoined);
       socket.off("ticketError", handleTicketError);
       socket.off("newMessage", handleNewMessage);
+      socket.off("newInternalMessage", handleNewInternalMessage);
 
       socket.disconnect();
     };
   }, [ticketId, dispatch]);
-
   const listRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = listRef.current;
@@ -142,23 +149,35 @@ export default function MessagePage() {
   const handleSendMessage = async () => {
     const content = messageContent.trim();
 
-    if (!content || isSending) return;
+    if (!content) return;
 
     try {
-      dispatch(
-        createTicketMessage({
-          ticketId,
-          content,
-          aiSuggestionUsed: isAiDraftUsed,
-          ...(isAiDraftUsed && aiDraft ? { aiSuggestion: aiDraft } : {}),
-        }),
-      );
+      if (effectiveMode === "EXTERNAL") {
+        await dispatch(
+          createTicketMessage({
+            ticketId,
+            content,
+            aiSuggestionUsed: isAiDraftUsed,
+            ...(isAiDraftUsed && aiDraft ? { aiSuggestion: aiDraft } : {}),
+          }),
+        ).unwrap();
+      } else {
+        await dispatch(
+          createTicketInternalMsg({
+            ticketId,
+            content,
+          }),
+        ).unwrap();
+      }
 
       setMessageContent("");
       setIsAiDraftUsed(false);
       dispatch(clearAgentAssistance());
-    } catch {}
+    } catch {
+      // Redux stores the appropriate error
+    }
   };
+
   return (
     <div className="h-full min-h-0 p-4 lg:p-6 space-y-2">
       <div className="mb-4 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
@@ -186,16 +205,12 @@ export default function MessagePage() {
                 {ticketDetails?.priority}
               </span>
               <span
-                className={`${CHIP} ${STATUS_STYLES[ticketDetails?.status ?? ""] ?? FALLBACK}`}
+                className={`${CHIP} ${getTicketStatusClass(ticketDetails?.status ?? "") ?? FALLBACK}`}
               >
                 {ticketDetails?.status?.replace("_", " ")}
               </span>
             </div>
           </div>
-        </div>
-
-        <div className="shrink-0">
-          {/* Keep your View Attachments link here */}
         </div>
       </div>
       <div className="grid grid-cols-1 gap-4 items-stretch lg:grid-cols-5 mb-4">
@@ -212,272 +227,117 @@ export default function MessagePage() {
                   </p>
                 </div>
 
-                {user?.role === "SupportAgent" && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsAiDraftUsed(false);
-                      dispatch(agentAssistance(ticketId));
-                    }}
-                    disabled={isAgentAssistanceLoading}
-                    className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 transition hover:bg-indigo-100 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {isAgentAssistanceLoading ? (
-                      <>
-                        <FiRefreshCw className="animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        <FiZap />
-                        Generate AI Reply
-                      </>
-                    )}
-                  </button>
-                )}
+                {messageMode === "EXTERNAL" &&
+                  user?.role === "SupportAgent" && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsAiDraftUsed(false);
+                        dispatch(agentAssistance(ticketId));
+                      }}
+                      disabled={isAgentAssistanceLoading}
+                      className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 transition hover:bg-indigo-100 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {isAgentAssistanceLoading ? (
+                        <>
+                          <FiRefreshCw className="animate-spin" />
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <FiZap />
+                          Generate AI Reply
+                        </>
+                      )}
+                    </button>
+                  )}
               </div>
+              {canViewInternal && (
+                <MessageTabs
+                  mode={effectiveMode}
+                  onChange={setMessageMode}
+                  canViewInternal={canViewInternal}
+                />
+              )}
             </div>
             {user?.role === "SupportAgent" && agentAssistanceError && (
               <div className="mx-4 mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
                 {agentAssistanceError}
               </div>
             )}
-
-            {user?.role === "SupportAgent" && aiDraft && (
-              <div className="mx-4 mt-4 rounded-xl border border-indigo-200 bg-indigo-50/70 p-4">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 font-semibold text-indigo-900">
-                    <FiZap />
-                    AI Reply Draft
-                  </div>
-
-                  <span className="text-xs text-indigo-700">
-                    Confidence: {Math.round(aiDraft.confidence * 100)}%
-                  </span>
-                </div>
-
-                <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-700">
-                  {aiDraft.suggestedResponse}
-                </p>
-
-                {aiDraft.escalationRecommended && (
-                  <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-                    <p className="font-semibold">Escalation recommended</p>
-                    {aiDraft.escalationReason && (
-                      <p className="mt-1">{aiDraft.escalationReason}</p>
-                    )}
-                  </div>
-                )}
-
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMessageContent(aiDraft.suggestedResponse);
-                      setIsAiDraftUsed(true);
-                    }}
-                    className="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-indigo-700"
-                  >
-                    Use this draft
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsAiDraftUsed(false);
-                      dispatch(agentAssistance(ticketId));
-                    }}
-                    disabled={isAgentAssistanceLoading}
-                    className="rounded-lg border border-indigo-200 bg-white px-3 py-2 text-sm font-medium text-indigo-700 transition hover:bg-indigo-50 disabled:opacity-50"
-                  >
-                    Regenerate
-                  </button>
-                </div>
-              </div>
-            )}
-            <div
-              ref={listRef}
-              className="min-h-0 flex-1 overflow-y-auto [scrollbar-width:thin] [scrollbar-color:#cbd5e1_transparent] bg-slate-50 p-4 sm:p-6"
-            >
-              {isLoading ? (
-                <div className="flex h-full min-h-40 items-center justify-center">
-                  <p className="text-sm font-medium text-slate-500">
-                    Loading messages...
-                  </p>
-                </div>
-              ) : fetchError ? (
-                <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                  {fetchError}
-                </div>
-              ) : messages.length === 0 ? (
-                <div className="flex h-full min-h-40 flex-col items-center justify-center text-center">
-                  <FiMessageSquare className="mb-3 text-3xl text-blue-300" />
-                  <p className="font-medium text-slate-700">No messages yet</p>
-                  <p className="mt-1 text-sm text-slate-500">
-                    Start the conversation by sending a message.
-                  </p>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-6">
-                  {messages.map((message, index) => {
-                    const currentDateKey = getMessageDateKey(message.createdAt);
-
-                    const previousMessage = messages[index - 1];
-
-                    const isNewDay =
-                      index === 0 ||
-                      getMessageDateKey(previousMessage.createdAt) !==
-                        currentDateKey;
-                    const isOwnMessage = message.senderId === currentUserId;
-
-                    return (
-                      <div key={message.id}>
-                        {isNewDay && (
-                          <div className="mb-4 flex items-center gap-3">
-                            <div className="h-px flex-1 bg-slate-200" />
-
-                            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-500">
-                              {formatMessageDate(message.createdAt)}
-                            </span>
-
-                            <div className="h-px flex-1 bg-slate-200" />
-                          </div>
-                        )}
-
-                        <div
-                          className={`flex w-full ${
-                            isOwnMessage ? "justify-end" : "justify-start"
-                          }`}
-                        >
-                          <div
-                            className={`flex max-w-[95%] gap-3 sm:max-w-[85%] ${
-                              isOwnMessage ? "flex-row-reverse" : "flex-row"
-                            }`}
-                          >
-                            <div
-                              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${
-                                isOwnMessage
-                                  ? "bg-blue-100 text-blue-700"
-                                  : "bg-slate-200 text-slate-600"
-                              }`}
-                            >
-                              {message.sender?.name
-                                .trim()
-                                .charAt(0)
-                                .toUpperCase()}
-                            </div>
-
-                            {/* Message */}
-                            <div
-                              className={`flex min-w-0 flex-col ${isOwnMessage ? "items-end" : "items-start"}`}
-                            >
-                              <div
-                                className={`mb-2 flex flex-wrap items-center gap-x-2 gap-y-1 ${
-                                  isOwnMessage ? "justify-end" : "justify-start"
-                                }`}
-                              >
-                                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                                  <span className="text-sm font-semibold text-slate-800">
-                                    {isOwnMessage ? "You" : message.sender.name}
-                                  </span>
-                                  {!isOwnMessage && (
-                                    <span className="rounded-full bg-slate-200/70 px-2 py-0.5 text-[11px] font-medium text-slate-600">
-                                      {message.sender.role}
-                                    </span>
-                                  )}
-                                  <span className="text-xs text-slate-400">
-                                    {formatMessageTime(message.createdAt)}
-                                  </span>
-                                </div>
-                                {message.isAIGenerated && (
-                                  <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-700">
-                                    AI Generated
-                                  </span>
-                                )}
-                              </div>
-
-                              <div
-                                className={`whitespace-pre-wrap break-words rounded-2xl px-4 py-3 text-sm leading-6 shadow-sm ${
-                                  isOwnMessage
-                                    ? "rounded-tr-sm bg-blue-50 border border-blue-100 text-slate-800"
-                                    : "rounded-tl-sm border border-slate-200 bg-white text-slate-700"
-                                }`}
-                              >
-                                {message.content}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-            <div className="shrink-0 border-t border-slate-200 bg-white p-4 flex items-end gap-3">
-              <textarea
-                id="content"
-                name="content"
-                value={messageContent}
-                onChange={(event) => setMessageContent(event.target.value)}
-                placeholder="Explain what happened, what you expected, and any steps you've already tried..."
-                rows={2}
-                maxLength={500}
-                className="flex-1 min-w-0 resize-none rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
+            {/* AI Assistance */}
+            {messageMode === "EXTERNAL" && (
+              <AgentAssistance
+                user={user}
+                aiDraft={aiDraft}
+                aiDraftUsed={() => {
+                  setMessageContent(aiDraft.suggestedResponse);
+                  setIsAiDraftUsed(true);
+                }}
+                regenerateDraft={() => {
+                  setIsAiDraftUsed(false);
+                  dispatch(agentAssistance(ticketId));
+                }}
+                loading={isAgentAssistanceLoading}
               />
-              {sendError && (
-                <p className="mt-2 text-sm text-red-600">{sendError}</p>
-              )}
-              <div className="flex shrink-0 flex-col items-center justify-between gap-2">
-                <span className="text-xs text-slate-400">
-                  {messageContent.length}/500
-                </span>
-
-                <button
-                  type="button"
-                  onClick={handleSendMessage}
-                  disabled={!messageContent.trim() || isSending}
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
-                  aria-label={isSending ? "Sending message" : "Send message"}
-                >
-                  {isSending ? "..." : <FiSend />}
-                </button>
-              </div>
-            </div>
+            )}
+            {/* Message panel */}
+            <MessagePanel
+              listRef={listRef}
+              isLoading={
+                effectiveMode === "EXTERNAL" ? isLoading : isInternalLoading
+              }
+              fetchError={
+                effectiveMode === "EXTERNAL" ? fetchError : internalFetchError
+              }
+              messages={displayedMessages}
+              userId={currentUserId}
+              mode={effectiveMode}
+            />
+            {/* Message Composer */}
+            <MessageComposer
+              messageContent={messageContent}
+              sendError={
+                effectiveMode === "EXTERNAL" ? sendError : internalSendError
+              }
+              isSending={
+                effectiveMode === "EXTERNAL" ? isSending : isInternalSending
+              }
+              setMessageContent={setMessageContent}
+              handleSendMessage={handleSendMessage}
+              mode={effectiveMode}
+            />
           </div>
         </div>
         <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:col-span-2">
-          <div className="border-b border-slate-200 px-5 py-4">
-            <h3 className="text-lg font-semibold text-slate-900">
-              Ticket Details
-            </h3>
-            <p className="mt-1 text-sm text-slate-500">
-              {ticketDetails?.createdAt
-                ? `Created ${formatMessageDate(ticketDetails.createdAt)}, ${formatMessageTime(ticketDetails.createdAt)}`
-                : "Loading…"}
-            </p>
+          <div className="border-b border-slate-200 px-4 py-4">
+            {ticketDetails ? (
+              <TicketSummary ticketDetails={ticketDetails} />
+            ) : (
+              <p className="text-sm text-slate-500">
+                Loading ticket details...
+              </p>
+            )}
           </div>
           <div className="space-y-6 p-5">
-            <div>
-              <h2 className="text-base font-semibold text-slate-900">
-                {ticketDetails?.title}
-              </h2>
-            </div>
-            <div>
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Description
-              </h3>
-              <p className="mt-2 max-h-60 overflow-y-auto whitespace-pre-wrap text-sm leading-6 text-slate-600">
-                {ticketDetails?.description}
-              </p>
-            </div>
-
             <div>
               <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                 People & Assignment
               </h3>
 
-              <div className="mt-3 space-y-3">
+              <TicketAssignment
+                ticket={ticketDetails}
+                user={user}
+                agents={[]}
+                developers={[]}
+                isAssigning={false}
+                onAssign={() => {}}
+                isAssigningAgent={false}
+                onAgentAssign={() => {}}
+                agentAssistance={null}
+                showAssignmentControls={false}
+              />
+              {/* <div className="mt-3 space-y-3">
                 <DetailRow
                   label="Customer"
                   value={
@@ -504,123 +364,21 @@ export default function MessagePage() {
                     "Not assigned"
                   }
                 />
-              </div>
+              </div> */}
             </div>
           </div>
         </div>
       </div>
-      {user?.role === "Developer" && (
-        <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm p-5">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                AI Technical Summary
-              </h3>
-
-              <p className="mt-1 text-xs text-slate-400">
-                Technical handoff generated from the ticket conversation
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => dispatch(fetchDeveloperAssistance(ticketId))}
-              disabled={isLoadingDeveloperAssistance}
-              className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-medium text-indigo-700 transition hover:bg-indigo-100 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {isLoadingDeveloperAssistance ? (
-                <>
-                  <FiRefreshCw className="animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <FiZap />
-                  Generate Summary
-                </>
-              )}
-            </button>
-          </div>
-
-          {developerAssistanceError && (
-            <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-              {developerAssistanceError}
-            </div>
-          )}
-
-          {developerAssistance && (
-            <div>
-              <div className="mt-4 max-h-[300px] space-y-4 overflow-y-auto rounded-xl border border-indigo-200 bg-indigo-50/50 p-4">
-                <div>
-                  <h4 className="text-sm font-semibold text-indigo-900">
-                    Issue Summary
-                  </h4>
-                  <p className="mt-1 text-sm leading-6 text-slate-700">
-                    {developerAssistance.issueSummary}
-                  </p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-indigo-900">
-                    Observed Behavior
-                  </h4>
-                  <p className="mt-1 text-sm leading-6 text-slate-700">
-                    {developerAssistance.observedBehavior}
-                  </p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-indigo-900">
-                    Troubleshooting Attempted
-                  </h4>
-                  <p className="mt-1 text-sm leading-6 text-slate-700">
-                    {developerAssistance.troubleshootingAttempted}
-                  </p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-indigo-900">
-                    Relevant Technical Details
-                  </h4>
-                  <p className="mt-1 text-sm leading-6 text-slate-700">
-                    {developerAssistance.relevantTechnicalDetails}
-                  </p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-indigo-900">
-                    Customer Impact
-                  </h4>
-                  <p className="mt-1 text-sm leading-6 text-slate-700">
-                    {developerAssistance.customerImpact}
-                  </p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-indigo-900">
-                    Developer Investigation
-                  </h4>
-                  <p className="mt-1 text-sm leading-6 text-slate-700">
-                    {developerAssistance.developerInvestigation}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center justify-between border-indigo-100 pt-3">
-                <span className="text-xs font-medium text-slate-500">
-                  AI Confidence
-                </span>
-
-                <span className="rounded-full bg-indigo-100 px-2.5 py-1 text-xs font-semibold text-indigo-700">
-                  {Math.round(developerAssistance.confidence * 100)}%
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => dispatch(fetchDeveloperAssistance(ticketId))}
-                disabled={isLoadingDeveloperAssistance}
-                className="w-full rounded-lg border border-indigo-200 bg-white px-3 py-2 text-xs font-medium text-indigo-700 transition hover:bg-indigo-50 disabled:opacity-50"
-              >
-                Regenerate Summary
-              </button>
-            </div>
-          )}
-        </div>
-      )}
+      {/* Developer Assistance */}
+      <DeveloperAssistance
+        user={user}
+        loading={isLoadingDeveloperAssistance}
+        developerAssistance={developerAssistance}
+        developerAssistanceError={developerAssistanceError}
+        fetchDeveloperAssistance={() =>
+          dispatch(fetchDeveloperAssistance(ticketId))
+        }
+      />
     </div>
   );
 }

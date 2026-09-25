@@ -157,9 +157,9 @@ export default function CreateTicket() {
       attachments.forEach((file) => {
         data.append("attachments", file);
       });
-      const result = await dispatch(createTicket(data)).unwrap();
-      router.push(`/tickets/${result}`);
+      const ticketId = await dispatch(createTicket(data)).unwrap();
 
+      router.push(`dashboard/tickets/`);
       router.refresh();
     } catch (error) {
       setSubmitError(

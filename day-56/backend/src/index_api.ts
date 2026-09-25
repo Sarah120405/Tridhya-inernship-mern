@@ -14,7 +14,7 @@ app.use("/auth", authRoute);
 app.use("/tickets", ticketRoute);
 app.use("/ticket_assigned", ticketAssignmentRoute);
 app.use("/messages", messageRoute);
-app.use("/internal-messages", internalMsgRoute);
+app.use("/internal_messages", internalMsgRoute);
 app.use("/sla", slaRoute);
 app.use("/ai", aiRoute);
 app.use("/report", reportRoute);

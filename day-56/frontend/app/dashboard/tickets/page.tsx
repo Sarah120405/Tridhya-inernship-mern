@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../../store/store";
 import { useEffect, useState } from "react";
 import {
+  closeTicket,
   developerUpdateTicket,
   fetchTicketDetails,
   fetchTickets,
@@ -45,6 +46,7 @@ export default function TicketsPage() {
   const [activeTab, setActiveTab] = useState<
     "overview" | "people" | "attachments" | "activity"
   >("overview");
+  const [updatingTicketId, setUpdatingTicketId] = useState<string | null>(null);
   const dispatch = useDispatch<AppDispatch>();
   const {
     tickets,
@@ -53,7 +55,6 @@ export default function TicketsPage() {
     ticketDetails,
     isDetailsLoading,
     detailsError,
-    isUpdatingStatus,
   } = useSelector((state: RootState) => state.ticket);
   const user = useSelector((state: RootState) => state.auth.user);
   const developers = useSelector((state: RootState) => state.user.developers);
@@ -75,6 +76,7 @@ export default function TicketsPage() {
     isLoading: activityLoading,
     error,
   } = useSelector((state: RootState) => state.activity);
+
   useEffect(() => {
     dispatch(fetchTickets());
 
@@ -117,6 +119,44 @@ export default function TicketsPage() {
     }
   };
 
+  const handleStartDevelopment = async (ticketId: string) => {
+    try {
+      setUpdatingTicketId(ticketId);
+
+      await dispatch(developerUpdateTicket(ticketId)).unwrap();
+    } finally {
+      setUpdatingTicketId(null);
+    }
+  };
+
+  const handleResolve = async (ticketId: string) => {
+    try {
+      setUpdatingTicketId(ticketId);
+
+      await dispatch(resolveTicket(ticketId)).unwrap();
+    } finally {
+      setUpdatingTicketId(null);
+    }
+  };
+
+  const handleCloseUpdate = async (
+    ticketId: string,
+    action: "CLOSE" | "REOPEN",
+  ) => {
+    try {
+      setUpdatingTicketId(ticketId);
+
+      await dispatch(
+        closeTicket({
+          ticketId,
+          action,
+        }),
+      ).unwrap();
+    } finally {
+      setUpdatingTicketId(null);
+    }
+  };
+
   const handleAssignDeveloper = async (developerId: string) => {
     if (!ticketDetails) return;
 
@@ -155,12 +195,16 @@ export default function TicketsPage() {
       <div
         className={`shrink-0 grid h-full min-h-0 gap-4 ${
           selectedTicketId
-            ? "grid-cols-1 lg:grid-cols-[minmax(320px,0.9fr)_minmax(0,1.6fr)]"
+            ? "grid-cols-1 md:grid-cols-[minmax(320px,0.9fr)_minmax(0,1.6fr)]"
             : "grid-cols-1"
         }`}
       >
         {/* LEFT: Ticket List */}
-        <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-blue-100 bg-white">
+        <section
+          className={`${
+            selectedTicketId ? "hidden md:flex" : "flex"
+          } flex min-h-0 flex-col overflow-hidden rounded-2xl border border-blue-100 bg-white`}
+        >
           <div className="border-b border-blue-100 bg-blue-50/40 p-5">
             <h1 className="text-2xl font-bold text-slate-900">Tickets</h1>
 
@@ -169,7 +213,9 @@ export default function TicketsPage() {
             </p>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto p-4 [scrollbar-color:#cbd5e1_transparent] [scrollbar-width:thin]">
+          <div
+            className={` min-h-0 flex-1 overflow-y-auto p-4 [scrollbar-color:#cbd5e1_transparent] [scrollbar-width:thin]`}
+          >
             <div className="space-y-3">
               {tickets.map((ticket) => (
                 <TicektList
@@ -177,12 +223,12 @@ export default function TicketsPage() {
                   ticket={ticket}
                   selected={selectedTicketId === ticket.id}
                   userRole={user?.role}
-                  isUpdatingStatus={isUpdatingStatus}
+                  isUpdatingStatus={updatingTicketId === ticket.id}
                   onSelect={() => handleSelectTicket(ticket.id)}
-                  onStartDevelopment={() =>
-                    dispatch(developerUpdateTicket(ticket.id))
-                  }
-                  onResolve={() => dispatch(resolveTicket(ticket.id))}
+                  onStartDevelopment={() => handleStartDevelopment(ticket.id)}
+                  onResolve={() => handleResolve(ticket.id)}
+                  onClose={() => handleCloseUpdate(ticket.id, "CLOSE")}
+                  onReopen={() => handleCloseUpdate(ticket.id, "REOPEN")}
                 />
               ))}
 
@@ -196,8 +242,10 @@ export default function TicketsPage() {
         </section>
         {/* RIGHT: Selected Ticket */}
         {selectedTicketId && (
-          <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-blue-100 bg-white">
-            <div className="shrink-0 border-b border-blue-100 bg-blue-50/30 p-5 flex justify-between items-center">
+          <section
+            className={` flex min-h-0 flex-col overflow-hidden rounded-2xl border border-blue-100 bg-white`}
+          >
+            <div className="shrink-0 border-b border-blue-100 bg-blue-50/30 p-4 sm:p-5 flex justify-between items-center">
               <div className="flex flex-col">
                 <button
                   type="button"
@@ -217,7 +265,7 @@ export default function TicketsPage() {
                 {ticketDetails && (
                   <Link
                     href={`/dashboard/tickets/${ticketDetails.id}/messages`}
-                    className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-blue-600 px-3 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+                    className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-blue-600 px-2 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
                   >
                     <span>Message</span>
                     <span aria-hidden="true">→</span>
@@ -269,7 +317,7 @@ export default function TicketsPage() {
             )}
 
             {/* Scrollable: active tab only */}
-            <div className="min-h-0 flex-1 overflow-y-auto p-3 scrollbar-none">
+            <div className="min-h-0 flex-1 overflow-y-auto p-3 [scrollbar-color:#cbd5e1_transparent] [scrollbar-width:thin]">
               {isDetailsLoading ? (
                 <p className="p-6 text-sm text-slate-500">
                   Loading ticket details...
@@ -301,7 +349,7 @@ export default function TicketsPage() {
                   {activeTab === "attachments" &&
                     (ticketDetails.attachments?.length ? (
                       <section className="rounded-xl border border-blue-100 bg-white p-5">
-                        <div className="flex gap-4 overflow-x-auto pb-2">
+                        <div className="flex gap-4 overflow-x-auto pb-2 [scrollbar-color:#cbd5e1_transparent] [scrollbar-width:thin]">
                           <TicketAttachments
                             attachments={ticketDetails.attachments}
                           />

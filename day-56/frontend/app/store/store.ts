@@ -8,6 +8,7 @@ import AssignmentReducer from "./slice/assignmentSlice";
 import ActivityReducer from "./slice/activitySlice";
 import SlaReducer from "./slice/slaSlice";
 import ReportReducer from "./slice/reportSlice";
+import InternalMsgReducer from "./slice/internalMsgSlice";
 
 const store = configureStore({
   reducer: {
@@ -20,6 +21,7 @@ const store = configureStore({
     activity: ActivityReducer,
     sla: SlaReducer,
     report: ReportReducer,
+    internalMsg: InternalMsgReducer,
   },
 });
 

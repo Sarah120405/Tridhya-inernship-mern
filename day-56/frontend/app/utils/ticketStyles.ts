@@ -55,6 +55,11 @@ export const formatActivityAction = (action: string) => {
     case "TICKET_RESOLVED":
       return "Ticket Resolved";
 
+    case "TICKET_CLOSE":
+      return "Ticket Closed";
+
+    case "STATUS_CHANGED":
+      return "Ticket Reopened";
     default:
       return action
         .replace(/_/g, " ")
@@ -85,6 +90,12 @@ export const getActivityDescription = (activity: TicketActivity) => {
 
     case "TICKET_RESOLVED":
       return "This ticket was marked as resolved.";
+
+    case "TICKET_CLOSE":
+      return "This ticket was closed by the customer";
+
+    case "STATUS_CHANGED":
+      return "This ticket was reopened and moved back to in progress.";
 
     default:
       return "Ticket activity was updated.";

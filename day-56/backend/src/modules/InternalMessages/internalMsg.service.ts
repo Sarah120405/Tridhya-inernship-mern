@@ -54,12 +54,29 @@ export async function createInternalMessage(
       authorId: senderId,
       content: content.trim(),
     },
+    include: {
+      author: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+        },
+      },
+    },
   });
+  const { author, ...messageData } = message;
+  const result = {
+    ...messageData,
+    senderId: message.authorId,
+    sender: author,
+  };
 
   const io = getIO();
-  io.to(`ticket:${ticketId}`).emit("newInternalMessage", message);
 
-  return message;
+  io.to(`ticket:${ticketId}`).emit("newInternalMessage", result);
+
+  return result;
 }
 
 export async function getInternalMessagesByTicketId(
@@ -118,5 +135,10 @@ export async function getInternalMessagesByTicketId(
     },
   });
 
-  return messages;
+  const result = messages.map(({ author, ...message }) => ({
+    ...message,
+    sender: author,
+  }));
+
+  return result;
 }

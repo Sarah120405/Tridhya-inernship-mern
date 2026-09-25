@@ -1,4 +1,5 @@
 import prisma from "../../config/db.config";
+import { TicketStatus, TicketActivityAction } from "@prisma/client";
 import { emailService } from "../../utils/email.service";
 
 export async function createTicket(
@@ -476,6 +477,79 @@ export async function ticketResolvedUpdate(
   } catch (error) {
     console.log("Error in sending mail: ", error);
   }
+
+  return result;
+}
+
+export async function ticketCloseUpdate(
+  ticketId: string,
+  action: "CLOSE" | "REOPEN",
+  customerId: string,
+) {
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: ticketId },
+  });
+
+  if (!ticket) {
+    throw {
+      status: 404,
+      message: "Ticket not found",
+    };
+  }
+
+  if (customerId !== ticket.customerId) {
+    throw {
+      status: 403,
+      message: "Unauthorized to update the ticket",
+    };
+  }
+
+  if (ticket.status !== "RESOLVED") {
+    throw {
+      status: 409,
+      message: "Only resolved tickets can be closed or reopened.",
+    };
+  }
+
+  let newStatus: TicketStatus, newAction: TicketActivityAction;
+
+  if (action === "CLOSE") {
+    newStatus = TicketStatus.CLOSED;
+    newAction = TicketActivityAction.TICKET_CLOSED;
+  } else if (action === "REOPEN") {
+    newStatus = TicketStatus.IN_PROGRESS;
+    newAction = TicketActivityAction.STATUS_CHANGED;
+  } else {
+    throw {
+      status: 400,
+      message: `Invalid action: ${action}`,
+    };
+  }
+
+  const result = await prisma.$transaction(async (tx) => {
+    const updatedTicket = await tx.ticket.update({
+      where: { id: ticketId },
+      data: {
+        status: newStatus,
+      },
+    });
+
+    const ticketActivity = await tx.ticketActivity.create({
+      data: {
+        ticketId: ticketId,
+        userId: customerId,
+        action: newAction,
+      },
+    });
+
+    if (action === "REOPEN") {
+      await tx.sLA.update({
+        where: { ticketId: ticketId },
+        data: { resolutionCompletedAt: null },
+      });
+    }
+    return { updatedTicket, ticketActivity };
+  });
 
   return result;
 }

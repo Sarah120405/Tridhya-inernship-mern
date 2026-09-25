@@ -34,7 +34,12 @@ export async function assignTicketToAgent(
     }
     const updatedTicket = await tx.ticket.update({
       where: { id: ticketId },
-      data: { assignedAgentId: agentId, status: "IN_PROGRESS" },
+      data: {
+        assignedAgentId: agentId,
+        ...(ticket.assignedAgentId === null && {
+          status: "IN_PROGRESS",
+        }),
+      },
     });
 
     const updatedTicketActivity = await tx.ticketActivity.create({

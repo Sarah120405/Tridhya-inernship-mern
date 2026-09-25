@@ -12,6 +12,8 @@ interface TicketListItemProps {
   onSelect: () => void;
   onStartDevelopment: () => void;
   onResolve: () => void;
+  onClose: () => void;
+  onReopen: () => void;
 }
 
 export default function TicketListItem({
@@ -22,6 +24,8 @@ export default function TicketListItem({
   onSelect,
   onStartDevelopment,
   onResolve,
+  onClose,
+  onReopen,
 }: TicketListItemProps) {
   return (
     <div
@@ -94,6 +98,17 @@ export default function TicketListItem({
             </button>
           )}
 
+          {userRole === "SupportAgent" && ticket.status === "IN_PROGRESS" && (
+            <button
+              type="button"
+              onClick={onResolve}
+              disabled={isUpdatingStatus}
+              className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isUpdatingStatus ? "Resolving..." : "Mark as Resolved"}
+            </button>
+          )}
+
           {/* Developer → Resolve */}
           {userRole === "Developer" && ticket.status === "IN_DEVELOPMENT" && (
             <button
@@ -104,6 +119,27 @@ export default function TicketListItem({
             >
               {isUpdatingStatus ? "Resolving..." : "Mark as Resolved"}
             </button>
+          )}
+
+          {userRole === "Customer" && ticket.status === "RESOLVED" && (
+            <div className="flex gap-4 items-center">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={isUpdatingStatus}
+                className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isUpdatingStatus ? "Closing..." : "Issue Resolved"}
+              </button>
+              <button
+                type="button"
+                onClick={onReopen}
+                disabled={isUpdatingStatus}
+                className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isUpdatingStatus ? "Updating..." : "Issue still exists"}
+              </button>
+            </div>
           )}
         </div>
       </div>

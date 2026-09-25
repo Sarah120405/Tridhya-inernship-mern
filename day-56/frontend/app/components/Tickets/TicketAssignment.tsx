@@ -13,6 +13,7 @@ interface TicketAssignmentProps {
   isAssigningAgent: boolean;
   onAgentAssign: (agentId: string) => void;
   agentAssistance: AgentAssistance | null;
+  showAssignmentControls?: boolean;
 }
 
 export default function TicketAssignment({
@@ -25,14 +26,17 @@ export default function TicketAssignment({
   isAssigningAgent,
   onAgentAssign,
   agentAssistance,
+  showAssignmentControls = true,
 }: TicketAssignmentProps) {
   const [selectedDeveloperId, setSelectedDeveloperId] = useState("");
   const [selectedAgentId, setSelectedAgentId] = useState("");
+  if (!ticket) return null;
+  const shouldEscalate = agentAssistance?.escalationRecommended === true;
 
   const canAssignDeveloper =
     (user?.role === "SupportAgent" || user?.role === "Admin") &&
     !ticket.assignedDeveloperId &&
-    agentAssistance?.escalationRecommended &&
+    shouldEscalate &&
     ["OPEN", "IN_PROGRESS"].includes(ticket.status);
 
   const canReassignDeveloper =
@@ -63,7 +67,7 @@ export default function TicketAssignment({
                   "Not assigned"}
               </p>
             </div>
-            {user?.role === "Admin" && (
+            {showAssignmentControls && user?.role === "Admin" && (
               <div className="flex flex-col gap-3 sm:flex-row">
                 <select
                   value={selectedAgentId}
@@ -86,19 +90,20 @@ export default function TicketAssignment({
                   onClick={() => onAgentAssign(selectedAgentId)}
                   className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {isAssigningAgent
+                  {isAssigning
                     ? ticket.assignedAgentId
                       ? "Reassigning..."
-                      : "Assigning..."
+                      : "Assigning ..."
                     : ticket.assignedAgentId
-                      ? "Reassign Agent"
-                      : "Assign Support Agent"}
+                      ? "Reassign Developer"
+                      : "Assign Agent"}
                 </button>
               </div>
             )}
           </div>
         </div>
-        {agentAssistance?.escalationRecommended &&
+        {showAssignmentControls &&
+          agentAssistance?.escalationRecommended &&
           (user?.role === "SupportAgent" || user?.role === "Admin") &&
           ["OPEN", "IN_PROGRESS"].includes(ticket.status) && (
             <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
@@ -135,43 +140,46 @@ export default function TicketAssignment({
               </p>
 
               <p className="mt-1 font-semibold text-slate-800">
-                {ticket.assignedDeveloper?.name ?? "Not assigned"}
+                {ticket.assignedDeveloper?.name ??
+                  ticket.assignedDeveloperId ??
+                  "Not assigned"}
               </p>
             </div>
 
-            {(canAssignDeveloper || canReassignDeveloper) && (
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <select
-                  value={selectedDeveloperId}
-                  onChange={(e) => setSelectedDeveloperId(e.target.value)}
-                  disabled={isAssigning}
-                  className="flex-1 rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-500"
-                >
-                  <option value="">Select developer</option>
+            {showAssignmentControls &&
+              (canAssignDeveloper || canReassignDeveloper) && (
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <select
+                    value={selectedDeveloperId}
+                    onChange={(e) => setSelectedDeveloperId(e.target.value)}
+                    disabled={isAssigning}
+                    className="flex-1 rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-500"
+                  >
+                    <option value="">Select developer</option>
 
-                  {developers.map((developer) => (
-                    <option key={developer.id} value={developer.id}>
-                      {developer.name}
-                    </option>
-                  ))}
-                </select>
+                    {developers.map((developer) => (
+                      <option key={developer.id} value={developer.id}>
+                        {developer.name}
+                      </option>
+                    ))}
+                  </select>
 
-                <button
-                  type="button"
-                  disabled={!selectedDeveloperId || isAssigning}
-                  onClick={() => onAssign(selectedDeveloperId)}
-                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {isAssigning
-                    ? ticket.assignedDeveloperId
-                      ? "Reassigning..."
-                      : "Assigning..."
-                    : ticket.assignedDeveloperId
-                      ? "Reassign Developer"
-                      : "Assign Developer"}
-                </button>
-              </div>
-            )}
+                  <button
+                    type="button"
+                    disabled={!selectedDeveloperId || isAssigning}
+                    onClick={() => onAssign(selectedDeveloperId)}
+                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isAssigning
+                      ? ticket.assignedDeveloperId
+                        ? "Reassigning..."
+                        : "Assigning..."
+                      : ticket.assignedDeveloperId
+                        ? "Reassign Developer"
+                        : "Assign Developer"}
+                  </button>
+                </div>
+              )}
           </div>
         </div>
       </div>

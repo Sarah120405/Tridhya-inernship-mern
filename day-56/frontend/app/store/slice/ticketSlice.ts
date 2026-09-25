@@ -46,10 +46,14 @@ interface TicketState {
   statusUpdateError: string | null;
 }
 
-interface CreateTicketResponse {
-  data?: { id: string };
-  id?: string;
-  message?: string;
+export interface CreateTicketResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    ticket?: {
+      id: string;
+    };
+  };
 }
 
 interface FetchTicketsResponse {
@@ -62,6 +66,11 @@ interface FetchTicketDetailsResponse {
   data?: Ticket;
   ticket?: Ticket;
   message?: string;
+}
+
+interface CloseTicketPayload {
+  ticketId: string;
+  action: "CLOSE" | "REOPEN";
 }
 
 const initialState: TicketState = {
@@ -90,9 +99,6 @@ export const createTicket = createAsyncThunk<
     const res = await fetch(`${API_URL}/tickets/`, {
       method: "POST",
       credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
       body: ticketData,
     });
     const result: CreateTicketResponse = await res.json();
@@ -101,7 +107,7 @@ export const createTicket = createAsyncThunk<
       return rejectWithValue(result.message || "Unable to create ticket.");
     }
 
-    const ticketId = result.data?.id ?? result.id;
+    const ticketId = result.data?.ticket?.id;
 
     if (!ticketId) {
       return rejectWithValue("Ticket created, but no ticket ID was returned.");
@@ -226,6 +232,38 @@ export const resolveTicket = createAsyncThunk(
   },
 );
 
+export const closeTicket = createAsyncThunk<
+  Ticket,
+  CloseTicketPayload,
+  { rejectValue: string }
+>("ticket/close_update", async ({ ticketId, action }, { rejectWithValue }) => {
+  try {
+    const response = await fetch(
+      `${API_URL}/tickets/ticket_close/${ticketId}`,
+      {
+        method: "PATCH",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action,
+        }),
+      },
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return rejectWithValue(data.message || "Failed to update ticket.");
+    }
+
+    return data.data.updatedTicket;
+  } catch {
+    return rejectWithValue("Something went wrong.");
+  }
+});
+
 const ticketSlice = createSlice({
   name: "ticketSlice",
   initialState,
@@ -334,6 +372,34 @@ const ticketSlice = createSlice({
         state.isUpdatingStatus = false;
         state.statusUpdateError =
           (action.payload as string) || "Failed to resolve ticket.";
+      });
+
+    builder
+      .addCase(closeTicket.pending, (state) => {
+        state.isUpdatingStatus = true;
+        state.statusUpdateError = null;
+      })
+
+      .addCase(closeTicket.fulfilled, (state, action) => {
+        state.isUpdatingStatus = false;
+        state.statusUpdateError = null;
+
+        const updatedTicket = action.payload;
+
+        state.ticketDetails = updatedTicket;
+
+        const index = state.tickets.findIndex(
+          (ticket) => ticket.id === updatedTicket.id,
+        );
+
+        if (index !== -1) {
+          state.tickets[index] = updatedTicket;
+        }
+      })
+
+      .addCase(closeTicket.rejected, (state, action) => {
+        state.isUpdatingStatus = false;
+        state.statusUpdateError = action.payload || "Failed to update ticket.";
       });
   },
 });

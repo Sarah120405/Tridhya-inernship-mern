@@ -6,6 +6,7 @@ import {
   getTicketActivityController,
   ticketInDevlopmentUpdateController,
   ticketResolvedController,
+  ticketCloseUpdateController,
 } from "./ticket.controller";
 import { requireAuth } from "../../middleware/requireAuth.middleware";
 import { requireRole } from "../../middleware/requireRole.middleware";
@@ -21,32 +22,32 @@ router.post(
   localFileUpload.array("attachments", 5),
   parseAiSuggestion,
   validate(createTicketSchema),
-  createTicketController,
+  createTicketController as any,
 );
 router.get(
   "/",
   requireAuth,
   requireRole(["Customer", "SupportAgent", "Developer", "Admin"]),
-  getTicketsController,
+  getTicketsController as any,
 );
 router.get(
   "/:id",
   requireAuth,
   requireRole(["Customer", "SupportAgent", "Developer", "Admin"]),
-  getTicketsDetailsController,
+  getTicketsDetailsController as any,
 );
 router.get(
   "/:id/activity",
   requireAuth,
   requireRole(["Customer", "SupportAgent", "Developer", "Admin"]),
-  getTicketActivityController,
+  getTicketActivityController as any,
 );
 router.patch(
   "/developer_update/:id",
   requireAuth,
   requireRole(["Developer"]),
   validate(ticketIdParamsSchema, "params"),
-  ticketInDevlopmentUpdateController,
+  ticketInDevlopmentUpdateController as any,
 );
 
 router.patch(
@@ -54,6 +55,14 @@ router.patch(
   requireAuth,
   requireRole(["SupportAgent", "Developer", "Admin"]),
   validate(ticketIdParamsSchema, "params"),
-  ticketResolvedController,
+  ticketResolvedController as any,
+);
+
+router.patch(
+  "/ticket_close/:id",
+  requireAuth,
+  requireRole(["Customer"]),
+  validate(ticketIdParamsSchema, "params"),
+  ticketCloseUpdateController as any,
 );
 export default router;

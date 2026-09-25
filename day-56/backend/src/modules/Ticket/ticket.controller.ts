@@ -4,6 +4,7 @@ import {
   getTicketActivity,
   getTickets,
   getTicketsDetails,
+  ticketCloseUpdate,
   ticketInDevelopmentUpdate,
   ticketResolvedUpdate,
 } from "./ticket.service";
@@ -181,6 +182,27 @@ export async function ticketResolvedController(
     );
 
     return sendResponse(res, 200, "Ticket succesfully resolved", ticket);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function ticketCloseUpdateController(
+  req: express.Request & { user: any },
+  res: express.Response,
+  next: express.NextFunction,
+) {
+  try {
+    const ticketId = Array.isArray(req.params.id)
+      ? req.params.id[0]
+      : req.params.id;
+    const ticket = await ticketCloseUpdate(
+      ticketId,
+      req.body.action,
+      req.user.id,
+    );
+
+    return sendResponse(res, 200, "Ticket status updated successfully", ticket);
   } catch (error) {
     next(error);
   }

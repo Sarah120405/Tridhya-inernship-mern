@@ -47,3 +47,29 @@ export const formatHours = (hours: number) => {
 
   return `${days}d ${remainingHours}h`;
 };
+
+export function formatMessageDate(date: string | Date) {
+  return new Date(date).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+export function formatMessageTime(date: string | Date) {
+  return new Date(date).toLocaleTimeString("en-IN", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
+export function getMessageDateKey(date: string | Date) {
+  const messageDate = new Date(date);
+
+  return [
+    messageDate.getFullYear(),
+    messageDate.getMonth(),
+    messageDate.getDate(),
+  ].join("-");
+}
