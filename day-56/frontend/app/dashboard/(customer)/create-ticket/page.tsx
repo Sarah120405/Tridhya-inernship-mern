@@ -159,7 +159,7 @@ export default function CreateTicket() {
       });
       const ticketId = await dispatch(createTicket(data)).unwrap();
 
-      router.push(`dashboard/tickets/`);
+      router.push(`tickets/`);
       router.refresh();
     } catch (error) {
       setSubmitError(

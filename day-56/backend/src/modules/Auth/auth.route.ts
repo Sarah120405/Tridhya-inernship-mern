@@ -28,9 +28,42 @@ router.get(
         email: true,
         role: true,
         isActive: true,
+        createdAt: true,
       },
     });
-    return sendResponse(res, 200, "User found", user);
+
+    if (!user) {
+      return sendResponse(res, 404, "User not found");
+    }
+
+    let totalTickets = 0;
+
+    if (user.role === "Customer") {
+      totalTickets = await prisma.ticket.count({
+        where: {
+          customerId: user.id,
+        },
+      });
+    } else if (user.role === "SupportAgent") {
+      totalTickets = await prisma.ticket.count({
+        where: {
+          assignedAgentId: user.id,
+        },
+      });
+    } else if (user.role === "Developer") {
+      totalTickets = await prisma.ticket.count({
+        where: {
+          assignedDeveloperId: user.id,
+        },
+      });
+    } else if (user.role === "Admin") {
+      totalTickets = await prisma.ticket.count();
+    }
+
+    return sendResponse(res, 200, "User found", {
+      ...user,
+      totalTickets,
+    });
   },
 );
 export default router;

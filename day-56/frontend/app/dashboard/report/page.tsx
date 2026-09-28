@@ -220,7 +220,22 @@ export default function AdminReport() {
         </section>
         {error && (
           <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-rose-700">
-            {error}
+            <p className="font-semibold">Unable to load report data</p>
+
+            <p className="mt-1 text-sm">{error}</p>
+
+            <button
+              onClick={() => {
+                dispatch(fetchTicketStatistics());
+                dispatch(fetchTicketDistribution());
+                dispatch(fetchTicketTrends());
+                dispatch(fetchSLAPerformance());
+                dispatch(fetchTeamPerformance());
+              }}
+              className="mt-4 rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white hover:bg-rose-700"
+            >
+              Try Again
+            </button>
           </div>
         )}
 

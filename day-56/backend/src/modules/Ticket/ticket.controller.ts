@@ -26,20 +26,22 @@ export async function createTicketController(
     for (const file of files) {
       const detectedType = await fileTypeFromBuffer(file.buffer);
 
-      if (
-        !detectedType ||
-        ![
-          "image/jpeg",
-          "image/png",
-          "image/gif",
-          "image/webp",
-          "image/avif",
-        ].includes(detectedType.mime)
-      ) {
+      const allowedMimeTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/gif",
+        "image/webp",
+        "image/avif",
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ];
+
+      if (!detectedType || !allowedMimeTypes.includes(detectedType.mime)) {
         return next({
           status: 400,
           success: false,
-          message: `Invalid image file: ${file.originalname}`,
+          message: `Invalid file type: ${file.originalname}`,
         });
       }
     }

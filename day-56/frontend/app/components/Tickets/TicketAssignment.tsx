@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Ticket } from "../../store/slice/ticketSlice";
-import { User } from "../../store/slice/userSlice";
+import { User } from "../../store/slice/authSlice";
 import { AgentAssistance } from "../../store/slice/aiSlice";
 
 interface TicketAssignmentProps {

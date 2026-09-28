@@ -2,7 +2,7 @@ import multer, { FileFilterCallback } from "multer";
 import path from "path";
 import { Request } from "express";
 
-const allowedExtensions = /\.(jpeg|jpg|png|gif|webp|avif)$/i;
+const allowedExtensions = /\.(jpeg|jpg|png|gif|webp|avif|pdf|doc|docx)$/i;
 
 const fileFilter = (
   req: Request,
@@ -14,7 +14,9 @@ const fileFilter = (
   );
 
   if (!extValid) {
-    return cb(new Error("Only valid image files are allowed"));
+    return cb(
+      new Error("Only image, PDF, and Word document files are allowed."),
+    );
   }
 
   cb(null, true);

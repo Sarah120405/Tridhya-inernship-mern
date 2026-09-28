@@ -294,7 +294,7 @@ export default function DashboardComponent({ user }) {
 
                       <button
                         onClick={() =>
-                          (window.location.href = `/tickets/${ticket.id}`)
+                          (window.location.href = `dashboard/tickets/${ticket.id}/messages`)
                         }
                         className="inline-flex items-center gap-2 self-start text-sm font-semibold text-blue-600 hover:text-blue-700 sm:self-center"
                       >
@@ -320,7 +320,7 @@ export default function DashboardComponent({ user }) {
               </div>
 
               <button
-                onClick={() => (window.location.href = "/tickets")}
+                onClick={() => (window.location.href = "/dashboard/tickets")}
                 className="inline-flex items-center gap-1 text-sm font-semibold text-blue-600 hover:text-blue-700"
               >
                 View all <FiArrowRight />
@@ -342,7 +342,7 @@ export default function DashboardComponent({ user }) {
                     <button
                       key={ticket.id}
                       onClick={() =>
-                        (window.location.href = `/tickets/${ticket.id}`)
+                        (window.location.href = `/dashboard/tickets`)
                       }
                       className="min-w-[280px] max-w-[280px] shrink-0 rounded-xl border border-blue-200 bg-white p-4 text-left transition hover:border-blue-300 hover:shadow-md"
                     >
@@ -439,7 +439,7 @@ export default function DashboardComponent({ user }) {
                   {activity.ticket?.id && (
                     <button
                       onClick={() =>
-                        (window.location.href = `/tickets/${activity.ticket.id}`)
+                        (window.location.href = `dashboard/tickets/${activity.ticket.id}`)
                       }
                       className="shrink-0 text-blue-600 hover:text-blue-700"
                       aria-label="View related ticket"

@@ -8,6 +8,8 @@ export interface User {
   email: string;
   role: "Customer" | "SupportAgent" | "Developer" | "Admin";
   isActive: boolean;
+  createdAt: string;
+  totalTickets: number;
 }
 
 interface AuthState {
@@ -53,7 +55,7 @@ export const registerUser = createAsyncThunk<
     const data = await res.json();
 
     if (!res.ok) {
-      return rejectWithValue(data.error || "Failed to register user");
+      return rejectWithValue(data.message || "Failed to register user");
     }
 
     return data;
@@ -78,7 +80,7 @@ export const login = createAsyncThunk<any, LoginData, { rejectValue: string }>(
       const data = await res.json();
 
       if (!res.ok) {
-        return rejectWithValue(data.error || "Failed to login");
+        return rejectWithValue(data.message || "Failed to login");
       }
 
       return data;
@@ -121,7 +123,7 @@ export const logOut = createAsyncThunk(
       const data = await res.json();
 
       if (!res.ok) {
-        return rejectWithValue(data.error || "Failed to logout");
+        return rejectWithValue(data.message || "Failed to logout");
       }
 
       return data;

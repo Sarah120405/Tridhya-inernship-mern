@@ -61,7 +61,11 @@ export default function MessagePage() {
   } = useSelector((state: RootState) => state.internalMsg);
   const { user } = useSelector((state: RootState) => state.auth);
   const { ticketDetails } = useSelector((state: RootState) => state.ticket);
-  const aiDraft = useSelector((state: RootState) => state.ai.agentAssistance);
+  const aiDraft = useSelector((state: RootState) =>
+    state.ai.agentAssistanceTicketId === ticketId
+      ? state.ai.agentAssistance
+      : null,
+  );
   const {
     isAgentAssistanceLoading,
     agentAssistanceError,
@@ -83,15 +87,16 @@ export default function MessagePage() {
   const displayedMessages =
     effectiveMode === "EXTERNAL" ? messages : internalMessages;
 
-  console.log(displayedMessages);
-
   useEffect(() => {
     dispatch(fetchTicketDetails(ticketId));
     dispatch(fetchTicketMessage(ticketId));
-    if (messageMode === "INTERNAL") {
+  }, [dispatch, ticketId]);
+
+  useEffect(() => {
+    if (canViewInternal && messageMode === "INTERNAL") {
       dispatch(fetchTicketInternalMsg(ticketId));
     }
-  }, [dispatch, ticketId, messageMode]);
+  }, [dispatch, ticketId, messageMode, canViewInternal]);
 
   useEffect(() => {
     if (!ticketId) return;
@@ -144,7 +149,7 @@ export default function MessagePage() {
   useEffect(() => {
     const el = listRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [messages]);
+  }, [displayedMessages]);
 
   const handleSendMessage = async () => {
     const content = messageContent.trim();
@@ -266,7 +271,7 @@ export default function MessagePage() {
               </div>
             )}
             {/* AI Assistance */}
-            {messageMode === "EXTERNAL" && (
+            {messageMode === "EXTERNAL" && !isAiDraftUsed && (
               <AgentAssistance
                 user={user}
                 aiDraft={aiDraft}

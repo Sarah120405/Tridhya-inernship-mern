@@ -20,6 +20,8 @@ import { getDevelopers, getSupportAgents } from "../../store/slice/userSlice";
 import {
   agentAssistance,
   clearAgentAssistance,
+  clearEscalationAssistance,
+  fetchEscalationAssistance,
 } from "../../store/slice/aiSlice";
 import TicketSummary from "../../components/Tickets/TicketSummary";
 import TicketMetaCards from "../../components/Tickets/TicketMetaCards";
@@ -55,15 +57,16 @@ export default function TicketsPage() {
     ticketDetails,
     isDetailsLoading,
     detailsError,
+    statusUpdateError,
+    isUpdatingStatus,
   } = useSelector((state: RootState) => state.ticket);
   const user = useSelector((state: RootState) => state.auth.user);
   const developers = useSelector((state: RootState) => state.user.developers);
   const agents = useSelector((state: RootState) => state.user.supportAgents);
   const {
-    agentAssistance: aiAssistance,
-    agentAssistanceTicketId,
-    agentAssistanceError,
-    isAgentAssistanceLoading,
+    escalationAssistance,
+    escalationAssistanceTicketId,
+    escalationAssistanceError,
   } = useSelector((state: RootState) => state.ai);
   const {
     isAssigningDeveloper,
@@ -101,21 +104,25 @@ export default function TicketsPage() {
   }
 
   if (fetchError) {
-    return <div className="p-6 text-rose-600">{fetchError}</div>;
+    return (
+      <div className="m-4 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+        {fetchError}
+      </div>
+    );
   }
 
   const handleSelectTicket = (ticketId: string) => {
     setSelectedTicketId(ticketId);
     setActiveTab("overview");
     dispatch(fetchTicketDetails(ticketId));
-    dispatch(clearAgentAssistance());
+    dispatch(clearEscalationAssistance());
     dispatch(clearActivity());
     const selectedTicket = tickets.find((ticket) => ticket.id === ticketId);
     if (
       selectedTicket &&
       ["OPEN", "IN_PROGRESS"].includes(selectedTicket.status)
     ) {
-      dispatch(agentAssistance(ticketId));
+      dispatch(fetchEscalationAssistance(ticketId));
     }
   };
 
@@ -124,6 +131,7 @@ export default function TicketsPage() {
       setUpdatingTicketId(ticketId);
 
       await dispatch(developerUpdateTicket(ticketId)).unwrap();
+    } catch {
     } finally {
       setUpdatingTicketId(null);
     }
@@ -134,6 +142,7 @@ export default function TicketsPage() {
       setUpdatingTicketId(ticketId);
 
       await dispatch(resolveTicket(ticketId)).unwrap();
+    } catch {
     } finally {
       setUpdatingTicketId(null);
     }
@@ -152,6 +161,7 @@ export default function TicketsPage() {
           action,
         }),
       ).unwrap();
+    } catch {
     } finally {
       setUpdatingTicketId(null);
     }
@@ -165,7 +175,7 @@ export default function TicketsPage() {
       assignDeveloper({
         ticketId: ticketDetails.id,
         developerId,
-        aiSuggestion: isReassignment ? null : aiAssistance,
+        aiSuggestion: isReassignment ? null : currentTicketAiAssistance,
       }),
     );
 
@@ -175,7 +185,9 @@ export default function TicketsPage() {
   };
 
   const currentTicketAiAssistance =
-    agentAssistanceTicketId === ticketDetails?.id ? aiAssistance : null;
+    escalationAssistanceTicketId === ticketDetails?.id
+      ? escalationAssistance
+      : null;
   const handleAssignAgent = async (agentId: string) => {
     if (!ticketDetails) return;
 
@@ -212,6 +224,11 @@ export default function TicketsPage() {
               Manage and track your support tickets
             </p>
           </div>
+          {statusUpdateError && (
+            <div className="mx-4 mt-3 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+              {statusUpdateError}
+            </div>
+          )}
 
           <div
             className={` min-h-0 flex-1 overflow-y-auto p-4 [scrollbar-color:#cbd5e1_transparent] [scrollbar-width:thin]`}
@@ -323,7 +340,9 @@ export default function TicketsPage() {
                   Loading ticket details...
                 </p>
               ) : detailsError ? (
-                <p className="p-6 text-sm text-rose-600">{detailsError}</p>
+                <div className="m-4 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+                  {detailsError}
+                </div>
               ) : ticketDetails ? (
                 <>
                   {activeTab === "overview" && (
@@ -332,6 +351,17 @@ export default function TicketsPage() {
 
                   {activeTab === "people" && (
                     <div className="rounded-2xl border border-blue-100 bg-white p-3">
+                      {(assignmentError || agentAssignmentError) && (
+                        <div className="mb-3 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+                          {assignmentError || agentAssignmentError}
+                        </div>
+                      )}
+                      {escalationAssistanceTicketId === ticketDetails?.id &&
+                        escalationAssistanceError && (
+                          <div className="mb-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                            {escalationAssistanceError}
+                          </div>
+                        )}
                       <TicketAssignment
                         ticket={ticketDetails}
                         user={user}

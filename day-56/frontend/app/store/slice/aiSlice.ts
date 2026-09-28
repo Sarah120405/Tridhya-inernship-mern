@@ -47,6 +47,11 @@ interface AiState {
   agentAssistanceError: string | null;
 
   suggestionUsed: boolean;
+
+  escalationAssistance: AgentAssistance | null;
+  escalationAssistanceTicketId: string | null;
+  escalationAssistanceError: string | null;
+  isEscalationLoading: boolean;
 }
 
 const initialState: AiState = {
@@ -64,6 +69,11 @@ const initialState: AiState = {
   agentAssistanceError: null,
 
   suggestionUsed: false,
+
+  escalationAssistance: null,
+  escalationAssistanceTicketId: null,
+  escalationAssistanceError: null,
+  isEscalationLoading: false,
 };
 
 interface TicketSuggestionInput {
@@ -133,6 +143,28 @@ export const agentAssistance = createAsyncThunk<
   }
 });
 
+export const fetchEscalationAssistance = createAsyncThunk<
+  AgentAssistanceResult,
+  string,
+  { rejectValue: string }
+>("ai/escalation_assistance", async (ticketId, { rejectWithValue }) => {
+  try {
+    const response = await fetch(`${API_URL}/ai/agent_assistance/${ticketId}`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+    });
+    const res = await response.json();
+
+    if (!response.ok) {
+      return rejectWithValue(res.message || "Unable to check escalation.");
+    }
+    return { ticketId, assistance: res.data as AgentAssistance };
+  } catch {
+    return rejectWithValue("Network error. Please try again.");
+  }
+});
+
 export const fetchDeveloperAssistance = createAsyncThunk<
   DeveloperAssistance,
   string,
@@ -193,6 +225,12 @@ const aiSlice = createSlice({
       state.developerAssistance = null;
       state.developerAssistanceError = null;
     },
+    clearEscalationAssistance: (state) => {
+      state.escalationAssistance = null;
+      state.escalationAssistanceTicketId = null;
+      state.escalationAssistanceError = null;
+      state.isEscalationLoading = false;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -232,6 +270,27 @@ const aiSlice = createSlice({
         state.agentAssistanceError =
           action.payload ?? "Unable to get AI assistance.";
       });
+
+    builder
+      .addCase(fetchEscalationAssistance.pending, (state, action) => {
+        state.isEscalationLoading = true;
+        state.escalationAssistance = null;
+        state.escalationAssistanceError = null;
+        state.escalationAssistanceTicketId = action.meta.arg;
+      })
+      .addCase(fetchEscalationAssistance.fulfilled, (state, action) => {
+        if (state.escalationAssistanceTicketId !== action.payload.ticketId)
+          return;
+        state.isEscalationLoading = false;
+        state.escalationAssistance = action.payload.assistance;
+      })
+      .addCase(fetchEscalationAssistance.rejected, (state, action) => {
+        if (state.escalationAssistanceTicketId !== action.meta.arg) return;
+        state.isEscalationLoading = false;
+        state.escalationAssistanceError =
+          action.payload ?? "Unable to check escalation.";
+      });
+
     builder
       .addCase(fetchDeveloperAssistance.pending, (state) => {
         state.isLoadingDeveloperAssistance = true;
@@ -256,5 +315,6 @@ export const {
   resetSuggestionUsed,
   clearAgentAssistance,
   clearDeveloperAssistance,
+  clearEscalationAssistance,
 } = aiSlice.actions;
 export default aiSlice.reducer;

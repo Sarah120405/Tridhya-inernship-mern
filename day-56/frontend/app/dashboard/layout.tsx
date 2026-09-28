@@ -8,6 +8,7 @@ import type { ReactNode } from "react";
 import type { AppDispatch, RootState } from "../store/store";
 
 import {
+  User,
   Ticket,
   House,
   Plus,
@@ -55,6 +56,12 @@ const navigation = [
     roles: ["SupportAgent", "Developer", "Admin"],
   },
   {
+    name: "Users Management",
+    href: "/dashboard/users",
+    icon: User,
+    roles: ["Admin"],
+  },
+  {
     name: "Reports",
     href: "/dashboard/report",
     icon: FiFile,
@@ -62,7 +69,7 @@ const navigation = [
   },
   {
     name: "Settings",
-    href: "/settings",
+    href: "/dashboard/settings",
     icon: Settings,
     roles: ["Customer", "SupportAgent", "Developer", "Admin"],
   },
