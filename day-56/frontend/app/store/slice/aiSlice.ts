@@ -3,6 +3,7 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 const API_URL = "http://localhost:5000/api";
 
 interface AiSuggestion {
+  isMeaningful: boolean;
   suggestedCategory: string;
   suggestedPriority: string;
   confidence: number;

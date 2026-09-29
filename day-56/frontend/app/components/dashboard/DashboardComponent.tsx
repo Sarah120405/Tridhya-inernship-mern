@@ -200,8 +200,8 @@ export default function DashboardComponent({ user }) {
       .replaceAll("_", " ")
       .replace(/\b\w/g, (char) => char.toUpperCase());
   return (
-    <main className="min-h-screen p-2">
-      <div className="mx-auto max-w-8xl space-y-6">
+    <main className="min-h-screen">
+      <div className="space-y-6">
         {/* Header */}
         <section className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>

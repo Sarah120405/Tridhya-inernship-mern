@@ -210,7 +210,7 @@ export default function AdminReport() {
         <section className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
             <h1 className="text-2xl font-bold text-slate-800 sm:text-3xl">
-              Welcome back, {user.name}!
+              Welcome back, {user?.name}!
             </h1>
 
             <p className="mt-2 text-sm text-slate-500">

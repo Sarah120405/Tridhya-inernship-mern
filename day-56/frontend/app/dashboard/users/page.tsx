@@ -16,6 +16,7 @@ import { AppDispatch, RootState } from "../../store/store";
 import { getAllUsers, updateUserRole } from "../../store/slice/userSlice";
 import useDebounce from "../../hook/useDebounce";
 import { User } from "../../store/slice/authSlice";
+import { MetricCard } from "../../components/MetricCard";
 
 export default function UsersPage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -108,66 +109,38 @@ export default function UsersPage() {
         </section>
 
         {/* Statistics */}
-        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-slate-500">Total Users</p>
-                <p className="mt-1 text-2xl font-bold text-slate-900">
-                  {totalUsers}
-                </p>
-              </div>
+        <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <MetricCard
+            title="Total Users"
+            description="All registered users"
+            value={totalUsers}
+            icon={<FiUsers />}
+            icon_2={<FiUsers />}
+          />
 
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                <FiUsers size={20} />
-              </div>
-            </div>
-          </div>
+          <MetricCard
+            title="Customers"
+            description="Registered customers"
+            value={customerCount}
+            icon={<FiUserCheck />}
+            icon_2={<FiUserCheck />}
+          />
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-slate-500">Customers</p>
-                <p className="mt-1 text-2xl font-bold text-slate-900">
-                  {customerCount}
-                </p>
-              </div>
+          <MetricCard
+            title="Support Agents"
+            description="Active support team"
+            value={supportAgentCount}
+            icon={<FiShield />}
+            icon_2={<FiShield />}
+          />
 
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-50 text-slate-600">
-                <FiUserCheck size={20} />
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-slate-500">Support Agents</p>
-                <p className="mt-1 text-2xl font-bold text-slate-900">
-                  {supportAgentCount}
-                </p>
-              </div>
-
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-                <FiShield size={20} />
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-slate-500">Developers</p>
-                <p className="mt-1 text-2xl font-bold text-slate-900">
-                  {developerCount}
-                </p>
-              </div>
-
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
-                <FiCode size={20} />
-              </div>
-            </div>
-          </div>
+          <MetricCard
+            title="Developers"
+            description="Technical support team"
+            value={developerCount}
+            icon={<FiCode />}
+            icon_2={<FiCode />}
+          />
         </section>
 
         {/* User Table */}
@@ -363,7 +336,7 @@ export default function UsersPage() {
               </div>
 
               {/* Mobile Cards */}
-              <div className="space-y-3 p-4 md:hidden">
+              <div className="space-y-3 p-4 md:hidden h-[500px] overflow-y-auto [scrollbar-color:#cbd5e1_transparent] [scrollbar-width:thin]">
                 {allUsers.map((user) => (
                   <div
                     key={user.id}
@@ -414,6 +387,10 @@ export default function UsersPage() {
 
                       <button
                         type="button"
+                        onClick={() => {
+                          setSelectedUser(user);
+                          setSelectedRole(user.role);
+                        }}
                         className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-600 hover:bg-blue-50 hover:text-blue-600"
                       >
                         <FiEdit3 size={14} />

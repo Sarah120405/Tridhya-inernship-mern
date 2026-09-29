@@ -31,6 +31,7 @@ import {
   fetchTicketActivity,
 } from "../../store/slice/activitySlice";
 import TicketTimeline from "../../components/Tickets/TicketTimeline";
+import useDebounce from "../../hook/useDebounce";
 
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
@@ -49,6 +50,13 @@ export default function TicketsPage() {
     "overview" | "people" | "attachments" | "activity"
   >("overview");
   const [updatingTicketId, setUpdatingTicketId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("");
+  const [priority, setPriority] = useState("");
+  const [category, setCategory] = useState("");
+
+  const debouncedSearch = useDebounce(search, 400);
+
   const dispatch = useDispatch<AppDispatch>();
   const {
     tickets,
@@ -81,7 +89,9 @@ export default function TicketsPage() {
   } = useSelector((state: RootState) => state.activity);
 
   useEffect(() => {
-    dispatch(fetchTickets());
+    dispatch(
+      fetchTickets({ search: debouncedSearch, status, priority, category }),
+    );
 
     if (user?.role === "Admin") {
       dispatch(getDevelopers());
@@ -91,7 +101,7 @@ export default function TicketsPage() {
     if (user?.role === "SupportAgent") {
       dispatch(getDevelopers());
     }
-  }, [dispatch, user?.role]);
+  }, [dispatch, debouncedSearch, status, priority, category, user?.role]);
 
   useEffect(() => {
     if (!ticketDetails?.id) return;
@@ -203,7 +213,7 @@ export default function TicketsPage() {
     }
   };
   return (
-    <div className="min-h-0 h-[calc(120vh-5rem)] space-y-2 px-2 flex flex-col gap-4">
+    <div className="min-h-0 h-[calc(120vh-5rem)] space-y-2 flex flex-col gap-4">
       <div
         className={`shrink-0 grid h-full min-h-0 gap-4 ${
           selectedTicketId
@@ -230,8 +240,65 @@ export default function TicketsPage() {
             </div>
           )}
 
+          <div className="border-b border-slate-100 p-4 sm:p-5">
+            <div className="flex flex-col gap-3">
+              {/* Search */}
+              <div className="relative">
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search by ticket title, description or ID..."
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
+                />
+              </div>
+
+              {/* Filters */}
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition hover:border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                >
+                  <option value="">All Statuses</option>
+                  <option value="OPEN">Open</option>
+                  <option value="IN_PROGRESS">In Progress</option>
+                  <option value="ESCALATED">Escalated</option>
+                  <option value="IN_DEVELOPMENT">In Development</option>
+                  <option value="RESOLVED">Resolved</option>
+                  <option value="CLOSED">Closed</option>
+                </select>
+
+                <select
+                  value={priority}
+                  onChange={(e) => setPriority(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition hover:border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                >
+                  <option value="">All Priorities</option>
+                  <option value="LOW">Low</option>
+                  <option value="MEDIUM">Medium</option>
+                  <option value="HIGH">High</option>
+                  <option value="URGENT">Urgent</option>
+                </select>
+
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition hover:border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                >
+                  <option value="">All Categories</option>
+                  <option value="TECHNICAL">Technical</option>
+                  <option value="BILLING">Billing</option>
+                  <option value="ACCOUNT">Account</option>
+                  <option value="FEATURE_REQUEST">Feature Request</option>
+                  <option value="GENERAL_INQUIRY">General Inquiry</option>
+                  <option value="OTHER">Other</option>
+                </select>
+              </div>
+            </div>
+          </div>
           <div
-            className={` min-h-0 flex-1 overflow-y-auto p-4 [scrollbar-color:#cbd5e1_transparent] [scrollbar-width:thin]`}
+            className={` min-h-0 flex-1 overflow-y-auto p-3 sm:p-4 [scrollbar-color:#cbd5e1_transparent] [scrollbar-width:thin]`}
           >
             <div className="space-y-3">
               {tickets.map((ticket) => (

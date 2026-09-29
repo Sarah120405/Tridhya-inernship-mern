@@ -18,7 +18,7 @@ export default function Dashboard() {
   if (checkingAuth) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-slate-500">Loading...</p>
+        <p className="text-slate-500">Authenticating User...</p>
       </div>
     );
   }

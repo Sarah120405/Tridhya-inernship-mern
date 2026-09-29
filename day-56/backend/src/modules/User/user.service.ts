@@ -109,7 +109,7 @@ export async function getCustomers(userId: string, userRole: string) {
       where: {
         role: "Customer",
         isActive: true,
-        customerTickets: {
+        createdTickets: {
           some: {
             assignedAgentId: userId,
           },
@@ -130,7 +130,7 @@ export async function getCustomers(userId: string, userRole: string) {
       where: {
         role: "Customer",
         isActive: true,
-        customerTickets: {
+        createdTickets: {
           some: {
             assignedDeveloperId: userId,
           },
@@ -174,7 +174,7 @@ export async function getSupportAgents(userId: string, userRole: string) {
       where: {
         role: "SupportAgent",
         isActive: true,
-        customerTickets: {
+        createdTickets: {
           some: {
             assignedDeveloperId: userId,
           },

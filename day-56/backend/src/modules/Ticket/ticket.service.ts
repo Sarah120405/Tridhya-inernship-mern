@@ -1,5 +1,13 @@
 import prisma from "../../config/db.config";
-import { TicketStatus, TicketActivityAction } from "@prisma/client";
+
+import {
+  Prisma,
+  TicketStatus,
+  TicketActivityAction,
+  TicketPriority,
+  TicketCategory,
+} from "@prisma/client";
+
 import { emailService } from "../../utils/email.service";
 
 export async function createTicket(
@@ -122,54 +130,140 @@ export async function createTicket(
   return result;
 }
 
-export async function getTickets(userId: string, role: string) {
-  let where: any = {};
-  let include: any = {};
+interface TicketFilters {
+  search?: string;
+  status?: TicketStatus;
+  priority?: TicketPriority;
+  category?: TicketCategory;
+  assignedAgentId?: string;
+  assignedDeveloperId?: string;
+}
+
+export async function getTickets(
+  userId: string,
+  role: string,
+  filters: TicketFilters = {},
+  page: number,
+  limit: number,
+) {
+  const skip = (page - 1) * limit;
+  const where: Prisma.TicketWhereInput = {};
+  let include: Prisma.TicketInclude = {
+    customer: {
+      select: {
+        id: true,
+        name: true,
+        email: true,
+      },
+    },
+    assignedAgent: {
+      select: {
+        id: true,
+        name: true,
+        email: true,
+      },
+    },
+    assignedDeveloper: {
+      select: {
+        id: true,
+        name: true,
+        email: true,
+      },
+    },
+  };
+
   if (role === "Developer") {
-    where = {
-      assignedDeveloperId: userId,
-    };
+    where.assignedDeveloperId = userId;
   } else if (role === "SupportAgent") {
-    where = {
-      assignedAgentId: userId,
-    };
+    where.assignedAgentId = userId;
   } else if (role === "Customer") {
-    where = {
-      customerId: userId,
-    };
+    where.customerId = userId;
   } else if (role === "Admin") {
-    include = {
-      customer: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        },
-      },
-      assignedAgent: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        },
-      },
-      assignedDeveloper: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        },
-      },
-    };
   } else {
-    throw { status: 403, message: "Unauthorized to get this data" };
+    throw {
+      status: 403,
+      message: "Unauthorized to get this data",
+    };
   }
+
+  const search = filters.search?.trim();
+
+  if (search) {
+    const searchConditions: Prisma.TicketWhereInput[] = [
+      {
+        title: {
+          contains: search,
+          mode: "insensitive",
+        },
+      },
+      {
+        description: {
+          contains: search,
+          mode: "insensitive",
+        },
+      },
+    ];
+
+    if (/^\d+$/.test(search)) {
+      searchConditions.push({
+        ticketNumber: Number(search),
+      });
+    }
+
+    if (role === "Admin") {
+      searchConditions.push(
+        {
+          customer: {
+            name: {
+              contains: search,
+              mode: "insensitive",
+            },
+          },
+        },
+        {
+          customer: {
+            email: {
+              contains: search,
+              mode: "insensitive",
+            },
+          },
+        },
+      );
+    }
+
+    where.OR = searchConditions;
+  }
+
+  if (filters.status) {
+    where.status = filters.status;
+  }
+
+  if (filters.priority) {
+    where.priority = filters.priority;
+  }
+
+  if (filters.category) {
+    where.category = filters.category;
+  }
+
+  if (role === "Admin") {
+    if (filters.assignedAgentId) {
+      where.assignedAgentId = filters.assignedAgentId;
+    }
+
+    if (filters.assignedDeveloperId) {
+      where.assignedDeveloperId = filters.assignedDeveloperId;
+    }
+  }
+
   const tickets = await prisma.ticket.findMany({
     where,
     include,
     orderBy: {
       createdAt: "desc",
     },
+    skip: skip,
+    take: limit,
   });
 
   return tickets;
@@ -511,7 +605,8 @@ export async function ticketCloseUpdate(
     };
   }
 
-  let newStatus: TicketStatus, newAction: TicketActivityAction;
+  let newStatus: TicketStatus;
+  let newAction: TicketActivityAction;
 
   if (action === "CLOSE") {
     newStatus = TicketStatus.CLOSED;
@@ -536,7 +631,7 @@ export async function ticketCloseUpdate(
 
     const ticketActivity = await tx.ticketActivity.create({
       data: {
-        ticketId: ticketId,
+        ticketId,
         userId: customerId,
         action: newAction,
       },
@@ -544,12 +639,96 @@ export async function ticketCloseUpdate(
 
     if (action === "REOPEN") {
       await tx.sLA.update({
-        where: { ticketId: ticketId },
-        data: { resolutionCompletedAt: null },
+        where: { ticketId },
+        data: {
+          resolutionCompletedAt: null,
+        },
       });
     }
-    return { updatedTicket, ticketActivity };
+
+    return {
+      updatedTicket,
+      ticketActivity,
+    };
   });
+
+  const notificationTicket = await prisma.ticket.findUnique({
+    where: {
+      id: ticketId,
+    },
+    include: {
+      customer: {
+        select: {
+          name: true,
+        },
+      },
+      assignedAgent: {
+        select: {
+          name: true,
+          email: true,
+        },
+      },
+      assignedDeveloper: {
+        select: {
+          name: true,
+          email: true,
+        },
+      },
+    },
+  });
+
+  if (!notificationTicket) {
+    return result;
+  }
+
+  const subject =
+    action === "CLOSE"
+      ? `Ticket #${notificationTicket.ticketNumber} Closed by Customer`
+      : `Ticket #${notificationTicket.ticketNumber} Reopened by Customer`;
+
+  const heading =
+    action === "CLOSE"
+      ? "Ticket Closed by Customer"
+      : "Ticket Reopened by Customer";
+
+  const message =
+    action === "CLOSE"
+      ? "The customer has confirmed that the issue has been resolved and closed the ticket."
+      : "The customer has reported that the issue still exists and reopened the ticket.";
+
+  const emailRecipients = [
+    notificationTicket.assignedAgent?.email,
+    notificationTicket.assignedDeveloper?.email,
+  ].filter((email): email is string => Boolean(email));
+
+  await Promise.allSettled(
+    emailRecipients.map((email) =>
+      emailService(
+        email,
+        subject,
+        `
+          <h2>${heading}</h2>
+
+          <p>Hello,</p>
+
+          <p>${message}</p>
+
+          <p><strong>Ticket Number:</strong> #${notificationTicket.ticketNumber}</p>
+          <p><strong>Title:</strong> ${notificationTicket.title}</p>
+          <p><strong>Customer:</strong> ${notificationTicket.customer.name}</p>
+          <p><strong>Priority:</strong> ${notificationTicket.priority}</p>
+          <p><strong>Status:</strong> ${notificationTicket.status}</p>
+          <p><strong>Updated By:</strong>  ${notificationTicket.customer.name}</p>
+
+          <p>Please review the ticket in SupportHub for further details.</p>
+          <p>
+            Thank you,<br>
+            Support Desk
+          </p>
+        `,
+      ),
+    ),
+  );
 
   return result;
 }

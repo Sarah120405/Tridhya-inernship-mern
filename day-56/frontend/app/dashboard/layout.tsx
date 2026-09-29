@@ -90,7 +90,7 @@ export default function CommonLayout({ children }: CommonLayoutProps) {
     <>
       <Link
         href="/dashboard"
-        className="flex h-[72px] items-center gap-3 border-b border-slate-700/70 px-6"
+        className="flex h-[60px] items-center gap-3 border-b border-slate-700/70 px-6"
       >
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg shadow-indigo-950/30">
           <Headset className="h-5 w-5 text-white" />
@@ -183,7 +183,7 @@ export default function CommonLayout({ children }: CommonLayoutProps) {
       {/* Main Section */}
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         {/* Topbar */}
-        <header className="z-10 flex h-[65px] shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-6">
+        <header className="z-10 flex h-[60px] shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-6">
           <div className="flex min-w-0 flex-1 items-center gap-3">
             <button
               type="button"
@@ -193,16 +193,6 @@ export default function CommonLayout({ children }: CommonLayoutProps) {
             >
               <Menu className="h-5 w-5" />
             </button>
-
-            {/* Search */}
-            <div className="relative w-full max-w-xl">
-              <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-              <input
-                type="search"
-                placeholder="Search tickets, users, or anything..."
-                className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-11 pr-4 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-100"
-              />
-            </div>
           </div>
 
           {/* User Profile */}

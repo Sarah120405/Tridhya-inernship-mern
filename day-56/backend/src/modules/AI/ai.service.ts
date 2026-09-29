@@ -63,7 +63,46 @@ export async function ticketSuggestion(ticketData: any) {
     4. HIGH or URGENT should only be used when the issue has meaningful impact, critical functionality failure, security concerns, payment problems, or significant business/customer impact.
     5. Give a confidence score between 0 and 1.
     6. Give a short explanation for your decision.
-    7. Do not invent information that is not present in the ticket.`;
+    7. Do not invent information that is not present in the ticket.
+    
+    Before suggesting a category or priority, determine whether the ticket
+    title and description contain meaningful information about a real customer
+    issue.
+
+    Meaningless input includes, but is not limited to:
+    - Only special characters or symbols
+    - Random letters or keyboard gibberish
+    - Random combinations of letters and numbers without understandable meaning
+    - Repeated meaningless words or characters
+    - Nonsensical phrases that do not describe a problem
+    - Placeholder or test text that does not describe an actual issue,
+      such as "asdf", "qwerty", or "test" when used without meaningful
+      supporting information.
+    - Content that is too vague to identify an actual customer problem
+    - Do not determine meaningfulness based only on whether the text contains
+      dictionary words. Random combinations of valid-looking words can still
+      be meaningless if they do not communicate an understandable issue.
+      
+    Meaningful input should describe an understandable issue, request, question,
+    error, failure, or problem that a customer could reasonably submit as a
+    support ticket.
+
+    If the title or description is meaningless:
+    1. Set isMeaningful to false.
+    2. Do not attempt to infer a category or priority from the meaningless content.
+    3. Set suggestedCategory to OTHER.
+    4. Set suggestedPriority to LOW only as a neutral fallback.
+    5. Set confidence to 0.
+    6. Explain briefly that the provided content does not contain enough
+      meaningful information to classify the ticket.
+
+    If the content is meaningful:
+    1. Set isMeaningful to true.
+    2. Suggest the most appropriate category.
+    3. Suggest the appropriate priority based only on the information provided.
+    4. Provide a confidence score between 0 and 1.
+    5. Explain the reasoning briefly.
+    `;
   try {
     const AIresponse = await gemini.models.generateContent({
       model: "gemini-3.5-flash-lite",
@@ -75,6 +114,9 @@ export async function ticketSuggestion(ticketData: any) {
           type: "object",
 
           properties: {
+            isMeaningful: {
+              type: "boolean",
+            },
             suggestedCategory: {
               type: "string",
               enum: category,
@@ -94,6 +136,7 @@ export async function ticketSuggestion(ticketData: any) {
           },
 
           required: [
+            "isMeaningful",
             "suggestedCategory",
             "suggestedPriority",
             "confidence",
@@ -109,6 +152,12 @@ export async function ticketSuggestion(ticketData: any) {
       };
     }
     const result = JSON.parse(AIresponse.text);
+    if (typeof result.isMeaningful !== "boolean") {
+      throw {
+        status: 502,
+        message: "Gemini returned an invalid meaningful-content result.",
+      };
+    }
     if (!category.includes(result.suggestedCategory)) {
       throw {
         status: 502,
@@ -135,6 +184,7 @@ export async function ticketSuggestion(ticketData: any) {
     }
 
     return {
+      isMeaningful: result.isMeaningful,
       suggestedCategory: result.suggestedCategory,
       suggestedPriority: result.suggestedPriority,
       confidence: result.confidence,

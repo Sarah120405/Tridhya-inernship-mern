@@ -13,6 +13,7 @@ import fs from "fs/promises";
 import path from "path";
 import { randomUUID } from "crypto";
 import { fileTypeFromBuffer } from "file-type";
+import { TicketCategory, TicketPriority, TicketStatus } from "@prisma/client";
 
 export async function createTicketController(
   req: express.Request & { user?: any },
@@ -86,7 +87,41 @@ export async function getTicketsController(
   next: express.NextFunction,
 ) {
   try {
-    const tickets = await getTickets(req.user.id, req.user.role);
+    const filters = {
+      search:
+        typeof req.query.search === "string" ? req.query.search : undefined,
+
+      status:
+        typeof req.query.status === "string"
+          ? (req.query.status as TicketStatus)
+          : undefined,
+
+      priority:
+        typeof req.query.priority === "string"
+          ? (req.query.priority as TicketPriority)
+          : undefined,
+
+      category:
+        typeof req.query.category === "string"
+          ? (req.query.category as TicketCategory)
+          : undefined,
+    };
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+
+    const priority =
+      typeof req.query.priority === "string" ? req.query.priority : undefined;
+
+    const search =
+      typeof req.query.search === "string" ? req.query.search : undefined;
+
+    const tickets = await getTickets(
+      req.user.id,
+      req.user.role,
+      filters,
+      page,
+      limit,
+    );
     return sendResponse(res, 200, "Tickets fetched successfully", tickets);
   } catch (err: any) {
     next(err);

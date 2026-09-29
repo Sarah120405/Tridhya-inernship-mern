@@ -68,6 +68,10 @@ export default function CreateTicket() {
     error: aiError,
     suggestionUsed: aiSuggestionUsed,
   } = useSelector((state: RootState) => state.ai);
+
+  const displayAIError = aiError
+    ? "AI suggestion is currently unavailable. Please select the category and priority manually."
+    : "";
   const handleFilesChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files ?? []);
 
@@ -292,12 +296,29 @@ export default function CreateTicket() {
             ? "Analyzing ticket..."
             : "✨ Suggest category & priority with AI"}
         </button>
-        {aiError && (
-          <p role="alert" className="mt-2 text-sm text-rose-600">
-            {aiError}
-          </p>
-        )}
 
+        {displayAIError && (
+          <div
+            role="alert"
+            className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"
+          >
+            {displayAIError}
+          </div>
+        )}
+        {aiSuggestion && !aiSuggestion.isMeaningful && (
+          <div
+            role="alert"
+            className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3"
+          >
+            <p className="text-sm font-medium text-amber-800">
+              AI could not classify this ticket.
+            </p>
+
+            <p className="mt-1 text-sm text-amber-700">
+              Please provide meaningful details about the issue and try again.
+            </p>
+          </div>
+        )}
         {aiSuggestion && (
           <div className="mt-4 rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50 to-white p-5">
             <div className="mb-3 flex items-center gap-2">
@@ -336,6 +357,10 @@ export default function CreateTicket() {
               type="button"
               onClick={() => {
                 if (!aiSuggestion) return;
+
+                if (!aiSuggestion.isMeaningful) {
+                  return;
+                }
 
                 setFormData((prev) => ({
                   ...prev,

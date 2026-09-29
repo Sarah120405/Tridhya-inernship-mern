@@ -29,6 +29,15 @@ export interface Ticket {
   assignedDeveloper?: TicketPerson | null;
 }
 
+export interface TicketFilters {
+  search?: string;
+  status?: string;
+  priority?: string;
+  category?: string;
+  assignedAgentId?: string;
+  assignedDeveloperId?: string;
+}
+
 interface TicketState {
   tickets: Ticket[];
   isLoading: boolean;
@@ -121,13 +130,35 @@ export const createTicket = createAsyncThunk<
 
 export const fetchTickets = createAsyncThunk<
   Ticket[],
-  void,
+  TicketFilters | undefined,
   { rejectValue: string }
->("tickets/", async (_, { rejectWithValue }) => {
+>("tickets/", async (filters, { rejectWithValue }) => {
   try {
-    const res = await fetch(`${API_URL}/tickets/`, {
-      credentials: "include",
-    });
+    const params = new URLSearchParams();
+
+    if (filters?.search?.trim()) {
+      params.set("search", filters.search.trim());
+    }
+
+    if (filters?.status) {
+      params.set("status", filters.status);
+    }
+
+    if (filters?.priority) {
+      params.set("priority", filters.priority);
+    }
+
+    if (filters?.category) {
+      params.set("category", filters.category);
+    }
+    const queryString = params.toString();
+
+    const res = await fetch(
+      `${API_URL}/tickets/${queryString ? `?${queryString}` : ""}`,
+      {
+        credentials: "include",
+      },
+    );
     const result: FetchTicketsResponse | Ticket[] = await res.json();
 
     if (!res.ok) {

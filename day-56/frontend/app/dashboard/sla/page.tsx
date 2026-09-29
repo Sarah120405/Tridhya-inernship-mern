@@ -231,7 +231,7 @@ export default function SLAMonitoringPage() {
       </div>
 
       <div className="overflow-hidden rounded-xl border border-blue-200 bg-white">
-        <div className="border-b border-blue-200 px-5 py-4 flex gap-2 items-center">
+        <div className="flex items-center gap-2 border-b border-blue-200 px-4 py-3 sm:px-5 sm:py-4">
           <h2 className="font-semibold text-slate-900">SLA Overview</h2>
 
           <p className="text-sm text-slate-500">
@@ -263,30 +263,30 @@ export default function SLAMonitoringPage() {
                   </div>
                 </div>
               )}
-              <table className="w-full min-w-[1000px]">
+              <table className="w-full min-w-[760px] sm:min-w-[900px] lg:min-w-[1000px]">
                 <thead className="border-b border-blue-200 bg-gray-50 sticky top-0 z-10">
                   <tr>
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-500">
+                    <th className="sticky left-0 z-20 whitespace-nowrap bg-gray-50 px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500 sm:px-3">
                       Ticket
                     </th>
 
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-500">
+                    <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500 sm:px-5">
                       Priority
                     </th>
 
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-500">
+                    <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500 sm:px-5">
                       Status
                     </th>
 
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-500">
+                    <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500 sm:px-5">
                       First Response
                     </th>
 
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-500">
+                    <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500 sm:px-5">
                       Resolution
                     </th>
 
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase text-slate-500">
+                    <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500 sm:px-5">
                       SLA
                     </th>
                   </tr>
@@ -300,25 +300,25 @@ export default function SLAMonitoringPage() {
 
                       return (
                         <tr key={sla.id} className="hover:bg-gray-50">
-                          <td className="px-5 py-4">
+                          <td className="sticky left-0 z-20 bg-white w-[220px] px-4 py-4 sm:px-3">
                             <div>
                               <p className="font-medium text-slate-900">
                                 #{ticket.ticketNumber}
                               </p>
 
-                              <p className="mt-1 max-w-xs truncate text-sm text-slate-500">
+                              <p className="mt-1 max-w-[220px] truncate text-sm text-slate-500">
                                 {ticket.title}
                               </p>
                             </div>
                           </td>
 
-                          <td className="px-5 py-4">
+                          <td className="whitespace-nowrap px-4 py-4 sm:px-5">
                             <span className="text-sm font-medium text-slate-700">
                               {ticket.priority}
                             </span>
                           </td>
 
-                          <td className="px-5 py-4">
+                          <td className="whitespace-nowrap px-4 py-4 sm:px-5">
                             <span className="text-sm text-slate-600">
                               {ticket.status}
                             </span>
@@ -420,23 +420,22 @@ export default function SLAMonitoringPage() {
                 </tbody>
               </table>
             </div>
-            <div className="flex items-center justify-between border-t border-blue-200 px-4 py-3">
+            <div className="flex flex-col gap-3 border-t border-blue-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm text-slate-500">
                 Page {page} of {totalPages}
               </p>
-
-              <div className="flex gap-2">
+              <div className="flex w-full gap-2 sm:w-auto">
                 <button
                   disabled={page === 1}
                   onClick={() => setPage((prev) => prev - 1)}
-                  className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="flex-1 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none"
                 >
                   Previous
                 </button>
                 <button
                   disabled={page === totalPages}
                   onClick={() => setPage((prev) => prev + 1)}
-                  className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="flex-1 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none"
                 >
                   Next
                 </button>

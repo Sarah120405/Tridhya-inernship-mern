@@ -59,7 +59,7 @@ export default function MessagePanel({
             </p>
           </div>
         ) : (
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-6 sm:gap-6">
             {messages.map((message, index) => {
               const currentDateKey = getMessageDateKey(message.createdAt);
 
@@ -89,7 +89,7 @@ export default function MessagePanel({
                     }`}
                   >
                     <div
-                      className={`flex max-w-[95%] gap-3 sm:max-w-[85%] ${
+                      className={`flex max-w-[92%] gap-2.5 sm:max-w-[85%] sm:gap-3 ${
                         isOwnMessage ? "flex-row-reverse" : "flex-row"
                       }`}
                     >
