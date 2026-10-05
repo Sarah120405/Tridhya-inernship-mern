@@ -1,5 +1,4 @@
 import http from "http";
-import { Server } from "socket.io";
 import express from "express";
 import dotenv from "dotenv";
 dotenv.config();
@@ -7,7 +6,6 @@ if (!process.env.JWT_SECRET) {
   throw new Error("Missing JWT_SECRET in environment");
 }
 import cookieParser from "cookie-parser";
-import path from "path";
 import cors from "cors";
 import index_api from "./index_api";
 import { errorHandler } from "./middleware/error.middleware";
@@ -19,7 +17,7 @@ import { initSocket } from "./socket/socket.server";
 const app = express();
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: process.env.FRONTEND_URL,
     credentials: true,
   }),
 );
@@ -83,7 +81,6 @@ app.use(
   }),
 );
 app.use(cookieParser());
-app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 app.use("/api", index_api);
 app.use(errorHandler);
 
