@@ -14,6 +14,8 @@ import path from "path";
 import { randomUUID } from "crypto";
 import { fileTypeFromBuffer } from "file-type";
 import { TicketCategory, TicketPriority, TicketStatus } from "@prisma/client";
+import { uploadToCloudinary } from "../../utils/cloudinaryUpload";
+import cloudinary from "../../config/cloud.config";
 
 export async function createTicketController(
   req: express.Request & { user?: any },
@@ -23,20 +25,21 @@ export async function createTicketController(
   const files = (req.files ?? []) as Express.Multer.File[];
   const savedFilePaths: string[] = [];
 
+  const allowedMimeTypes = [
+    "image/jpeg",
+    "image/png",
+    "image/gif",
+    "image/webp",
+    "image/avif",
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ];
+
+  const uploadedFiles = [];
   try {
     for (const file of files) {
       const detectedType = await fileTypeFromBuffer(file.buffer);
-
-      const allowedMimeTypes = [
-        "image/jpeg",
-        "image/png",
-        "image/gif",
-        "image/webp",
-        "image/avif",
-        "application/pdf",
-        "application/msword",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      ];
 
       if (!detectedType || !allowedMimeTypes.includes(detectedType.mime)) {
         return next({
@@ -47,36 +50,28 @@ export async function createTicketController(
       }
     }
 
-    const uploadDir = path.join(process.cwd(), "uploads");
-    await fs.mkdir(uploadDir, { recursive: true });
-
-    const savedFiles: Express.Multer.File[] = [];
-
     for (const file of files) {
-      const filename = `${file.fieldname}-${randomUUID()}${path.extname(file.originalname)}`;
+      const uploaded = await uploadToCloudinary(file.buffer, file.originalname);
 
-      const filePath = path.join(uploadDir, filename);
-
-      await fs.writeFile(filePath, file.buffer);
-      savedFilePaths.push(filePath);
-
-      savedFiles.push({
-        ...file,
-        filename,
-        path: filePath,
+      uploadedFiles.push({
+        originalName: file.originalname,
+        mimeType: file.mimetype,
+        size: file.size,
+        url: uploaded.url,
+        publicId: uploaded.publicId,
+        resourceType: uploaded.resourceType,
       });
     }
 
-    const ticket = await createTicket(req.user.id, req.body, savedFiles);
+    const ticket = await createTicket(req.user.id, req.body, uploadedFiles);
 
     return sendResponse(res, 201, "Ticket created successfully", ticket);
   } catch (err: any) {
     await Promise.all(
-      savedFilePaths.map((filePath) =>
-        fs.unlink(filePath).catch(() => undefined),
+      uploadedFiles.map((file) =>
+        cloudinary.uploader.destroy(file.publicId).catch(() => undefined),
       ),
     );
-
     next(err);
   }
 }

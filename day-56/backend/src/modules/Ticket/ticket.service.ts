@@ -11,13 +11,22 @@ import {
 import { emailService } from "../../utils/email.service";
 import { emitTicketUpdated } from "../../socket/ticket.events";
 
+interface UploadedFile {
+  originalName: string;
+  mimeType: string;
+  size: number;
+  url: string;
+  publicId: string;
+  resourceType: string;
+}
+
 export async function createTicket(
   userId: string,
   ticketData: any,
-  files?: Express.Multer.File[],
+  files?: UploadedFile[],
 ) {
   const result = await prisma.$transaction(async (tx) => {
-    const attachments = files?.map((file) => file.path) || [];
+    const attachments = files?.map((file) => file.url) || [];
     const aiSuggestionUsed = ticketData.aiSuggestionUsed;
     const ticket = await tx.ticket.create({
       data: {

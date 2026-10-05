@@ -457,7 +457,11 @@ export default function TicketsPage() {
                       <section className="rounded-xl border border-blue-100 bg-white p-5">
                         <div className="flex gap-4 overflow-x-auto pb-2 [scrollbar-color:#cbd5e1_transparent] [scrollbar-width:thin]">
                           <TicketAttachments
-                            attachments={ticketDetails.attachments}
+                            attachments={
+                              Array.isArray(ticketDetails.attachments)
+                                ? (ticketDetails.attachments as string[])
+                                : []
+                            }
                           />
                         </div>
                       </section>
