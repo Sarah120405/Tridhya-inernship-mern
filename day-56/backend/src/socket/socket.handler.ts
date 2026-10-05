@@ -49,4 +49,10 @@ export function registerSocketHandlers(socket: Socket) {
       socket.emit("ticketError", { message: "Unable to join ticket room." });
     }
   });
+
+  socket.on("leaveTicket", (ticketId: string) => {
+    const roomName = `ticket:${ticketId}`;
+    socket.leave(roomName);
+    console.log(`User ${socket.data.user?.id} left ticket room: ${roomName}`);
+  });
 }

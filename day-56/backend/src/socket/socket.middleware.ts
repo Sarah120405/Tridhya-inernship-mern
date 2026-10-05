@@ -1,4 +1,4 @@
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 import { Socket } from "socket.io";
 
 export function socketAuthMiddleware(
@@ -26,14 +26,18 @@ export function socketAuthMiddleware(
       return next(new Error("Authentication token required"));
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload & {
       id: string;
       role: string;
     };
+    if (!decoded.exp) {
+      return next(new Error("Token expiry information is missing"));
+    }
 
     socket.data.user = {
       id: decoded.id,
       role: decoded.role,
+      expiresAt: decoded.exp * 1000,
     };
 
     next();

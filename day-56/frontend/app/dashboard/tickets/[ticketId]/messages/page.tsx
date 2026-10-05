@@ -82,8 +82,6 @@ export default function MessagePage() {
 
   const effectiveMode: MessageMode = canViewInternal ? messageMode : "EXTERNAL";
 
-  console.log(effectiveMode);
-
   const displayedMessages =
     effectiveMode === "EXTERNAL" ? messages : internalMessages;
 
@@ -128,23 +126,20 @@ export default function MessagePage() {
     socket.on("newMessage", handleNewMessage);
     socket.on("newInternalMessage", handleNewInternalMessage);
 
-    console.log("🔥 CONNECTING SOCKET...");
-
-    socket.connect();
-
     console.log("🔥 EMITTING JOIN TICKET:", ticketId);
 
     socket.emit("joinTicket", ticketId);
 
     return () => {
       socket.off("ticketJoined", handleTicketJoined);
+      socket.off("ticketJoined", handleTicketJoined);
       socket.off("ticketError", handleTicketError);
       socket.off("newMessage", handleNewMessage);
       socket.off("newInternalMessage", handleNewInternalMessage);
-
-      socket.disconnect();
+      socket.emit("leaveTicket", ticketId);
     };
   }, [ticketId, dispatch]);
+
   const listRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = listRef.current;
@@ -342,34 +337,6 @@ export default function MessagePage() {
                 agentAssistance={null}
                 showAssignmentControls={false}
               />
-              {/* <div className="mt-3 space-y-3">
-                <DetailRow
-                  label="Customer"
-                  value={
-                    ticketDetails?.customer?.name ??
-                    ticketDetails?.customerId ??
-                    "Not available"
-                  }
-                />
-
-                <DetailRow
-                  label="Assigned Agent"
-                  value={
-                    ticketDetails?.assignedAgent?.name ??
-                    ticketDetails?.assignedAgentId ??
-                    "Not assigned"
-                  }
-                />
-
-                <DetailRow
-                  label="Assigned Developer"
-                  value={
-                    ticketDetails?.assignedDeveloper?.name ??
-                    ticketDetails?.assignedDeveloperId ??
-                    "Not assigned"
-                  }
-                />
-              </div> */}
             </div>
           </div>
         </div>

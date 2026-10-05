@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { fetchCurrentUser, logOut } from "../store/slice/authSlice";
 import { FiFile } from "react-icons/fi";
+import { socket } from "../lib/socket";
 
 interface CommonLayoutProps {
   children: ReactNode;
@@ -85,6 +86,29 @@ export default function CommonLayout({ children }: CommonLayoutProps) {
   useEffect(() => {
     dispatch(fetchCurrentUser());
   }, [dispatch]);
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+    socket.connect();
+    const handleAuthExpired = async ({ message }: { message: string }) => {
+      console.error("Socket authentication expired:", message);
+      socket.disconnect();
+      try {
+        await dispatch(logOut()).unwrap();
+      } finally {
+        router.push("/");
+      }
+    };
+
+    socket.on("auth:expired", handleAuthExpired);
+
+    return () => {
+      socket.off("auth:expired", handleAuthExpired);
+      socket.disconnect();
+    };
+  }, [user?.id, dispatch, router]);
 
   const SidebarContent = (
     <>

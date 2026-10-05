@@ -1,4 +1,5 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { TicketActivity } from "./activitySlice";
 const API_URL = "http://localhost:5000/api";
 
 interface TicketPerson {
@@ -80,6 +81,11 @@ interface FetchTicketDetailsResponse {
 interface CloseTicketPayload {
   ticketId: string;
   action: "CLOSE" | "REOPEN";
+}
+
+interface RealtimeTicketUpdate {
+  ticket: Ticket;
+  activity?: TicketActivity;
 }
 
 const initialState: TicketState = {
@@ -303,6 +309,22 @@ const ticketSlice = createSlice({
       state.createdTicketId = null;
       state.createError = null;
     },
+    applyRealtimeTicketUpdate: (
+      state,
+      action: PayloadAction<RealtimeTicketUpdate>,
+    ) => {
+      const updatedTicket = action.payload.ticket;
+
+      state.ticketDetails = updatedTicket;
+
+      const index = state.tickets.findIndex(
+        (ticket) => ticket.id === updatedTicket.id,
+      );
+
+      if (index !== -1) {
+        state.tickets[index] = updatedTicket;
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -435,5 +457,6 @@ const ticketSlice = createSlice({
   },
 });
 
-export const { resetCreatedTicket } = ticketSlice.actions;
+export const { resetCreatedTicket, applyRealtimeTicketUpdate } =
+  ticketSlice.actions;
 export default ticketSlice.reducer;

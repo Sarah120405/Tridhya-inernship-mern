@@ -9,6 +9,7 @@ import {
 } from "@prisma/client";
 
 import { emailService } from "../../utils/email.service";
+import { emitTicketUpdated } from "../../socket/ticket.events";
 
 export async function createTicket(
   userId: string,
@@ -451,6 +452,10 @@ export async function ticketInDevelopmentUpdate(
     });
     return { updateTicket, updateTicketActivity };
   });
+  emitTicketUpdated(ticketId, {
+    ticket: result.updateTicket,
+    activity: result.updateTicketActivity,
+  });
   const customer = await prisma.user.findUnique({
     where: { id: result.updateTicket.customerId },
   });
@@ -539,6 +544,10 @@ export async function ticketResolvedUpdate(
       },
     });
     return { updatedTicket, updateTicketActivity, updateSLA };
+  });
+  emitTicketUpdated(ticketId, {
+    ticket: result.updatedTicket,
+    activity: result.updateTicketActivity,
   });
   const customer = await prisma.user.findUnique({
     where: { id: result.updatedTicket.customerId },
@@ -652,6 +661,10 @@ export async function ticketCloseUpdate(
     };
   });
 
+  emitTicketUpdated(ticketId, {
+    ticket: result.updatedTicket,
+    activity: result.ticketActivity,
+  });
   const notificationTicket = await prisma.ticket.findUnique({
     where: {
       id: ticketId,

@@ -43,8 +43,6 @@ export default function TicketAssignment({
     (user?.role === "SupportAgent" || user?.role === "Admin") &&
     !!ticket.assignedDeveloperId &&
     ["ESCALATED", "IN_DEVELOPMENT"].includes(ticket.status);
-  console.log(ticket.assignedDeveloper?.name);
-
   return (
     <>
       <div className="space-y-4">

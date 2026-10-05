@@ -1,4 +1,5 @@
 import prisma from "../../config/db.config";
+import { emitTicketUpdated } from "../../socket/ticket.events";
 import { emailService } from "../../utils/email.service";
 
 export async function assignTicketToAgent(
@@ -53,6 +54,11 @@ export async function assignTicketToAgent(
       },
     });
     return { agent, updatedTicket, updatedTicketActivity };
+  });
+
+  emitTicketUpdated(ticketId, {
+    ticket: result.updatedTicket,
+    activity: result.updatedTicketActivity,
   });
 
   try {
@@ -178,6 +184,11 @@ export async function assignTicketToDeveloper(
       updatedTicket,
       updatedTicketActivity,
     };
+  });
+
+  emitTicketUpdated(ticketId, {
+    ticket: result.updatedTicket,
+    activity: result.updatedTicketActivity,
   });
 
   try {

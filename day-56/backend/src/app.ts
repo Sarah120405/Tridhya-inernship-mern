@@ -30,10 +30,48 @@ io.use(socketAuthMiddleware);
 
 io.on("connection", (socket) => {
   console.log("Socket connected:", socket.id);
-  console.log("Authenticated user:", socket.data.user);
+
+  const expiresAt = socket.data.user?.expiresAt;
+
+  let expiryTimer: NodeJS.Timeout | undefined;
+
+  if (expiresAt) {
+    const remainingTime = expiresAt - Date.now();
+
+    if (remainingTime <= 0) {
+      socket.emit("auth:expired", {
+        message: "Your session has expired. Please log in again.",
+      });
+
+      socket.disconnect(true);
+      return;
+    }
+
+    expiryTimer = setTimeout(() => {
+      socket.emit("auth:expired", {
+        message: "Your session has expired. Please log in again.",
+      });
+
+      socket.disconnect(true);
+    }, remainingTime);
+  }
+
+  const user = socket.data.user;
+
+  if (user) {
+    const userRoom = `user:${user.id}`;
+    socket.join(userRoom);
+
+    console.log(`User ${user.id} joined user room: ${userRoom}`);
+  }
+
   registerSocketHandlers(socket);
 
   socket.on("disconnect", () => {
+    if (expiryTimer) {
+      clearTimeout(expiryTimer);
+    }
+
     console.log("Socket disconnected:", socket.id);
   });
 });
