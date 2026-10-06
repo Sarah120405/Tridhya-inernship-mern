@@ -9,6 +9,7 @@ export function initSocket(httpServer: http.Server) {
       origin: process.env.FRONTEND_URL,
       credentials: true,
     },
+    transports: ["websocket"],
   });
 
   io.on("connection", (socket) => {

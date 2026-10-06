@@ -4,6 +4,7 @@ import { SOCKET_URL } from "../lib/api";
 export const socket: Socket = io(SOCKET_URL, {
   withCredentials: true,
   autoConnect: false,
+  transports: ["websocket"],
 });
 
 socket.on("connect", () => {
