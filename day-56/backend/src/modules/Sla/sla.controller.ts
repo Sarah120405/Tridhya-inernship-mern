@@ -1,5 +1,10 @@
 import { Request, Response, NextFunction } from "express";
-import { getSLA, getSLAByTicketId, slaBreachCheck } from "./sla.service";
+import {
+  backgroundSlaMonitoring,
+  getSLA,
+  getSLAByTicketId,
+  slaBreachCheck,
+} from "./sla.service";
 import { sendResponse } from "../../utils/response";
 
 export async function getSLAController(
@@ -60,6 +65,20 @@ export async function slaBreachController(
       : req.params.id;
     const sla = await slaBreachCheck(ticketId);
     return sendResponse(res, 200, "SLA Breach calculated successfully", sla);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function slaMonitoringController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    await backgroundSlaMonitoring();
+
+    return sendResponse(res, 200, "SLA monitoring completed successfully.");
   } catch (error) {
     next(error);
   }
