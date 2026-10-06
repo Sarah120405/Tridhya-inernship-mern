@@ -46,7 +46,7 @@ export default function MessagePage() {
   const [messageMode, setMessageMode] = useState<MessageMode | "INTERNAL">(
     "EXTERNAL",
   );
-
+  const [isAiErrorDismissed, setIsAiErrorDismissed] = useState(false);
   const params = useParams<{ ticketId: string }>();
   const ticketId = params.ticketId;
   const { messages, isLoading, fetchError, isSending, sendError } = useSelector(
@@ -145,6 +145,11 @@ export default function MessagePage() {
     const el = listRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [displayedMessages]);
+
+  const displayAIError =
+    agentAssistanceError && !aiDraft
+      ? "AI suggestion is currently unavailable. Please select the category and priority manually."
+      : "";
 
   const handleSendMessage = async () => {
     const content = messageContent.trim();
@@ -260,11 +265,14 @@ export default function MessagePage() {
                 />
               )}
             </div>
-            {user?.role === "SupportAgent" && agentAssistanceError && (
-              <div className="mx-4 mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                {agentAssistanceError}
-              </div>
-            )}
+            {user?.role === "SupportAgent" &&
+              agentAssistanceError &&
+              !isAiErrorDismissed &&
+              messageMode === "EXTERNAL" && (
+                <div className="mx-4 mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  {displayAIError}
+                </div>
+              )}
             {/* AI Assistance */}
             {messageMode === "EXTERNAL" && !isAiDraftUsed && (
               <AgentAssistance
@@ -306,6 +314,7 @@ export default function MessagePage() {
               setMessageContent={setMessageContent}
               handleSendMessage={handleSendMessage}
               mode={effectiveMode}
+              onTyping={() => setIsAiErrorDismissed(true)}
             />
           </div>
         </div>

@@ -209,9 +209,24 @@ export async function agentAssistance(
   userId: string,
   userRole: string,
 ) {
-  const ticket = await prisma.ticket.findUnique({
-    where: { id: ticketId },
-  });
+  const [ticket, ticketMessages] = await Promise.all([
+    prisma.ticket.findUnique({
+      where: { id: ticketId },
+    }),
+    prisma.message.findMany({
+      where: { ticketId: ticketId },
+      orderBy: { createdAt: "asc" },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            name: true,
+            role: true,
+          },
+        },
+      },
+    }),
+  ]);
 
   if (!ticket) {
     throw { status: 404, message: "Ticket not found" };
@@ -223,19 +238,6 @@ export async function agentAssistance(
   if (userId !== ticket.assignedAgentId) {
     throw { status: 403, message: "Unauthorized" };
   }
-  const ticketMessages = await prisma.message.findMany({
-    where: { ticketId: ticketId },
-    orderBy: { createdAt: "asc" },
-    include: {
-      sender: {
-        select: {
-          id: true,
-          name: true,
-          role: true,
-        },
-      },
-    },
-  });
 
   const ticketContext = {
     title: ticket.title,
@@ -336,9 +338,24 @@ export async function developerAssistance(
   userId: string,
   userRole: string,
 ) {
-  const ticket = await prisma.ticket.findUnique({
-    where: { id: ticketId },
-  });
+  const [ticket, ticketMessages] = await Promise.all([
+    prisma.ticket.findUnique({
+      where: { id: ticketId },
+    }),
+    prisma.message.findMany({
+      where: { ticketId: ticketId },
+      orderBy: { createdAt: "asc" },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            name: true,
+            role: true,
+          },
+        },
+      },
+    }),
+  ]);
 
   if (!ticket) {
     throw { status: 404, message: "Ticket not found" };
@@ -350,20 +367,6 @@ export async function developerAssistance(
   if (userId !== ticket.assignedDeveloperId) {
     throw { status: 403, message: "Unauthorized" };
   }
-  const ticketMessages = await prisma.message.findMany({
-    where: { ticketId: ticketId },
-    orderBy: { createdAt: "asc" },
-    include: {
-      sender: {
-        select: {
-          id: true,
-          name: true,
-          role: true,
-        },
-      },
-    },
-  });
-
   const ticketContext = {
     title: ticket.title,
     description: ticket.description,

@@ -32,5 +32,6 @@ export async function login(userData: any) {
   if (!validPassword) {
     throw { status: 401, message: "Invalid password" };
   }
-  return user;
+  const { password, ...userWithoutPassword } = user;
+  return userWithoutPassword;
 }

@@ -8,6 +8,7 @@ interface MessageComposerProps {
   setMessageContent: React.Dispatch<React.SetStateAction<string>>;
   handleSendMessage: () => void;
   mode: MessageMode;
+  onTyping: () => void;
 }
 
 export default function MessageComposer({
@@ -17,6 +18,7 @@ export default function MessageComposer({
   setMessageContent,
   handleSendMessage,
   mode,
+  onTyping,
 }: MessageComposerProps) {
   return (
     <div className="shrink-0 border-t border-slate-200 bg-white p-3 sm:p-4">
@@ -26,7 +28,10 @@ export default function MessageComposer({
             id="content"
             name="content"
             value={messageContent}
-            onChange={(event) => setMessageContent(event.target.value)}
+            onChange={(event) => {
+              setMessageContent(event.target.value);
+              onTyping();
+            }}
             placeholder={
               mode === "EXTERNAL"
                 ? "Reply to the customer..."
