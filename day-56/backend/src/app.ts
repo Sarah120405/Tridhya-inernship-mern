@@ -9,7 +9,6 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import index_api from "./index_api";
 import { errorHandler } from "./middleware/error.middleware";
-import { startSlaMonitoring } from "./jobs/sla_monitor.job";
 import { socketAuthMiddleware } from "./socket/socket.middleware";
 import { registerSocketHandlers } from "./socket/socket.handler";
 import { initSocket } from "./socket/socket.server";
@@ -94,5 +93,4 @@ const PORT = process.env.PORT || 5000;
 
 httpServer.listen(PORT, () => {
   console.log("Server running on port: ", PORT);
-  startSlaMonitoring();
 });
