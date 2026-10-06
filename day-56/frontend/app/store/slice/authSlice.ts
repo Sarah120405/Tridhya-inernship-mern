@@ -1,6 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-
-const API_URL = "http://localhost:5000/api";
+import { API_URL } from "../../lib/api";
 
 export interface User {
   id: string;
@@ -96,7 +95,7 @@ export const fetchCurrentUser = createAsyncThunk<
   { rejectValue: string }
 >("auth/me", async (_, { rejectWithValue }) => {
   try {
-    const res = await fetch("http://localhost:5000/api/auth/me", {
+    const res = await fetch(`${API_URL}/auth/me`, {
       credentials: "include",
     });
 

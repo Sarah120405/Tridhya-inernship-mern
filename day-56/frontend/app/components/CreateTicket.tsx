@@ -3,13 +3,13 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  FiArrowLeft,
   FiCheckCircle,
   FiFileText,
   FiFlag,
   FiTag,
   FiType,
 } from "react-icons/fi";
+import { API_URL } from "../lib/api";
 
 interface FormData {
   title: string;
@@ -126,7 +126,7 @@ export default function CreateTicket() {
         data.append("attachments", file);
       });
 
-      const response = await fetch("http://localhost:5000/api/tickets", {
+      const response = await fetch(`${API_URL}/tickets`, {
         method: "POST",
         credentials: "include",
         body: data,

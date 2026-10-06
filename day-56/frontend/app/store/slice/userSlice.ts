@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import type { User } from "./authSlice";
-const API_URL = "http://localhost:5000/api";
+import { API_URL } from "../../lib/api";
 
 interface UserResponse {
   success: boolean;

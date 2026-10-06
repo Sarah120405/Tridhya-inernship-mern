@@ -2,8 +2,7 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { Ticket } from "./ticketSlice";
 import { User } from "./authSlice";
 import { AgentAssistance } from "./aiSlice";
-
-const API_URL = "http://localhost:5000/api";
+import { API_URL } from "../../lib/api";
 
 interface AssignDeveloperPayload {
   ticketId: string;

@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
-const API_URL = "http://localhost:5000/api";
+import { API_URL } from "../../lib/api";
 
 export interface InternalMsg {
   id: string;
