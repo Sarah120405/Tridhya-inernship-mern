@@ -151,6 +151,7 @@ export default function CommonLayout({ children }: CommonLayoutProps) {
       ticket: TicketInterface;
       activity: TicketActivity;
     }) => {
+      console.log("🔥 TICKET UPDATED RECEIVED:", payload);
       dispatch(applyRealtimeTicketUpdate(payload));
       if (payload.activity?.userId !== user?.id) {
         const message = `Ticket ${payload.ticket.ticketNumber} updated to ${payload.ticket.status.replace("_", " ")}`;

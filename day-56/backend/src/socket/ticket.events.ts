@@ -11,7 +11,6 @@ export function emitTicketUpdated(
   payload: TicketUpdatePayload,
 ) {
   const io = getIO();
-  io.to(`ticket:${ticketId}`).emit("ticketUpdated", payload);
 
   const { customerId, assignedAgentId, assignedDeveloperId } =
     payload.ticket as Ticket;
@@ -19,7 +18,20 @@ export function emitTicketUpdated(
     Boolean,
   );
 
+  console.log("🔥 EMITTING TICKET UPDATED", {
+    ticketId,
+    status: payload.ticket.status,
+    activityUserId: payload.activity.userId,
+    recipients,
+  });
+  io.to(`ticket:${ticketId}`).emit("ticketUpdated", payload);
+
   recipients.forEach((userId) => {
+    console.log("📡 EMITTING TO USER ROOM", {
+      room: `user:${userId}`,
+      ticketId,
+      status: payload.ticket.status,
+    });
     io.to(`user:${userId}`).emit("ticketUpdated", payload);
   });
 }
