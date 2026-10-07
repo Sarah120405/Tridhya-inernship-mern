@@ -3,13 +3,11 @@ import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../../store/store";
 import { useEffect, useState } from "react";
 import {
-  applyRealtimeTicketUpdate,
   closeTicket,
   developerUpdateTicket,
   fetchTicketDetails,
   fetchTickets,
   resolveTicket,
-  Ticket,
 } from "../../store/slice/ticketSlice";
 import Link from "next/link";
 import TicektList from "../../components/Tickets/TicketListItem";
@@ -29,12 +27,9 @@ import TicketAttachments from "../../components/Tickets/TicketAttachments";
 import {
   clearActivity,
   fetchTicketActivity,
-  TicketActivity,
 } from "../../store/slice/activitySlice";
 import TicketTimeline from "../../components/Tickets/TicketTimeline";
 import useDebounce from "../../hook/useDebounce";
-import { socket } from "../../lib/socket";
-import toast from "react-hot-toast";
 
 export default function TicketsPage() {
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
@@ -100,23 +95,6 @@ export default function TicketsPage() {
 
     dispatch(fetchTicketActivity(ticketDetails.id));
   }, [dispatch, ticketDetails?.id]);
-
-  useEffect(() => {
-    const handleTicketUpdated = (payload: {
-      ticket: Ticket;
-      activity: TicketActivity;
-    }) => {
-      dispatch(applyRealtimeTicketUpdate(payload));
-      toast.success(
-        `Ticket ${payload.ticket.ticketNumber} updated to ${payload.ticket.status.replace("_", " ")}`,
-      );
-    };
-    socket.on("ticketUpdated", handleTicketUpdated);
-
-    return () => {
-      socket.off("ticketUpdated", handleTicketUpdated);
-    };
-  }, [dispatch]);
 
   if (isLoading && tickets.length === 0) {
     return <div className="p-6 text-gray-500">Loading tickets...</div>;

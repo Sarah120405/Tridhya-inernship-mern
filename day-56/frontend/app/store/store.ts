@@ -9,6 +9,7 @@ import ActivityReducer from "./slice/activitySlice";
 import SlaReducer from "./slice/slaSlice";
 import ReportReducer from "./slice/reportSlice";
 import InternalMsgReducer from "./slice/internalMsgSlice";
+import NotificaitonReducer from "./slice/notificationSlice";
 
 const store = configureStore({
   reducer: {
@@ -22,6 +23,7 @@ const store = configureStore({
     sla: SlaReducer,
     report: ReportReducer,
     internalMsg: InternalMsgReducer,
+    notificationSlice: NotificaitonReducer,
   },
 });
 

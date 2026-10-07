@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
@@ -26,6 +26,18 @@ import {
 import { fetchCurrentUser, logOut } from "../store/slice/authSlice";
 import { FiFile } from "react-icons/fi";
 import { socket } from "../lib/socket";
+import toast from "react-hot-toast";
+import {
+  applyRealtimeTicketUpdate,
+  Ticket as TicketInterface,
+} from "../store/slice/ticketSlice";
+import { TicketActivity } from "../store/slice/activitySlice";
+import {
+  addNotification,
+  markAsRead,
+  markAllAsRead,
+} from "../store/slice/notificationSlice";
+import useOnClickOutside from "../hook/useOnClickOutside";
 
 interface CommonLayoutProps {
   children: ReactNode;
@@ -82,6 +94,13 @@ export default function CommonLayout({ children }: CommonLayoutProps) {
 
   const router = useRouter();
   const user = useSelector((state: RootState) => state.auth.user);
+  const notifications = useSelector(
+    (state: RootState) => state.notificationSlice.items,
+  );
+  const unreadCount = notifications.filter((n) => !n.read).length;
+  const [notifOpen, setNotifOpen] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
+  useOnClickOutside(notifRef, () => setNotifOpen(false));
   const dispatch = useDispatch<AppDispatch>();
   useEffect(() => {
     dispatch(fetchCurrentUser());
@@ -109,6 +128,33 @@ export default function CommonLayout({ children }: CommonLayoutProps) {
       socket.disconnect();
     };
   }, [user?.id, dispatch, router]);
+
+  useEffect(() => {
+    const handleTicketUpdated = (payload: {
+      ticket: TicketInterface;
+      activity: TicketActivity;
+    }) => {
+      dispatch(applyRealtimeTicketUpdate(payload));
+      if (payload.activity?.userId !== user?.id) {
+        const message = `Ticket ${payload.ticket.ticketNumber} updated to ${payload.ticket.status.replace("_", " ")}`;
+        toast.success(message);
+        dispatch(
+          addNotification({
+            id: crypto.randomUUID(),
+            message,
+            ticketId: payload.ticket.id,
+            read: false,
+            createdAt: new Date().toISOString(),
+          }),
+        );
+      }
+    };
+    socket.on("ticketUpdated", handleTicketUpdated);
+
+    return () => {
+      socket.off("ticketUpdated", handleTicketUpdated);
+    };
+  }, [dispatch, user?.id]);
 
   const SidebarContent = (
     <>
@@ -221,14 +267,59 @@ export default function CommonLayout({ children }: CommonLayoutProps) {
 
           {/* User Profile */}
           <div className="ml-4 flex shrink-0 items-center gap-3 sm:gap-5">
-            <button
-              type="button"
-              aria-label="Notifications"
-              className="relative rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
-            >
-              <Bell className="h-5 w-5" />
-              <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />
-            </button>
+            <div className="relative" ref={notifRef}>
+              <button
+                type="button"
+                aria-label="Notifications"
+                onClick={() => setNotifOpen((prev) => !prev)}
+                className="relative rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+              >
+                <Bell className="h-5 w-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />
+                )}
+              </button>
+
+              {notifOpen && (
+                <div className="absolute right-0 mt-2 w-80 rounded-xl border border-slate-200 bg-white shadow-lg z-20">
+                  <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+                    <p className="text-sm font-semibold text-slate-800">
+                      Notifications
+                    </p>
+                    {unreadCount > 0 && (
+                      <button
+                        onClick={() => dispatch(markAllAsRead())}
+                        className="text-xs font-medium text-indigo-600 hover:underline"
+                      >
+                        Mark all as read
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="max-h-80 overflow-y-auto">
+                    {notifications.length === 0 ? (
+                      <p className="px-4 py-6 text-center text-sm text-slate-500">
+                        No notifications
+                      </p>
+                    ) : (
+                      notifications.map((n) => (
+                        <Link
+                          key={n.id}
+                          href={`/dashboard/tickets`}
+                          onClick={() => {
+                            dispatch(markAsRead(n.id));
+                            setNotifOpen(false);
+                          }}
+                          className="block border-b border-slate-50 px-4 py-3 text-sm font-medium text-slate-800 transition hover:bg-slate-50"
+                        >
+                          {n.message}
+                        </Link>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
 
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 to-violet-600 text-sm font-semibold text-white">
