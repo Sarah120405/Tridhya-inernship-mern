@@ -14,6 +14,10 @@ const router = express.Router();
 router.post("/register", validate(registerSchema), registerController);
 router.post("/login", validate(loginSchema), loginController);
 router.post("/logout", logoutController);
+router.get("/socket-token", requireAuth, (req, res) => {
+  const token = req.cookies.token;
+  res.json({ token });
+});
 router.get(
   "/me",
   requireAuth,

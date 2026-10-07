@@ -107,10 +107,9 @@ export default function CommonLayout({ children }: CommonLayoutProps) {
   }, [dispatch]);
 
   useEffect(() => {
-    if (!user) {
-      return;
-    }
-    socket.connect();
+    if (!user) return;
+    let isMounted = true;
+
     const handleAuthExpired = async ({ message }: { message: string }) => {
       console.error("Socket authentication expired:", message);
       socket.disconnect();
@@ -121,9 +120,27 @@ export default function CommonLayout({ children }: CommonLayoutProps) {
       }
     };
 
-    socket.on("auth:expired", handleAuthExpired);
+    const connectSocket = async () => {
+      try {
+        const res = await fetch("/api/auth/socket-token", {
+          credentials: "include",
+        });
+        const { token } = await res.json();
+
+        if (!isMounted) return;
+
+        socket.auth = { token };
+        socket.on("auth:expired", handleAuthExpired);
+        socket.connect();
+      } catch (error) {
+        console.error("Failed to fetch socket token:", error);
+      }
+    };
+
+    void connectSocket();
 
     return () => {
+      isMounted = false;
       socket.off("auth:expired", handleAuthExpired);
       socket.disconnect();
     };

@@ -6,21 +6,7 @@ export function socketAuthMiddleware(
   next: (err?: Error) => void,
 ) {
   try {
-    const cookieHeader = socket.handshake.headers.cookie;
-
-    if (!cookieHeader) {
-      return next(new Error("Authentication cookie required"));
-    }
-
-    const tokenCookie = cookieHeader
-      .split(";")
-      .find((cookie) => cookie.trim().startsWith("token="));
-
-    if (!tokenCookie) {
-      return next(new Error("Authentication token required"));
-    }
-
-    const token = tokenCookie.split("=")[1];
+    const token = socket.handshake.auth?.token; // read from auth payload, not cookie
 
     if (!token) {
       return next(new Error("Authentication token required"));
@@ -30,6 +16,7 @@ export function socketAuthMiddleware(
       id: string;
       role: string;
     };
+
     if (!decoded.exp) {
       return next(new Error("Token expiry information is missing"));
     }
@@ -43,7 +30,6 @@ export function socketAuthMiddleware(
     next();
   } catch (error) {
     console.error("Socket authentication error:", error);
-
     next(new Error("Invalid or expired token"));
   }
 }
