@@ -5,10 +5,11 @@ type UserRole = "Customer" | "SupportAgent" | "Developer" | "Admin";
 
 async function getUserFromBackend(request: NextRequest) {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
+    const res = await fetch(`${request.nextUrl.origin}/api/auth/me`, {
       headers: {
         cookie: request.headers.get("cookie") ?? "",
       },
+      cache: "no-store",
     });
     console.log("Cookie header in middleware:", request.headers.get("cookie"));
     console.log("Response from backend:", res);
