@@ -11,6 +11,10 @@ socket.on("connect", () => {
   console.log("🔥 SOCKET CONNECTED:", socket.id);
 });
 
+socket.io.on("reconnect", (attempt) => {
+  console.log("🔥 SOCKET RECONNECTED, attempt:", attempt);
+});
+
 socket.on("connect_error", (error) => {
   console.error("🔥 SOCKET CONNECTION ERROR:", error.message);
 });
