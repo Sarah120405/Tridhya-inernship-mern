@@ -62,6 +62,7 @@ export default function AuthForm({ mode, onSwitchMode }: AuthFormProps) {
     );
 
     if (login.fulfilled.match(result)) {
+      console.log("Login successful");
       router.push("/dashboard");
     }
   };

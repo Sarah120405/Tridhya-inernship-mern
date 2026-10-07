@@ -10,7 +10,8 @@ async function getUserFromBackend(request: NextRequest) {
         cookie: request.headers.get("cookie") ?? "",
       },
     });
-
+    console.log("Cookie header in middleware:", request.headers.get("cookie"));
+    console.log("Response from backend:", res);
     if (!res.ok) return null;
 
     const json = await res.json();
