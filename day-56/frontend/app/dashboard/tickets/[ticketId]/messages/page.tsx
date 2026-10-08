@@ -121,24 +121,41 @@ export default function MessagePage() {
       dispatch(addInternalMsg(message));
     };
 
+    const joinRoom = () => {
+      console.log("🔥 EMITTING JOIN TICKET:", ticketId);
+      socket.emit("joinTicket", ticketId);
+    };
+
     socket.on("ticketJoined", handleTicketJoined);
     socket.on("ticketError", handleTicketError);
     socket.on("newMessage", handleNewMessage);
     socket.on("newInternalMessage", handleNewInternalMessage);
+    socket.on("connect", joinRoom);
 
-    console.log("🔥 EMITTING JOIN TICKET:", ticketId);
-
-    socket.emit("joinTicket", ticketId);
+    if (socket.connected) joinRoom();
 
     return () => {
-      socket.off("ticketJoined", handleTicketJoined);
       socket.off("ticketJoined", handleTicketJoined);
       socket.off("ticketError", handleTicketError);
       socket.off("newMessage", handleNewMessage);
       socket.off("newInternalMessage", handleNewInternalMessage);
-      socket.emit("leaveTicket", ticketId);
+      socket.off("connect", joinRoom);
+      if (socket.connected) socket.emit("leaveTicket", ticketId);
     };
   }, [ticketId, dispatch]);
+
+  useEffect(() => {
+    const handleReconnect = () => {
+      dispatch(fetchTicketMessage(ticketId));
+      if (canViewInternal && messageMode === "INTERNAL") {
+        dispatch(fetchTicketInternalMsg(ticketId));
+      }
+    };
+    socket.io.on("reconnect", handleReconnect);
+    return () => {
+      socket.io.off("reconnect", handleReconnect);
+    };
+  }, [dispatch, ticketId, canViewInternal, messageMode]);
 
   const listRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
