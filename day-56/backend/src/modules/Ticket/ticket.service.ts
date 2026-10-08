@@ -630,7 +630,9 @@ export async function ticketCloseUpdate(
     newStatus = TicketStatus.CLOSED;
     newAction = TicketActivityAction.TICKET_CLOSED;
   } else if (action === "REOPEN") {
-    newStatus = TicketStatus.IN_PROGRESS;
+    newStatus = ticket.assignedDeveloperId
+      ? TicketStatus.IN_DEVELOPMENT
+      : TicketStatus.IN_PROGRESS;
     newAction = TicketActivityAction.STATUS_CHANGED;
   } else {
     throw {
@@ -644,6 +646,8 @@ export async function ticketCloseUpdate(
       where: { id: ticketId },
       data: {
         status: newStatus,
+        ...(action === "REOPEN" ? { resolvedAt: null } : {}),
+        ...(action === "CLOSE" ? { closedAt: new Date() } : {}),
       },
     });
 
