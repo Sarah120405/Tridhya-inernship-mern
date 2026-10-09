@@ -65,8 +65,15 @@ interface SLAResponse {
   };
 }
 
+interface SLAByTicketIdResponse {
+  success: boolean;
+  message: string;
+  data: SLA;
+}
+
 interface SLAState {
   slas: SLA[];
+  slaByTicket: SLA | null;
   pagination: SLAResponse["data"]["pagination"] | null;
   isLoading: boolean;
   error: string | null;
@@ -74,6 +81,7 @@ interface SLAState {
 
 const initialState: SLAState = {
   slas: [],
+  slaByTicket: null,
   pagination: null,
   isLoading: false,
   error: null,
@@ -121,6 +129,32 @@ export const fetchSLAs = createAsyncThunk<
     }
   },
 );
+
+export const fetchSLAByTicketId = createAsyncThunk<
+  SLAByTicketIdResponse,
+  { ticketId: string },
+  { rejectValue: string }
+>("sla/fetchSLAByTicketId", async ({ ticketId }, { rejectWithValue }) => {
+  try {
+    const response = await fetch(`${API_URL}/sla/${ticketId}`, {
+      method: "GET",
+      credentials: "include",
+    });
+
+    const data: SLAByTicketIdResponse = await response.json();
+
+    if (!response.ok) {
+      return rejectWithValue(data.message || "Failed to fetch SLA record.");
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Fetch SLA by ticket ID error:", error);
+
+    return rejectWithValue("Unable to fetch SLA record. Please try again.");
+  }
+});
+
 const slaSlice = createSlice({
   name: "sla",
 
@@ -157,6 +191,24 @@ const slaSlice = createSlice({
         state.isLoading = false;
         state.slas = [];
         state.error = action.payload || "Failed to fetch SLA records.";
+      });
+    builder
+      .addCase(fetchSLAByTicketId.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+
+      .addCase(fetchSLAByTicketId.fulfilled, (state, action) => {
+        state.isLoading = false;
+
+        state.slaByTicket = action.payload.data ? action.payload.data : null;
+        state.error = null;
+      })
+
+      .addCase(fetchSLAByTicketId.rejected, (state, action) => {
+        state.isLoading = false;
+        state.slaByTicket = null;
+        state.error = action.payload || "Failed to fetch SLA record.";
       });
   },
 });

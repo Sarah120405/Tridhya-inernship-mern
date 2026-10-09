@@ -87,7 +87,7 @@ export default function UsersPage() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen">
       <div className="mx-auto max-w-[1500px] space-y-6">
         {/* Header */}
         <section>
@@ -385,17 +385,19 @@ export default function UsersPage() {
                         </span>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedUser(user);
-                          setSelectedRole(user.role);
-                        }}
-                        className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-600 hover:bg-blue-50 hover:text-blue-600"
-                      >
-                        <FiEdit3 size={14} />
-                        Change Role
-                      </button>
+                      {user.role !== "Admin" && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setSelectedRole(user.role);
+                          }}
+                          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-600 hover:bg-blue-50 hover:text-blue-600"
+                        >
+                          <FiEdit3 size={14} />
+                          Change Role
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}

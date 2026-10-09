@@ -101,3 +101,46 @@ export const getActivityDescription = (activity: TicketActivity) => {
       return "Ticket activity was updated.";
   }
 };
+
+export const getOverallSLAStatus = (
+  firstResponse: TargetStatus,
+  resolution: TargetStatus,
+) => {
+  const statuses = [firstResponse, resolution].filter(
+    (status) => status !== "NOT_APPLICABLE",
+  );
+
+  if (statuses.length === 0) return "NOT_APPLICABLE";
+
+  if (statuses.includes("BREACHED")) return "BREACHED";
+
+  if (statuses.every((status) => status === "COMPLETED")) {
+    return "COMPLETED";
+  }
+
+  if (statuses.includes("AT_RISK")) return "AT_RISK";
+
+  return "ON_TRACK";
+};
+
+type TargetStatus =
+  | "COMPLETED"
+  | "BREACHED"
+  | "AT_RISK"
+  | "ON_TRACK"
+  | "NOT_APPLICABLE";
+
+export const getStatusClasses = (status: TargetStatus | string) => {
+  switch (status) {
+    case "COMPLETED":
+      return "bg-blue-100 text-blue-700";
+    case "BREACHED":
+      return "bg-red-100 text-red-700";
+    case "AT_RISK":
+      return "bg-yellow-100 text-yellow-700";
+    case "ON_TRACK":
+      return "bg-green-100 text-green-700";
+    default:
+      return "bg-gray-100 text-gray-600";
+  }
+};

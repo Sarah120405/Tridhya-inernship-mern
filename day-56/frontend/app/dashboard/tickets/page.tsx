@@ -30,6 +30,7 @@ import {
 } from "../../store/slice/activitySlice";
 import TicketTimeline from "../../components/Tickets/TicketTimeline";
 import useDebounce from "../../hook/useDebounce";
+import { FiUsers } from "react-icons/fi";
 
 export default function TicketsPage() {
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
@@ -201,6 +202,24 @@ export default function TicketsPage() {
   };
   return (
     <div className="min-h-0 h-[calc(120vh-5rem)] space-y-2 flex flex-col gap-4">
+      <section>
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
+            <FiUsers size={22} />
+          </div>
+
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">
+              Tickets
+            </h1>
+
+            <p className="mt-1 text-sm text-slate-500">
+              Manage and track your support tickets
+            </p>
+          </div>
+        </div>
+      </section>
+
       <div
         className={`shrink-0 grid h-full min-h-0 gap-4 ${
           selectedTicketId
@@ -214,13 +233,6 @@ export default function TicketsPage() {
             selectedTicketId ? "hidden md:flex" : "flex"
           } flex min-h-0 flex-col overflow-hidden rounded-2xl border border-blue-100 bg-white`}
         >
-          <div className="border-b border-blue-100 bg-blue-50/40 p-5">
-            <h1 className="text-2xl font-bold text-slate-900">Tickets</h1>
-
-            <p className="mt-1 text-sm text-slate-500">
-              Manage and track your support tickets
-            </p>
-          </div>
           {statusUpdateError && (
             <div className="mx-4 mt-3 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
               {statusUpdateError}
@@ -411,9 +423,11 @@ export default function TicketsPage() {
                         </div>
                       )}
                       {escalationAssistanceTicketId === ticketDetails?.id &&
-                        escalationAssistanceError && (
+                        escalationAssistanceError &&
+                        user.role === "SupportAgent" && (
                           <div className="mb-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-                            {escalationAssistanceError}
+                            {escalationAssistanceError ||
+                              "Failed to fetch AI assistance."}
                           </div>
                         )}
                       <TicketAssignment

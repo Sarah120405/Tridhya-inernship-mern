@@ -3,7 +3,6 @@
 import {
   FiCalendar,
   FiCamera,
-  FiClock,
   FiEdit3,
   FiLock,
   FiLogOut,
@@ -19,6 +18,7 @@ import {
   updateUserDetails,
   updateUserPassword,
 } from "../../store/slice/userSlice";
+import { toast } from "react-hot-toast";
 
 export default function SettingsPage() {
   const dispatch = useDispatch<AppDispatch>();
@@ -29,6 +29,11 @@ export default function SettingsPage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
+  const [profileError, setProfileError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+
+  const profileUnchanged =
+    name.trim() === user?.name && email.trim() === user?.email;
   const router = useRouter();
 
   const {
@@ -49,6 +54,18 @@ export default function SettingsPage() {
   }, [user]);
 
   const handleUpdateProfile = async () => {
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+
+    if (trimmedName.length < 2) {
+      setProfileError("Name must be at least 2 characters.");
+      return;
+    }
+    if (!/^\S+@\S+\.\S+$/.test(trimmedEmail)) {
+      setProfileError("Enter a valid email address.");
+      return;
+    }
+    setProfileError("");
     const result = await dispatch(
       updateUserDetails({
         name,
@@ -57,15 +74,29 @@ export default function SettingsPage() {
     );
 
     if (updateUserDetails.fulfilled.match(result)) {
+      toast.success("Profile updated successfully!");
       dispatch(fetchCurrentUser());
     }
   };
 
   const handleUpdatePassword = async () => {
-    if (newPassword !== confirmPassword) {
-      console.log("Password didn't match");
+    setPasswordError("");
 
-      return "Password didn't match";
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setPasswordError("Please fill in all password fields.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError("New password and confirm password do not match.");
+      return;
+    }
+    if (newPassword === currentPassword) {
+      setPasswordError("New password must be different from the current one.");
+      return;
+    }
+    if (newPassword.length < 8) {
+      setPasswordError("New password must be at least 8 characters.");
+      return;
     }
 
     const result = await dispatch(
@@ -79,6 +110,7 @@ export default function SettingsPage() {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
+      toast.success("Password updated successfully!");
     }
   };
 
@@ -229,9 +261,9 @@ export default function SettingsPage() {
                 </div>
               </div>
               {/* Save */}
-              {updateUserError && (
+              {(profileError || updateUserError) && (
                 <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600">
-                  {updateUserError}
+                  {profileError || updateUserError}
                 </div>
               )}
               <div className="mt-auto flex justify-end">
@@ -311,9 +343,9 @@ export default function SettingsPage() {
                   />
                 </div>
               </div>
-              {updatePasswordError && (
+              {(passwordError || updatePasswordError) && (
                 <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600">
-                  {updatePasswordError}
+                  {passwordError || updatePasswordError}
                 </div>
               )}
               <div className="mt-auto flex justify-end">

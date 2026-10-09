@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Ticket } from "../../store/slice/ticketSlice";
 import { User } from "../../store/slice/authSlice";
 import { AgentAssistance } from "../../store/slice/aiSlice";
@@ -30,6 +30,10 @@ export default function TicketAssignment({
 }: TicketAssignmentProps) {
   const [selectedDeveloperId, setSelectedDeveloperId] = useState("");
   const [selectedAgentId, setSelectedAgentId] = useState("");
+
+  useEffect(() => setSelectedAgentId(""), [ticket?.assignedAgentId]);
+  useEffect(() => setSelectedDeveloperId(""), [ticket?.assignedDeveloperId]);
+
   if (!ticket) return null;
   const shouldEscalate = agentAssistance?.escalationRecommended === true;
 
@@ -70,7 +74,11 @@ export default function TicketAssignment({
                 <select
                   value={selectedAgentId}
                   onChange={(e) => setSelectedAgentId(e.target.value)}
-                  disabled={isAssigningAgent}
+                  disabled={
+                    !selectedAgentId ||
+                    isAssigningAgent ||
+                    selectedAgentId === ticket.assignedAgentId
+                  }
                   className="flex-1 rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-500"
                 >
                   <option value="">Select Support Agent</option>
@@ -88,12 +96,12 @@ export default function TicketAssignment({
                   onClick={() => onAgentAssign(selectedAgentId)}
                   className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {isAssigning
+                  {isAssigningAgent
                     ? ticket.assignedAgentId
                       ? "Reassigning..."
                       : "Assigning ..."
                     : ticket.assignedAgentId
-                      ? "Reassign Developer"
+                      ? "Reassign Agent"
                       : "Assign Agent"}
                 </button>
               </div>
@@ -150,7 +158,11 @@ export default function TicketAssignment({
                   <select
                     value={selectedDeveloperId}
                     onChange={(e) => setSelectedDeveloperId(e.target.value)}
-                    disabled={isAssigning}
+                    disabled={
+                      !selectedDeveloperId ||
+                      isAssigning ||
+                      selectedDeveloperId === ticket.assignedDeveloperId
+                    }
                     className="flex-1 rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-500"
                   >
                     <option value="">Select developer</option>

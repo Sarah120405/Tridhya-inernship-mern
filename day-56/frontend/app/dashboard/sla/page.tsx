@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../../store/store";
-import { fetchSLAs } from "../../store/slice/slaSlice";
+import { fetchSLAByTicketId, fetchSLAs } from "../../store/slice/slaSlice";
 import { MetricCard } from "../../components/MetricCard";
 import {
   FiActivity,
@@ -12,20 +12,71 @@ import {
   FiCheckCircle,
 } from "react-icons/fi";
 import useDebounce from "../../hook/useDebounce";
+import { formatDate } from "../../utils/date";
+import {
+  getOverallSLAStatus,
+  getStatusClasses,
+  PRIORITY_STYLES,
+  getTicketStatusClass,
+} from "../../utils/ticketStyles";
+import SlaModal from "../../components/SlaModal";
+
+type TargetStatus =
+  | "COMPLETED"
+  | "BREACHED"
+  | "AT_RISK"
+  | "ON_TRACK"
+  | "NOT_APPLICABLE";
+
+export function getTargetStatus(
+  completedAt: string | Date | null,
+  dueAt: string | Date | null,
+  createdAt: string | Date,
+  now = new Date(),
+): TargetStatus {
+  if (!dueAt) return "NOT_APPLICABLE";
+
+  const due = new Date(dueAt).getTime();
+  const current = now.getTime();
+
+  if (completedAt) {
+    return new Date(completedAt).getTime() > due ? "BREACHED" : "COMPLETED";
+  }
+
+  if (current > due) return "BREACHED";
+
+  const start = new Date(createdAt).getTime();
+  const duration = Math.max(due - start, 1);
+  const percentageRemaining = ((due - current) / duration) * 100;
+
+  return percentageRemaining <= 20 ? "AT_RISK" : "ON_TRACK";
+}
 
 export default function SLAMonitoringPage() {
   const dispatch = useDispatch<AppDispatch>();
 
-  const { slas, pagination, isLoading, error } = useSelector(
+  const { slas, slaByTicket, pagination, isLoading, error } = useSelector(
     (state: RootState) => state.sla,
   );
 
   const [page, setPage] = useState(1);
-  const limit = 5;
+  const limit = 10;
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [priorityFilter, setPriorityFilter] = useState("ALL");
   const debouncedSearch = useDebounce(search, 300);
+  const [selectedSLA, setSelectedSLA] = useState<(typeof slas)[number] | null>(
+    null,
+  );
+
+  const [slaDetails, setSlaDetails] = useState<(typeof slas)[number] | null>(
+    null,
+  );
+
+  const [isSlaModalOpen, setIsSlaModalOpen] = useState(false);
+  const [isSlaDetailsLoading, setIsSlaDetailsLoading] = useState(false);
+  const [slaDetailsError, setSlaDetailsError] = useState("");
+
   useEffect(() => {
     dispatch(
       fetchSLAs({
@@ -36,6 +87,25 @@ export default function SLAMonitoringPage() {
       }),
     );
   }, [dispatch, page, priorityFilter, debouncedSearch]);
+
+  const handleOpenSLAModal = async (sla: (typeof slas)[number]) => {
+    setSelectedSLA(sla);
+    setSlaDetails(null);
+    setSlaDetailsError("");
+    setIsSlaModalOpen(true);
+    setIsSlaDetailsLoading(true);
+
+    try {
+      dispatch(fetchSLAByTicketId({ ticketId: sla.ticket.id }));
+      console.log("SLA details fetched successfully:", slaByTicket);
+      setSlaDetails(slaByTicket);
+    } catch (error) {
+      console.error("Failed to fetch SLA details:", error);
+      setSlaDetailsError("Unable to load SLA details. Please try again.");
+    } finally {
+      setIsSlaDetailsLoading(false);
+    }
+  };
   const totalPages = pagination?.totalPages ?? 1;
 
   useEffect(() => {
@@ -43,61 +113,27 @@ export default function SLAMonitoringPage() {
   }, [priorityFilter, debouncedSearch, statusFilter]);
 
   const getSLAStatus = (sla: (typeof slas)[number]) => {
-    if (sla.breached) {
+    const firstResponse = getTargetStatus(
+      sla.firstRespondedAt,
+      sla.firstResponseDueAt,
+      sla.createdAt,
+    );
+
+    const resolution = getTargetStatus(
+      sla.resolutionCompletedAt,
+      sla.resolutionDueAt,
+      sla.createdAt,
+    );
+
+    if (firstResponse === "BREACHED" || resolution === "BREACHED") {
       return "BREACHED";
     }
 
-    const now = new Date().getTime();
-
-    const responseDue = sla.firstResponseDueAt
-      ? new Date(sla.firstResponseDueAt).getTime()
-      : null;
-    const resolutionDue = sla.resolutionDueAt
-      ? new Date(sla.resolutionDueAt).getTime()
-      : null;
-    const dueTimes = [responseDue, resolutionDue].filter(
-      (time): time is number => time !== null,
-    );
-    if (dueTimes.length === 0) {
-      return "ON_TRACK";
-    }
-
-    const nearestDue = Math.min(...dueTimes);
-    const totalDuration = Math.max(
-      nearestDue - new Date(sla.createdAt).getTime(),
-      1,
-    );
-    const remaining = nearestDue - now;
-    const percentageRemaining = (remaining / totalDuration) * 100;
-
-    if (percentageRemaining <= 20) {
+    if (firstResponse === "AT_RISK" || resolution === "AT_RISK") {
       return "AT_RISK";
     }
+
     return "ON_TRACK";
-  };
-
-  const getRemainingTime = (dueAt: string | null) => {
-    if (!dueAt) {
-      return "—";
-    }
-
-    const difference = new Date(dueAt).getTime() - Date.now();
-
-    if (difference <= 0) {
-      return "Breached";
-    }
-
-    const totalMinutes = Math.floor(difference / (1000 * 60));
-    const days = Math.floor(totalMinutes / (60 * 24));
-    const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
-    const minutes = totalMinutes % 60;
-    if (days > 0) {
-      return `${days}d ${hours}h`;
-    }
-    if (hours > 0) {
-      return `${hours}h ${minutes}m`;
-    }
-    return `${minutes}m`;
   };
 
   const filteredSLAs = useMemo(() => {
@@ -230,14 +266,21 @@ export default function SLAMonitoringPage() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-blue-200 bg-white">
-        <div className="flex items-center gap-2 border-b border-blue-200 px-4 py-3 sm:px-5 sm:py-4">
-          <h2 className="font-semibold text-slate-900">SLA Overview</h2>
+      <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
+        <div className="flex flex-col gap-1 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <div>
+            <h2 className="text-base font-semibold tracking-tight text-slate-900">
+              SLA Overview
+            </h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Monitor response and resolution targets
+            </p>
+          </div>
 
-          <p className="text-sm text-slate-500">
-            ({pagination?.total ?? 0} ticket
-            {(pagination?.total ?? 0) !== 1 ? "s" : ""})
-          </p>
+          <span className="inline-flex w-fit items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600">
+            {pagination?.total ?? 0}{" "}
+            {(pagination?.total ?? 0) === 1 ? "ticket" : "tickets"}
+          </span>
         </div>
 
         {filteredSLAs.length === 0 ? (
@@ -250,7 +293,7 @@ export default function SLAMonitoringPage() {
           </div>
         ) : (
           <>
-            <div className="overflow-auto max-h-[500px] relative [scrollbar-color:#cbd5e1_transparent] [scrollbar-width:thin]">
+            <div className="overflow-auto max-h-[560px] relative [scrollbar-color:#cbd5e1_transparent] [scrollbar-width:thin]">
               {isLoading && (
                 <div className="absolute inset-0 z-20 bg-white/70 backdrop-blur-[1px]">
                   <div className="flex h-full items-center justify-center">
@@ -264,145 +307,176 @@ export default function SLAMonitoringPage() {
                 </div>
               )}
               <table className="w-full min-w-[760px] sm:min-w-[900px] lg:min-w-[1000px]">
-                <thead className="border-b border-blue-200 bg-gray-50 sticky top-0 z-10">
+                <thead className="border-b border-slate-200 bg-slate-50/95 backdrop-blur-sm sticky top-0 z-10">
                   <tr>
                     <th className="sticky left-0 z-20 whitespace-nowrap bg-gray-50 px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500 sm:px-3">
                       Ticket
                     </th>
 
                     <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500 sm:px-5">
-                      Priority
-                    </th>
-
-                    <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500 sm:px-5">
                       Status
                     </th>
 
-                    <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500 sm:px-5">
-                      First Response
+                    <th className="min-w-[240px] px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      First Response SLA
                     </th>
 
-                    <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500 sm:px-5">
-                      Resolution
+                    <th className="min-w-[240px] px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Resolution SLA
                     </th>
 
-                    <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500 sm:px-5">
-                      SLA
+                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Overall SLA
                     </th>
                   </tr>
                 </thead>
 
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-slate-100">
                   {filteredSLAs.length > 0 ? (
                     filteredSLAs.map((sla) => {
                       const ticket = sla.ticket;
-                      const slaStatus = getSLAStatus(sla);
+                      const firstResponseStatus = getTargetStatus(
+                        sla.firstRespondedAt,
+                        sla.firstResponseDueAt,
+                        sla.createdAt,
+                      );
 
+                      const resolutionStatus = getTargetStatus(
+                        sla.resolutionCompletedAt,
+                        sla.resolutionDueAt,
+                        sla.createdAt,
+                      );
+
+                      const overallStatus = getOverallSLAStatus(
+                        firstResponseStatus,
+                        resolutionStatus,
+                      );
+
+                      const renderTarget = (
+                        status: TargetStatus,
+                        completedAt: string | Date | null,
+                        dueAt: string | Date | null,
+                      ) => {
+                        const isCompleted = Boolean(completedAt);
+                        const isBreached =
+                          !isCompleted && status === "BREACHED";
+
+                        const label = isCompleted
+                          ? "Completed"
+                          : isBreached
+                            ? "Deadline passed"
+                            : "Due date";
+
+                        const dateValue = completedAt || dueAt;
+
+                        const indicatorClass = isCompleted
+                          ? "bg-emerald-500"
+                          : isBreached
+                            ? "bg-red-500"
+                            : status === "AT_RISK"
+                              ? "bg-amber-500"
+                              : "bg-blue-500";
+
+                        return (
+                          <div className="flex min-w-[190px] items-start gap-3">
+                            <span
+                              className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${indicatorClass}`}
+                            />
+
+                            <div className="min-w-0">
+                              <p className="text-xs font-medium text-slate-500">
+                                {dueAt || completedAt ? label : "Deadline"}
+                              </p>
+
+                              <p
+                                className={`mt-1 text-sm font-medium ${
+                                  isBreached
+                                    ? "text-red-600"
+                                    : isCompleted
+                                      ? "text-emerald-700"
+                                      : "text-slate-800"
+                                }`}
+                              >
+                                {dateValue
+                                  ? formatDate(dateValue)
+                                  : "Not configured"}
+                              </p>
+
+                              {!isCompleted && dueAt && (
+                                <p className="mt-1 text-[11px] text-slate-400">
+                                  {isBreached
+                                    ? "Requires attention"
+                                    : "Target deadline"}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      };
                       return (
-                        <tr key={sla.id} className="hover:bg-gray-50">
-                          <td className="sticky left-0 z-20 bg-white w-[220px] px-4 py-4 sm:px-3">
-                            <div>
-                              <p className="font-medium text-slate-900">
-                                #{ticket.ticketNumber}
-                              </p>
+                        <tr
+                          key={sla.id}
+                          onClick={() => handleOpenSLAModal(sla)}
+                          className="group cursor-pointer transition-colors duration-150 hover:bg-slate-50/80"
+                        >
+                          <td className="sticky left-0 z-[5] w-[220px] bg-white px-5 py-4 transition-colors group-hover:bg-slate-50 sm:px-5">
+                            <div className="flex items-start gap-3">
+                              <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-xs font-bold text-slate-600">
+                                {ticket.ticketNumber}
+                              </div>
 
-                              <p className="mt-1 max-w-[220px] truncate text-sm text-slate-500">
-                                {ticket.title}
-                              </p>
+                              <div className="min-w-0">
+                                <span
+                                  className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium  ${PRIORITY_STYLES[ticket.priority]}`}
+                                >
+                                  {ticket.priority}
+                                </span>
+                                <p className="mt-1 max-w-[190px] truncate text-sm text-slate-500">
+                                  {ticket.title}
+                                </p>
+                              </div>
                             </div>
                           </td>
 
                           <td className="whitespace-nowrap px-4 py-4 sm:px-5">
-                            <span className="text-sm font-medium text-slate-700">
-                              {ticket.priority}
-                            </span>
-                          </td>
-
-                          <td className="whitespace-nowrap px-4 py-4 sm:px-5">
-                            <span className="text-sm text-slate-600">
-                              {ticket.status}
+                            <span
+                              className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium  ${getTicketStatusClass(ticket.status)}`}
+                            >
+                              {ticket.status.replaceAll("_", " ")}
                             </span>
                           </td>
 
                           <td className="px-5 py-4">
-                            {sla.firstRespondedAt ? (
-                              <div>
-                                <p className="text-sm font-medium text-green-600">
-                                  Completed
-                                </p>
-
-                                <p className="text-xs text-slate-500">
-                                  {new Date(
-                                    sla.firstRespondedAt,
-                                  ).toLocaleString()}
-                                </p>
-                              </div>
-                            ) : (
-                              <div>
-                                <p className="text-sm font-medium text-slate-700">
-                                  {getRemainingTime(sla.firstResponseDueAt)}
-                                </p>
-
-                                {sla.firstResponseDueAt && (
-                                  <p className="text-xs text-slate-500">
-                                    Due{" "}
-                                    {new Date(
-                                      sla.firstResponseDueAt,
-                                    ).toLocaleString()}
-                                  </p>
-                                )}
-                              </div>
+                            {renderTarget(
+                              firstResponseStatus,
+                              sla.firstRespondedAt,
+                              sla.firstResponseDueAt,
                             )}
                           </td>
 
                           <td className="px-5 py-4">
-                            {sla.resolutionCompletedAt ? (
-                              <div>
-                                <p className="text-sm font-medium text-green-600">
-                                  Completed
-                                </p>
-
-                                <p className="text-xs text-slate-500">
-                                  {new Date(
-                                    sla.resolutionCompletedAt,
-                                  ).toLocaleString()}
-                                </p>
-                              </div>
-                            ) : (
-                              <div>
-                                <p className="text-sm font-medium text-slate-700">
-                                  {getRemainingTime(sla.resolutionDueAt)}
-                                </p>
-
-                                {sla.resolutionDueAt && (
-                                  <p className="text-xs text-slate-500">
-                                    Due{" "}
-                                    {new Date(
-                                      sla.resolutionDueAt,
-                                    ).toLocaleString()}
-                                  </p>
-                                )}
-                              </div>
+                            {renderTarget(
+                              resolutionStatus,
+                              sla.resolutionCompletedAt,
+                              sla.resolutionDueAt,
                             )}
                           </td>
-                          <td className="px-5 py-4">
-                            {slaStatus === "BREACHED" && (
-                              <span className="inline-flex rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700">
-                                Breached
-                              </span>
-                            )}
 
-                            {slaStatus === "AT_RISK" && (
-                              <span className="inline-flex rounded-full bg-yellow-100 px-3 py-1 text-xs font-semibold text-yellow-700">
-                                At Risk
-                              </span>
-                            )}
-
-                            {slaStatus === "ON_TRACK" && (
-                              <span className="inline-flex rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
-                                On Track
-                              </span>
-                            )}
+                          <td className="whitespace-nowrap px-5 py-4">
+                            <span
+                              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ${getStatusClasses(overallStatus)}`}
+                            >
+                              <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                              {overallStatus === "NOT_APPLICABLE"
+                                ? "N/A"
+                                : overallStatus === "AT_RISK"
+                                  ? "At Risk"
+                                  : overallStatus === "ON_TRACK"
+                                    ? "On Track"
+                                    : overallStatus === "COMPLETED"
+                                      ? "Completed"
+                                      : "Breached"}
+                            </span>
                           </td>
                         </tr>
                       );
@@ -420,22 +494,29 @@ export default function SLAMonitoringPage() {
                 </tbody>
               </table>
             </div>
-            <div className="flex flex-col gap-3 border-t border-blue-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+
+            <div className="flex flex-col gap-3 border-t border-slate-100 bg-slate-50/50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
               <p className="text-sm text-slate-500">
-                Page {page} of {totalPages}
+                Page{" "}
+                <span className="font-semibold text-slate-800">{page}</span> of{" "}
+                <span className="font-semibold text-slate-800">
+                  {totalPages}
+                </span>
               </p>
+
               <div className="flex w-full gap-2 sm:w-auto">
                 <button
                   disabled={page === 1}
                   onClick={() => setPage((prev) => prev - 1)}
-                  className="flex-1 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none"
+                  className="flex flex-1 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none"
                 >
                   Previous
                 </button>
+
                 <button
                   disabled={page === totalPages}
                   onClick={() => setPage((prev) => prev + 1)}
-                  className="flex-1 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none"
+                  className="flex flex-1 items-center justify-center rounded-lg border border-slate-800 bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none"
                 >
                   Next
                 </button>
@@ -444,6 +525,19 @@ export default function SLAMonitoringPage() {
           </>
         )}
       </div>
+      {isSlaModalOpen && selectedSLA && (
+        <SlaModal
+          selectedSLA={selectedSLA}
+          isSlaDetailsLoading={isSlaDetailsLoading}
+          slaDetails={slaDetails}
+          slaDetailsError={slaDetailsError}
+          setIsSlaModalOpen={setIsSlaModalOpen}
+          setSelectedSLA={setSelectedSLA}
+          setSlaDetails={setSlaDetails}
+          setSlaDetailsError={setSlaDetailsError}
+          handleOpenSLAModal={handleOpenSLAModal}
+        />
+      )}
     </div>
   );
 }

@@ -201,7 +201,7 @@ export default function MessagePage() {
   };
 
   return (
-    <div className="h-full min-h-0 p-4 lg:p-6 space-y-2">
+    <div className="h-full min-h-0 space-y-2">
       <div className="mb-4 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 items-center gap-4">
           <div className="flex h-12 w-12 sm:h-8 sm:h-8 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-xl text-blue-700">

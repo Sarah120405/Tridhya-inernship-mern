@@ -234,9 +234,39 @@ export async function ticketsDistribution() {
     ]);
   return { ticketByCategory, ticketByPriority, ticketByStatus };
 }
+type SlaRow = {
+  firstResponseDueAt: Date | null;
+  firstRespondedAt: Date | null;
+  resolutionDueAt: Date | null;
+  resolutionCompletedAt: Date | null;
+};
+
+export function getSlaBreach(
+  sla: SlaRow,
+  ticketStatus: string,
+  now = new Date(),
+) {
+  const finished = ticketStatus === "RESOLVED" || ticketStatus === "CLOSED";
+
+  const firstResponse =
+    !!sla.firstResponseDueAt &&
+    (sla.firstRespondedAt
+      ? sla.firstRespondedAt > sla.firstResponseDueAt
+      : !finished && now > sla.firstResponseDueAt);
+
+  const resolution =
+    !!sla.resolutionDueAt &&
+    (sla.resolutionCompletedAt
+      ? sla.resolutionCompletedAt > sla.resolutionDueAt
+      : !finished && now > sla.resolutionDueAt);
+
+  return { firstResponse, resolution, any: firstResponse || resolution };
+}
 
 export async function SLAPerformance() {
-  const slaData = await prisma.sLA.findMany({});
+  const slaData = await prisma.sLA.findMany({
+    include: { ticket: { select: { status: true } } },
+  });
 
   const now = new Date();
 
@@ -245,38 +275,10 @@ export async function SLAPerformance() {
   let resolutionBreaches = 0;
 
   for (const sla of slaData) {
-    let firstResponseBreached = false;
-    let resolutionBreached = false;
-
-    // First response breach
-    if (sla.firstResponseDueAt) {
-      if (sla.firstRespondedAt) {
-        firstResponseBreached = sla.firstRespondedAt > sla.firstResponseDueAt;
-      } else {
-        firstResponseBreached = now > sla.firstResponseDueAt;
-      }
-    }
-
-    // Resolution breach
-    if (sla.resolutionDueAt) {
-      if (sla.resolutionCompletedAt) {
-        resolutionBreached = sla.resolutionCompletedAt > sla.resolutionDueAt;
-      } else {
-        resolutionBreached = now > sla.resolutionDueAt;
-      }
-    }
-
-    if (firstResponseBreached) {
-      firstResponseBreaches++;
-    }
-
-    if (resolutionBreached) {
-      resolutionBreaches++;
-    }
-
-    if (firstResponseBreached || resolutionBreached) {
-      totalBreaches++;
-    }
+    const b = getSlaBreach(sla, sla.ticket.status, now);
+    if (b.firstResponse) firstResponseBreaches++;
+    if (b.resolution) resolutionBreaches++;
+    if (b.any) totalBreaches++;
   }
 
   const totalSLAs = slaData.length;
@@ -323,32 +325,36 @@ export async function teamPerformance() {
           createdAt: true,
           resolvedAt: true,
           sla: {
-            select: { breached: true },
+            select: {
+              firstResponseDueAt: true,
+              firstRespondedAt: true,
+              resolutionDueAt: true,
+              resolutionCompletedAt: true,
+            },
           },
         },
       });
-      const resolvedTickets = tickets.filter(
-        (ticket) => ticket.status === "RESOLVED",
-      );
-      const totalResolutionTime = resolvedTickets.reduce((total, ticket) => {
-        return (
-          total + (ticket.resolvedAt!.getTime() - ticket.createdAt.getTime())
-        );
-      }, 0);
-      const averageResolutionTime =
-        resolvedTickets.length === 0
-          ? 0
-          : totalResolutionTime / resolvedTickets.length;
+      const resolvedTickets = tickets.filter((t) => t.status === "RESOLVED");
+      const closedTickets = tickets.filter((t) => t.status === "CLOSED");
 
-      const closedTickets = tickets.filter(
-        (tickets) => tickets.status === "CLOSED",
+      // used only for the average
+      const completedTickets = tickets.filter(
+        (t) => t.resolvedAt && t.resolvedAt >= t.createdAt,
       );
+      const totalResolutionTime = completedTickets.reduce(
+        (sum, t) => sum + (t.resolvedAt!.getTime() - t.createdAt.getTime()),
+        0,
+      );
+      const averageResolutionTime =
+        completedTickets.length === 0
+          ? 0
+          : totalResolutionTime / completedTickets.length;
       const activeTickets = tickets.filter(
         (tickets) =>
           tickets.status !== "CLOSED" && tickets.status !== "RESOLVED",
       );
       const slaBreaches = tickets.filter(
-        (ticket) => ticket.sla?.breached,
+        (t) => t.sla && getSlaBreach(t.sla, t.status).any,
       ).length;
 
       return {
