@@ -11,6 +11,17 @@ const category = [
 ];
 const priority = ["LOW", "MEDIUM", "HIGH", "URGENT"];
 
+async function generateAI(
+  params: Parameters<typeof gemini.models.generateContent>[0],
+) {
+  try {
+    return await gemini.models.generateContent(params);
+  } catch (err) {
+    console.error("Gemini request failed:", err);
+    throw { status: 503, message: "AI assistance is temporarily unavailable." };
+  }
+}
+
 export async function ticketSuggestion(ticketData: any) {
   const { title, description, customerCategory } = ticketData;
   if (!title?.trim()) {
@@ -104,7 +115,7 @@ export async function ticketSuggestion(ticketData: any) {
     5. Explain the reasoning briefly.
     `;
   try {
-    const AIresponse = await gemini.models.generateContent({
+    const AIresponse = await generateAI({
       model: "gemini-3.5-flash-lite",
       contents: prompt,
       config: {
@@ -248,25 +259,47 @@ export async function agentAssistance(
   };
 
   const conversationContext = ticketMessages.map((message) => ({
-    senderId: message.senderId,
+    senderRole: message.sender.role,
     content: message.content,
     createdAt: message.createdAt,
   }));
 
   const prompt = `You are an AI assistant helping a customer support agent.
 
-    Analyze the ticket and conversation.
+    Analyze the ticket and the conversation, then do two things:
+    1. Draft a reply the agent can send to the customer.
+    2. Decide whether the ticket needs a developer.
 
-    Your tasks:
-    1. Draft a professional response that the support agent can send to the customer.
-    2. Determine whether the ticket should be escalated to a developer.
-    3. If escalation is recommended, explain the reason.
-    4. Use only information available in the ticket and conversation.
-    5. Do not invent technical details, solutions, policies, timelines, or promises.
-    6. Do not directly perform any action such as sending a message or escalating the ticket.
-    7. The suggested response should be clear, polite, professional, and relevant to the latest customer message.
-    8. If there is not enough information to provide a solution, draft a response asking the customer for the necessary information.
-    9. Escalation should be recommended when the issue requires developer/technical investigation or cannot reasonably be handled by the support agent.
+    REPLY RULES
+    - Use only information in the ticket and conversation. Do not invent technical details, solutions, policies, timelines or promises.
+    - Be clear, polite and professional, and respond to the customer's latest message (senderRole "Customer").
+    - If information is missing (error message, steps to reproduce, screenshots, account details), ask the customer for it.
+    - Do not perform any action yourself, such as sending a message or escalating.
+
+    ESCALATION RULES
+    Default to NOT recommending escalation. Support agents are expected to resolve most tickets themselves: how-to and usage questions, account and profile changes,
+     billing explanations, feature requests, general inquiries, and anything answerable with standard guidance or by asking the customer for more details.
+    
+    Set escalationRecommended to true ONLY when at least one of these is clearly true:
+    - The customer describes a likely defect, error or integration/API failure that needs investigation of code, logs or data to diagnose.
+    - There is data loss, data corruption, a security concern, or an outage affecting the service.
+    - The agent has already replied with standard troubleshooting or requested details, and the customer reports the problem persists.
+
+    If escalation is recommended, explain the reason.
+    
+    Do NOT recommend escalation just because:
+    - the category is TECHNICAL or the priority is HIGH or URGENT,
+    - the customer sounds frustrated or in a hurry,
+    - details are missing (ask the customer first),
+    - the ticket is a how-to question or a feature request.
+
+    If you are unsure, set escalationRecommended to false and use the reply to gather the missing information.
+
+    OUTPUT FIELDS
+    - suggestedResponse: the draft reply.
+    - escalationRecommended: true or false.
+    - escalationReason: one or two sentences. If false, briefly say why the agent can handle it.
+    - confidence: a number between 0 and 1 (for example 0.85) showing your confidence in the escalation decision.
 
     Ticket:
     ${JSON.stringify(ticketContext, null, 2)}
@@ -274,10 +307,11 @@ export async function agentAssistance(
     Conversation:
     ${JSON.stringify(conversationContext, null, 2)}
   `;
-  const AIresponse = await gemini.models.generateContent({
+  const AIresponse = await generateAI({
     model: "gemini-3.5-flash-lite",
     contents: prompt,
     config: {
+      temperature: 0.2,
       responseMimeType: "application/json",
 
       responseSchema: {
@@ -307,30 +341,35 @@ export async function agentAssistance(
       },
     },
   });
-  if (!AIresponse.text) {
-    throw {
-      status: 502,
-      message: "Gemini returned an empty response.",
-    };
-  }
-  const result = JSON.parse(AIresponse.text);
-  if (
-    typeof result.confidence !== "number" ||
-    result.confidence < 0 ||
-    result.confidence > 1
-  ) {
-    throw {
-      status: 502,
-      message: "Gemini returned an invalid confidence score.",
-    };
-  }
 
-  return {
-    suggestedResponse: result.suggestedResponse,
-    escalationRecommended: result.escalationRecommended,
-    escalationReason: result.escalationReason,
-    confidence: result.confidence,
-  };
+  try {
+    if (!AIresponse.text) {
+      throw {
+        status: 502,
+        message: "Gemini returned an empty response.",
+      };
+    }
+    const result = JSON.parse(AIresponse.text);
+    if (
+      typeof result.confidence !== "number" ||
+      result.confidence < 0 ||
+      result.confidence > 1
+    ) {
+      throw {
+        status: 502,
+        message: "Gemini returned an invalid confidence score.",
+      };
+    }
+
+    return {
+      suggestedResponse: result.suggestedResponse,
+      escalationRecommended: result.escalationRecommended,
+      escalationReason: result.escalationReason,
+      confidence: result.confidence,
+    };
+  } catch (error) {
+    throw { status: 502, message: "AI returned an unreadable response." };
+  }
 }
 
 export async function developerAssistance(
@@ -393,6 +432,7 @@ export async function developerAssistance(
     5. Technical details that developer should know before working.
     6. Suggest developer investigation to start trouble shooting 
     7. The summary should be concise, factual, technical, and useful for a developer investigating the issue.
+    8. confidence: a number between 0 and 1 (for example 0.85) showing how confident you are in the accuracy of this summary.
 
     Ticket:
     ${JSON.stringify(ticketContext, null, 2)}
@@ -400,7 +440,7 @@ export async function developerAssistance(
     Conversation:
     ${JSON.stringify(conversationContext, null, 2)}
   `;
-  const AIresponse = await gemini.models.generateContent({
+  const AIresponse = await generateAI({
     model: "gemini-3.5-flash-lite",
     contents: prompt,
     config: {

@@ -111,7 +111,7 @@ export default function CommonLayout({ children }: CommonLayoutProps) {
     let isMounted = true;
 
     const handleAuthExpired = async ({ message }: { message: string }) => {
-      console.error("Socket authentication expired:", message);
+      console.warn("Socket authentication expired:", message);
       socket.disconnect();
       try {
         await dispatch(logOut()).unwrap();

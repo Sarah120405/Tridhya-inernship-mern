@@ -115,7 +115,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen">
       <div className="mx-auto max-w-[1500px] space-y-6">
         {/* Header */}
         <section>

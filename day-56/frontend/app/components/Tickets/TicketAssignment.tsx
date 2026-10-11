@@ -74,11 +74,7 @@ export default function TicketAssignment({
                 <select
                   value={selectedAgentId}
                   onChange={(e) => setSelectedAgentId(e.target.value)}
-                  disabled={
-                    !selectedAgentId ||
-                    isAssigningAgent ||
-                    selectedAgentId === ticket.assignedAgentId
-                  }
+                  disabled={isAssigningAgent}
                   className="flex-1 rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-500"
                 >
                   <option value="">Select Support Agent</option>
@@ -92,7 +88,11 @@ export default function TicketAssignment({
 
                 <button
                   type="button"
-                  disabled={!selectedAgentId || isAssigningAgent}
+                  disabled={
+                    !selectedAgentId ||
+                    isAssigningAgent ||
+                    selectedAgentId === ticket.assignedAgentId
+                  }
                   onClick={() => onAgentAssign(selectedAgentId)}
                   className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
@@ -158,11 +158,7 @@ export default function TicketAssignment({
                   <select
                     value={selectedDeveloperId}
                     onChange={(e) => setSelectedDeveloperId(e.target.value)}
-                    disabled={
-                      !selectedDeveloperId ||
-                      isAssigning ||
-                      selectedDeveloperId === ticket.assignedDeveloperId
-                    }
+                    disabled={isAssigning}
                     className="flex-1 rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-500"
                   >
                     <option value="">Select developer</option>
@@ -176,7 +172,11 @@ export default function TicketAssignment({
 
                   <button
                     type="button"
-                    disabled={!selectedDeveloperId || isAssigning}
+                    disabled={
+                      !selectedDeveloperId ||
+                      isAssigning ||
+                      selectedDeveloperId === ticket.assignedDeveloperId
+                    }
                     onClick={() => onAssign(selectedDeveloperId)}
                     className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                   >

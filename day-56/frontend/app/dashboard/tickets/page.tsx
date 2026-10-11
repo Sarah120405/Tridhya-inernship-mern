@@ -80,7 +80,9 @@ export default function TicketsPage() {
     dispatch(
       fetchTickets({ search: debouncedSearch, status, priority, category }),
     );
+  }, [dispatch, debouncedSearch, status, priority, category, user?.role]);
 
+  useEffect(() => {
     if (user?.role === "Admin") {
       dispatch(getDevelopers());
       dispatch(getSupportAgents());
@@ -89,25 +91,12 @@ export default function TicketsPage() {
     if (user?.role === "SupportAgent") {
       dispatch(getDevelopers());
     }
-  }, [dispatch, debouncedSearch, status, priority, category, user?.role]);
-
+  }, [dispatch, user?.role]);
   useEffect(() => {
     if (!ticketDetails?.id) return;
 
     dispatch(fetchTicketActivity(ticketDetails.id));
   }, [dispatch, ticketDetails?.id]);
-
-  if (isLoading && tickets.length === 0) {
-    return <div className="p-6 text-gray-500">Loading tickets...</div>;
-  }
-
-  if (fetchError) {
-    return (
-      <div className="m-4 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
-        {fetchError}
-      </div>
-    );
-  }
 
   const handleSelectTicket = (ticketId: string) => {
     setSelectedTicketId(ticketId);
@@ -118,7 +107,8 @@ export default function TicketsPage() {
     const selectedTicket = tickets.find((ticket) => ticket.id === ticketId);
     if (
       selectedTicket &&
-      ["OPEN", "IN_PROGRESS"].includes(selectedTicket.status)
+      ["OPEN", "IN_PROGRESS"].includes(selectedTicket.status) &&
+      user?.role === "SupportAgent"
     ) {
       dispatch(fetchEscalationAssistance(ticketId));
     }
@@ -300,25 +290,38 @@ export default function TicketsPage() {
             className={` min-h-0 flex-1 overflow-y-auto p-3 sm:p-4 [scrollbar-color:#cbd5e1_transparent] [scrollbar-width:thin]`}
           >
             <div className="space-y-3">
-              {tickets.map((ticket) => (
-                <TicektList
-                  key={ticket.id}
-                  ticket={ticket}
-                  selected={selectedTicketId === ticket.id}
-                  userRole={user?.role}
-                  isUpdatingStatus={updatingTicketId === ticket.id}
-                  onSelect={() => handleSelectTicket(ticket.id)}
-                  onStartDevelopment={() => handleStartDevelopment(ticket.id)}
-                  onResolve={() => handleResolve(ticket.id)}
-                  onClose={() => handleCloseUpdate(ticket.id, "CLOSE")}
-                  onReopen={() => handleCloseUpdate(ticket.id, "REOPEN")}
-                />
-              ))}
-
-              {tickets.length === 0 && (
+              {fetchError ? (
+                <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+                  {fetchError}
+                </div>
+              ) : isLoading && tickets.length === 0 ? (
                 <p className="py-8 text-center text-sm text-slate-500">
-                  No tickets found.
+                  Loading tickets...
                 </p>
+              ) : (
+                <>
+                  {tickets.map((ticket) => (
+                    <TicektList
+                      key={ticket.id}
+                      ticket={ticket}
+                      selected={selectedTicketId === ticket.id}
+                      userRole={user?.role}
+                      isUpdatingStatus={updatingTicketId === ticket.id}
+                      onSelect={() => handleSelectTicket(ticket.id)}
+                      onStartDevelopment={() =>
+                        handleStartDevelopment(ticket.id)
+                      }
+                      onResolve={() => handleResolve(ticket.id)}
+                      onClose={() => handleCloseUpdate(ticket.id, "CLOSE")}
+                      onReopen={() => handleCloseUpdate(ticket.id, "REOPEN")}
+                    />
+                  ))}
+                  {tickets.length === 0 && (
+                    <p className="py-8 text-center text-sm text-slate-500">
+                      No tickets found.
+                    </p>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -426,8 +429,8 @@ export default function TicketsPage() {
                         escalationAssistanceError &&
                         user.role === "SupportAgent" && (
                           <div className="mb-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-                            {escalationAssistanceError ||
-                              "Failed to fetch AI assistance."}
+                            AI assistance is currently unavailable. You can
+                            still handle this ticket manually.
                           </div>
                         )}
                       <TicketAssignment

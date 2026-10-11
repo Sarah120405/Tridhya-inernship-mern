@@ -165,7 +165,7 @@ export default function MessagePage() {
 
   const displayAIError =
     agentAssistanceError && !aiDraft
-      ? "AI suggestion is currently unavailable. Please select the category and priority manually."
+      ? "AI suggestion is currently unavailable. Please draft a response manually."
       : "";
 
   const handleSendMessage = async () => {

@@ -206,15 +206,14 @@ export default function AdminReport() {
   return (
     <main className="min-h-screen bg-[#EOFFFF] p-2">
       <div className="mx-auto max-w-8xl space-y-6">
-        {/* Header */}
         <section className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
             <h1 className="text-2xl font-bold text-slate-800 sm:text-3xl">
-              Welcome back, {user?.name}!
+              Report Dashboard
             </h1>
 
             <p className="mt-2 text-sm text-slate-500">
-              Here's an overview of your support tickets.
+              Overview of ticket statistics, trends, and team performance.
             </p>
           </div>
         </section>

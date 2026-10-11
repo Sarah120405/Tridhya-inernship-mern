@@ -309,7 +309,7 @@ export default function SLAMonitoringPage() {
               <table className="w-full min-w-[760px] sm:min-w-[900px] lg:min-w-[1000px]">
                 <thead className="border-b border-slate-200 bg-slate-50/95 backdrop-blur-sm sticky top-0 z-10">
                   <tr>
-                    <th className="sticky left-0 z-20 whitespace-nowrap bg-gray-50 px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500 sm:px-3">
+                    <th className="lg:sticky left-0 z-20 whitespace-nowrap bg-gray-50 px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500 sm:px-3">
                       Ticket
                     </th>
 
@@ -419,7 +419,7 @@ export default function SLAMonitoringPage() {
                           onClick={() => handleOpenSLAModal(sla)}
                           className="group cursor-pointer transition-colors duration-150 hover:bg-slate-50/80"
                         >
-                          <td className="sticky left-0 z-[5] w-[220px] bg-white px-5 py-4 transition-colors group-hover:bg-slate-50 sm:px-5">
+                          <td className="lg:sticky left-0 z-[5] w-[220px] bg-white px-5 py-4 transition-colors group-hover:bg-slate-50 sm:px-5">
                             <div className="flex items-start gap-3">
                               <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-xs font-bold text-slate-600">
                                 {ticket.ticketNumber}

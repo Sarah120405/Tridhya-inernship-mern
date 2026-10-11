@@ -23,7 +23,7 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[#fcfaf7] text-[#111a4d]">
       <header className="border-b border-purple-100 bg-[#fcfaf7]/95 top-0 left-0 z-50 w-full fixed">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 lg:px-8">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4 lg:px-8">
           <div className="flex items-center gap-2.5">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 shadow-md">
               <Ticket className="h-5 w-5 text-white" />
@@ -38,7 +38,7 @@ export default function Home() {
           </div>
 
           {/* Navigation */}
-          <nav className="hidden items-center gap-10 md:flex">
+          <nav className="order-3 flex w-full items-center justify-center gap-6 md:order-none md:w-auto md:gap-5 lg:gap-10">
             <a
               href="#home"
               className="border-b-2 border-indigo-600 pb-1 text-sm font-semibold text-indigo-600"
@@ -64,14 +64,14 @@ export default function Home() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => setActiveModal("login")}
-              className="rounded-xl border border-indigo-200 bg-white px-5 py-2.5 text-sm font-semibold text-[#111a4d] transition hover:border-indigo-400 hover:bg-indigo-50"
+              className="rounded-xl border border-indigo-200 bg-white px-3 py-2 text-xs font-semibold text-[#111a4d] transition hover:border-indigo-400 hover:bg-indigo-50 sm:px-5 sm:py-2.5 sm:text-sm"
             >
               Login
             </button>
 
             <button
               onClick={() => setActiveModal("register")}
-              className="rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:scale-[1.02] hover:shadow-lg"
+              className="rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-3 py-2 text-xs font-semibold text-white shadow-md transition hover:scale-[1.02] hover:shadow-lg sm:px-5 sm:py-2.5 sm:text-sm"
             >
               Register
             </button>
@@ -79,11 +79,11 @@ export default function Home() {
         </div>
       </header>
 
-      <section id="home" className="relative overflow-hidden">
+      <section id="home" className="relative scroll-mt-20 overflow-hidden">
         <div className="pointer-events-none absolute -right-20 top-20 h-72 w-72 rounded-full bg-purple-200/40 blur-3xl" />
         <div className="pointer-events-none absolute bottom-0 left-20 h-64 w-64 rounded-full bg-pink-200/30 blur-3xl" />
 
-        <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-6 py-20 lg:grid-cols-2 lg:px-8 lg:py-24">
+        <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-5 pb-16 pt-28 sm:px-6 sm:pb-20 sm:pt-32 lg:grid-cols-2 lg:gap-12 lg:px-8 lg:py-24">
           {/* Left content */}
           <div>
             <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-purple-50 px-4 py-2 text-sm font-semibold text-purple-700">
@@ -91,7 +91,7 @@ export default function Home() {
               AI-Powered Support
             </div>
 
-            <h1 className="max-w-2xl text-5xl font-extrabold leading-[1.08] tracking-tight text-[#101947] sm:text-6xl">
+            <h1 className="max-w-2xl text-4xl font-extrabold leading-[1.08] tracking-tight text-[#101947] sm:text-5xl lg:text-6xl">
               Smarter Support,
               <br />
               <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 bg-clip-text text-transparent">
@@ -99,16 +99,16 @@ export default function Home() {
               </span>
             </h1>
 
-            <p className="mt-7 max-w-xl text-lg leading-8 text-slate-600">
+            <p className="mt-6 max-w-xl text-base leading-7 text-slate-600 sm:mt-7 sm:text-lg sm:leading-8">
               Our AI-powered ticket management system helps you create, track
               and resolve support tickets faster — with the right people, the
               right priority, and the right insights.
             </p>
 
-            <div className="mt-8 flex flex-wrap gap-4">
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-4">
               <button
                 onClick={() => setActiveModal("register")}
-                className="group flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-3.5 font-semibold text-white shadow-lg transition hover:scale-[1.02]"
+                className="group flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-3.5 font-semibold text-white shadow-lg transition hover:scale-[1.02] sm:justify-start"
               >
                 Get Started
                 <ArrowRight className="h-5 w-5 transition group-hover:translate-x-1" />
@@ -235,7 +235,7 @@ export default function Home() {
 
       <section
         id="features"
-        className="border-t border-purple-50 bg-[#f8f7fc] py-20"
+        className="scroll-mt-20 border-t border-purple-50 bg-[#f8f7fc] py-14 sm:py-20"
       >
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
@@ -270,13 +270,13 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="about" className="bg-white py-20">
+      <section id="about" className="scroll-mt-20 bg-white py-14 sm:py-20">
         <div className="mx-auto max-w-5xl px-6 text-center lg:px-8">
           <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
             <CheckCircle2 className="h-7 w-7" />
           </div>
 
-          <h2 className="text-3xl font-bold text-[#111a4d]">
+          <h2 className="text-2xl font-bold leading-tight text-[#111a4d] sm:text-3xl">
             Everything your support team needs
           </h2>
 
