@@ -112,6 +112,12 @@ export async function assignTicketToDeveloper(
       };
     }
 
+    if (["RESOLVED", "CLOSED"].includes(ticket.status)) {
+      throw {
+        status: 409,
+        message: "Resolved or closed tickets cannot be escalated.",
+      };
+    }
     const developer = await tx.user.findUnique({
       where: { id: escalationData.developerId },
     });

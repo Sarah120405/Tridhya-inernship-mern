@@ -163,7 +163,10 @@ export default function TicketsPage() {
       assignDeveloper({
         ticketId: ticketDetails.id,
         developerId,
-        aiSuggestion: isReassignment ? null : currentTicketAiAssistance,
+        aiSuggestion:
+          !isReassignment && currentTicketAiAssistance?.escalationRecommended
+            ? currentTicketAiAssistance
+            : null,
       }),
     );
 

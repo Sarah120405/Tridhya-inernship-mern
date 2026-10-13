@@ -40,7 +40,6 @@ export default function TicketAssignment({
   const canAssignDeveloper =
     (user?.role === "SupportAgent" || user?.role === "Admin") &&
     !ticket.assignedDeveloperId &&
-    shouldEscalate &&
     ["OPEN", "IN_PROGRESS"].includes(ticket.status);
 
   const canReassignDeveloper =
