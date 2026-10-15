@@ -4,8 +4,8 @@ import {
   deleteProject,
   getAllProjects,
   getProjectById,
-} from "./project.service";
-import { Project, CreateProjectBody } from "../../types";
+} from "./project.service.js";
+import { Project, CreateProjectBody } from "../../types.js";
 
 const route = express.Router();
 

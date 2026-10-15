@@ -5,8 +5,8 @@ import {
   getAllTasks,
   getTaskById,
   updateTask,
-} from "./task.service";
-import { Task, CreateTaskBody } from "../../types";
+} from "./task.service.js";
+import { Task, CreateTaskBody } from "../../types.js";
 
 const route = express.Router();
 

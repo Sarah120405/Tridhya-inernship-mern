@@ -1,5 +1,5 @@
-import { Project, CreateProjectBody } from "../../types";
-import { projects, tasks } from "../../types";
+import { Project, CreateProjectBody } from "../../types.js";
+import { projects, tasks } from "../../types.js";
 
 export function getAllProjects(): Project[] {
   return projects;

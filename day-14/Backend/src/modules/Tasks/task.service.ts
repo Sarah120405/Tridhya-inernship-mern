@@ -1,4 +1,4 @@
-import { tasks, CreateTaskBody, Task } from "../../types";
+import { tasks, CreateTaskBody, Task } from "../../types.js";
 
 export function getAllTasks(projectId?: string): Task[] {
   if (!projectId) {

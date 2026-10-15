@@ -1,6 +1,6 @@
 import type { Project, CreateProjectBody } from "../type.ts";
 
-const BASE_URL = "http://localhost:3000/projects";
+const BASE_URL = "http://localhost:5000/projects";
 
 export async function getAllProjects(): Promise<Project[]> {
   const res = await fetch(BASE_URL);

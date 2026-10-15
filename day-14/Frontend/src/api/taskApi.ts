@@ -1,6 +1,6 @@
 import type { Task, CreateTaskBody } from "../type.ts";
 
-const BASE_URL = "http://localhost:3000/tasks";
+const BASE_URL = "http://localhost:5000/tasks";
 
 export async function getAllTasks(projectId: string): Promise<Task[]> {
   const res = await fetch(`${BASE_URL}?projectId=${projectId}`);
