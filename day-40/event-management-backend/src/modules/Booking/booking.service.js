@@ -1,4 +1,4 @@
-import { Booking, Event, User } from "../../models/index.js";
+import { Booking, Event, User } from "../../models/Index.js";
 import { sendingBookingConfirmation } from "../../services/email.service.js";
 export async function createBooking(userId, eventId) {
   const event = await Event.findById(eventId);

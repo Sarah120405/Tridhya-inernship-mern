@@ -1,4 +1,4 @@
-import { Event, Booking, User } from "../../models/index.js";
+import { Event, Booking, User } from "../../models/Index.js";
 
 export async function getAllUsers() {
   const users = await User.find().select("-passwordHash");

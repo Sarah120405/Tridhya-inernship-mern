@@ -1,4 +1,4 @@
-import { Favorite, Event } from "../../models/index.js";
+import { Favorite, Event } from "../../models/Index.js";
 
 export async function toggleFavorite(userId, eventId) {
   const existing = await Favorite.findOne({ user: userId, event: eventId });

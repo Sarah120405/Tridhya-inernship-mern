@@ -2,7 +2,7 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
-import { User, Event, Booking, Favorite } from "./src/models/index.js";
+import { User, Event, Booking, Favorite } from "./src/models/Index.js";
 
 dotenv.config();
 
@@ -18,8 +18,7 @@ async function seed() {
   console.log("Cleared existing data");
 
   // --- Users ---
-  const passwordHash = await bcrypt.hash("password123", 10);
-
+  const passwordHash = "password123";
   const admin = await User.create({
     name: "Admin Sarah",
     email: "admin@example.com",
