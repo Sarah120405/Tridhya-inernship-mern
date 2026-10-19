@@ -16,6 +16,8 @@ export async function connectDB() {
   try {
     await sequelize.authenticate();
     console.log("MySQL connected successfully");
+    await sequelize.sync();
+    console.log("Database tables synchronized");
   } catch (err) {
     console.error("MySQL connection failed:", err.message);
     process.exit(1);

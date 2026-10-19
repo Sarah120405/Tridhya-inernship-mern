@@ -262,7 +262,7 @@ export default function BorrowRecords() {
                           </p>
 
                           <p className="text-xs text-[#8A8291]">
-                            Book ID: {record.id}
+                            Record ID: {record.id}
                           </p>
                         </div>
                       </div>
