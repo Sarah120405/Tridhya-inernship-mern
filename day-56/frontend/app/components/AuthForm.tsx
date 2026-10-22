@@ -132,7 +132,7 @@ export default function AuthForm({ mode, onSwitchMode }: AuthFormProps) {
 
       <button
         type="submit"
-        disabled={loading}
+        /* disabled={loading} */
         className="w-full rounded-lg bg-black px-4 py-2.5 font-medium text-white transition hover:bg-gray-800"
       >
         {isLogin ? "Login" : "Register"}

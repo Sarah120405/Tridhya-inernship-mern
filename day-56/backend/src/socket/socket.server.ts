@@ -14,15 +14,15 @@ export async function initSocket(httpServer: http.Server) {
     transports: ["websocket"],
   });
 
-  const pubClient = createClient({ url: process.env.REDIS_URL });
-  const subClient = pubClient.duplicate();
+  const pubClient = createClient({ url: process.env.REDIS_URL }); // This creates the publisher connection
+  const subClient = pubClient.duplicate(); // This creates a separate client for subscribing
 
   pubClient.on("error", (err) => console.error("Redis pub Error", err));
   subClient.on("error", (err) => console.error("Redis sub Error", err));
 
-  await Promise.all([pubClient.connect(), subClient.connect()]);
+  await Promise.all([pubClient.connect(), subClient.connect()]); // Connects both clients before adapter is attached
 
-  io.adapter(createAdapter(pubClient, subClient));
+  io.adapter(createAdapter(pubClient, subClient)); // Enable cross instance socket.io communication
   console.log("Socket.IO Redis adapter connected");
 
   io.on("connection", (socket) => {

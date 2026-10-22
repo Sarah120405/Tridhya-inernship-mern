@@ -11,8 +11,6 @@ async function getUserFromBackend(request: NextRequest) {
       },
       cache: "no-store",
     });
-    console.log("Cookie header in middleware:", request.headers.get("cookie"));
-    console.log("Response from backend:", res);
     if (!res.ok) return null;
     const json = await res.json();
     return json.data as { id: string; role: UserRole };

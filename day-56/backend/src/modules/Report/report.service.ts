@@ -1,4 +1,5 @@
 import prisma from "../../config/db.config";
+import { cacheClient } from "../../socket/socket.cache";
 
 export async function Dashboard(userId: string, userRole: string) {
   let where: any = {};
@@ -63,6 +64,21 @@ export async function Dashboard(userId: string, userRole: string) {
       status: 403,
       message: "Unauthorized.",
     };
+  }
+
+  const cacheKey =
+    userRole === "Admin"
+      ? "supporthub:dashboard:Admin"
+      : `supporthub:dashboard:${userRole}:${userId}`;
+
+  const cachedDashboard = await cacheClient.get(cacheKey);
+
+  if (cachedDashboard) {
+    try {
+      return JSON.parse(cachedDashboard);
+    } catch (e) {
+      await cacheClient.del(cachedDashboard);
+    }
   }
 
   const [
@@ -161,7 +177,7 @@ export async function Dashboard(userId: string, userRole: string) {
       }),
     ]);
 
-  return {
+  const dashboardData = {
     metrics: {
       totalTickets,
       openTickets,
@@ -173,6 +189,23 @@ export async function Dashboard(userId: string, userRole: string) {
     needsAttention,
     recentNotifications,
   };
+
+  await cacheClient.set(cacheKey, JSON.stringify(dashboardData), { EX: 60 });
+
+  return dashboardData;
+
+  /* return {
+    metrics: {
+      totalTickets,
+      openTickets,
+      awaitingReply,
+      resolvedTickets,
+      escalatedTickets,
+    },
+    recentTickets,
+    needsAttention,
+    recentNotifications,
+  }; */
 }
 
 export async function ticketStatistics() {

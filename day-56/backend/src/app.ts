@@ -12,6 +12,7 @@ import { errorHandler } from "./middleware/error.middleware";
 import { socketAuthMiddleware } from "./socket/socket.middleware";
 import { registerSocketHandlers } from "./socket/socket.handler";
 import { initSocket } from "./socket/socket.server";
+import { connectCacheRedis } from "./socket/socket.cache";
 
 const PORT = process.env.PORT || 5000;
 
@@ -36,6 +37,7 @@ app.use(errorHandler);
 const httpServer = http.createServer(app);
 
 async function bootstrap() {
+  await connectCacheRedis();
   const io = await initSocket(httpServer);
   io.use(socketAuthMiddleware);
 

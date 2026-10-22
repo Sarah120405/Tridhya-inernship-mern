@@ -10,6 +10,8 @@ import {
 
 import { emailService } from "../../utils/email.service";
 import { emitTicketUpdated } from "../../socket/ticket.events";
+import { invalidateDashboardCache } from "../../utils/dashboard-cache";
+import { cacheClient } from "../../socket/socket.cache";
 
 interface UploadedFile {
   originalName: string;
@@ -105,6 +107,8 @@ export async function createTicket(
     });
     return { ticket, ticketActivity, sla };
   });
+
+  await invalidateDashboardCache();
 
   const customer = await prisma.user.findUnique({
     where: { id: userId },
@@ -266,6 +270,35 @@ export async function getTickets(
     }
   }
 
+  const cacheKey = `supporthub:tickets:${JSON.stringify({
+    userId,
+    role,
+    search: filters.search?.trim() ?? "",
+    status: filters.status ?? "",
+    priority: filters.priority ?? "",
+    category: filters.category ?? "",
+    assignedAgentId: filters.assignedAgentId ?? "",
+    assignedDeveloperId: filters.assignedDeveloperId ?? "",
+    page,
+    limit,
+  })}`;
+
+  let cachedTickets: string | null = null;
+
+  try {
+    cachedTickets = await cacheClient.get(cacheKey);
+  } catch (error) {
+    console.error("Ticket cache read failed:", error);
+  }
+
+  if (cachedTickets !== null) {
+    try {
+      return JSON.parse(cachedTickets);
+    } catch {
+      console.error("Invalid ticket cache data");
+    }
+  }
+
   const tickets = await prisma.ticket.findMany({
     where,
     include,
@@ -276,6 +309,13 @@ export async function getTickets(
     take: limit,
   });
 
+  try {
+    await cacheClient.set(cacheKey, JSON.stringify(tickets), {
+      EX: 60,
+    });
+  } catch (error) {
+    console.error("Ticket cache write failed:", error);
+  }
   return tickets;
 }
 
@@ -465,6 +505,8 @@ export async function ticketInDevelopmentUpdate(
     ticket: result.updateTicket,
     activity: result.updateTicketActivity,
   });
+
+  await invalidateDashboardCache();
   const customer = await prisma.user.findUnique({
     where: { id: result.updateTicket.customerId },
   });
@@ -558,6 +600,8 @@ export async function ticketResolvedUpdate(
     ticket: result.updatedTicket,
     activity: result.updateTicketActivity,
   });
+
+  await invalidateDashboardCache();
   const customer = await prisma.user.findUnique({
     where: { id: result.updatedTicket.customerId },
   });
@@ -678,6 +722,8 @@ export async function ticketCloseUpdate(
     ticket: result.updatedTicket,
     activity: result.ticketActivity,
   });
+
+  await invalidateDashboardCache();
   const notificationTicket = await prisma.ticket.findUnique({
     where: {
       id: ticketId,

@@ -1,5 +1,6 @@
 import prisma from "../../config/db.config";
 import { emitTicketUpdated } from "../../socket/ticket.events";
+import { invalidateDashboardCache } from "../../utils/dashboard-cache";
 import { emailService } from "../../utils/email.service";
 
 export async function assignTicketToAgent(
@@ -60,6 +61,8 @@ export async function assignTicketToAgent(
     ticket: result.updatedTicket,
     activity: result.updatedTicketActivity,
   });
+
+  await invalidateDashboardCache();
 
   try {
     await emailService(
@@ -196,6 +199,8 @@ export async function assignTicketToDeveloper(
     ticket: result.updatedTicket,
     activity: result.updatedTicketActivity,
   });
+
+  await invalidateDashboardCache();
 
   try {
     await emailService(

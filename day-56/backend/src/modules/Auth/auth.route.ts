@@ -9,10 +9,20 @@ import { sendResponse } from "../../utils/response";
 import prisma from "../../config/db.config";
 import { validate } from "../../middleware/validate.middleware";
 import { loginSchema, registerSchema } from "./auth.validator";
+import {
+  accountBasedLimiter,
+  loginRateLimiter,
+} from "../../middleware/rateLimiter";
 
 const router = express.Router();
 router.post("/register", validate(registerSchema), registerController);
-router.post("/login", validate(loginSchema), loginController);
+router.post(
+  "/login",
+  loginRateLimiter,
+  validate(loginSchema),
+  accountBasedLimiter,
+  loginController,
+);
 router.post("/logout", logoutController);
 router.get("/socket-token", requireAuth, (req, res) => {
   const token = req.cookies.token;
