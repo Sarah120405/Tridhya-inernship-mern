@@ -8,10 +8,10 @@ import {
   TicketCategory,
 } from "@prisma/client";
 
-import { emailService } from "../../utils/email.service";
 import { emitTicketUpdated } from "../../socket/ticket.events";
 import { invalidateDashboardCache } from "../../utils/dashboard-cache";
 import { cacheClient } from "../../socket/socket.cache";
+import { ticketEmailQueue } from "../../socket/socket.email.queue";
 
 interface UploadedFile {
   originalName: string;
@@ -117,26 +117,36 @@ export async function createTicket(
     if (!customer) {
       console.error("Customer not found:", userId);
     } else {
-      await emailService(
-        customer.email,
-        "Your support ticket has been created",
-        `
-    <h2>Ticket Created Successfully</h2>
-    <p>Hello ${customer.name},</p>
+      const job = await ticketEmailQueue.add(
+        "send-ticket-email",
+        {
+          ticketId: String(result.ticket.id),
+          recipient: customer.email,
+          subject: "Your support ticket has been created",
+          html: `
+          <h2>Ticket Created Successfully</h2>
 
-    <p>Your support ticket has been created successfully.</p>
+          <p>Hello ${customer.name},</p>
+          <p>Your support ticket has been created successfully.</p>
 
-    <p><strong>Ticket Number:</strong> #${result.ticket.ticketNumber}</p>
-    <p><strong>Title:</strong> ${result.ticket.title}</p>
-    <p><strong>Priority:</strong> ${result.ticket.priority}</p>
-    <p><strong>Status:</strong> ${result.ticket.status}</p>
+          <p><strong>Ticket Number:</strong> #${result.ticket.ticketNumber}</p>
+          <p><strong>Title:</strong> ${result.ticket.title}</p>
+          <p><strong>Priority:</strong> ${result.ticket.priority}</p>
+          <p><strong>Status:</strong> ${result.ticket.status}</p>
 
-    <p>Our support team will review your ticket and get back to you.</p>
-
-    <p>Thank you,<br>
-    Support Desk</p>
-  `,
+          <p>Our support team will review your ticket and get back to you.</p>
+          <p>Thank you,<br>Support Desk</p>
+      `,
+        },
+        {
+          attempts: 3,
+          backoff: {
+            type: "exponential",
+            delay: 1000,
+          },
+        },
       );
+      console.log("[Email Queue] Job added:", job.id);
     }
   } catch (error) {
     console.log("Error in sending mail: ", error);
@@ -514,25 +524,36 @@ export async function ticketInDevelopmentUpdate(
     if (!customer) {
       console.error("Customer not found:", result.updateTicket.customerId);
     } else {
-      await emailService(
-        customer.email,
-        "Your support ticket is escalated to developemnt",
-        `
-    <h2>Ticket In Development</h2>
-    <p>Hello ${customer.name},</p>
+      await ticketEmailQueue.add(
+        "send-ticket-email",
+        {
+          ticketId: String(result.updateTicket.id),
+          recipient: customer.email,
+          subject: "Your support ticket is escalated to developemnt",
+          html: `
+        <h2>Ticket In Development</h2>
+        <p>Hello ${customer.name},</p>
 
-    <p>Your support ticket has been escalated to our technical team for investigation.</p>
+        <p>Your support ticket has been escalated to our technical team for investigation.</p>
 
-    <p><strong>Ticket Number:</strong> #${result.updateTicket.ticketNumber}</p>
-    <p><strong>Title:</strong> ${result.updateTicket.title}</p>
-    <p><strong>Priority:</strong> ${result.updateTicket.priority}</p>
-    <p><strong>Status:</strong> ${result.updateTicket.status}</p>
+        <p><strong>Ticket Number:</strong> #${result.updateTicket.ticketNumber}</p>
+        <p><strong>Title:</strong> ${result.updateTicket.title}</p>
+        <p><strong>Priority:</strong> ${result.updateTicket.priority}</p>
+        <p><strong>Status:</strong> ${result.updateTicket.status}</p>
 
-    <p>Our technical team will review your ticket and get back to you.</p>
+        <p>Our technical team will review your ticket and get back to you.</p>
 
-    <p>Thank you,<br>
-    Support Desk</p>
-  `,
+        <p>Thank you,<br>
+        Support Desk</p>
+      `,
+        },
+        {
+          attempts: 3,
+          backoff: {
+            type: "exponential",
+            delay: 1000,
+          },
+        },
       );
     }
   } catch (error) {
@@ -609,25 +630,36 @@ export async function ticketResolvedUpdate(
     if (!customer) {
       console.error("Customer not found:", result.updatedTicket.customerId);
     } else {
-      await emailService(
-        customer.email,
-        "Your support ticket has been resolved",
-        `
-    <h2>Ticket Successfully Resolved</h2>
-    <p>Hello ${customer.name},</p>
+      await ticketEmailQueue.add(
+        "send-ticket-email",
+        {
+          ticketId: String(result.updatedTicket.id),
+          recipient: customer.email,
+          subject: "Your support ticket has been resolved",
+          html: `
+          <h2>Ticket Successfully Resolved</h2>
+          <p>Hello ${customer.name},</p>
 
-    <p>Your support ticket has been resolved successfully.</p>
+          <p>Your support ticket has been resolved successfully.</p>
 
-    <p><strong>Ticket Number:</strong> #${result.updatedTicket.ticketNumber}</p>
-    <p><strong>Title:</strong> ${result.updatedTicket.title}</p>
-    <p><strong>Priority:</strong> ${result.updatedTicket.priority}</p>
-    <p><strong>Status:</strong> ${result.updatedTicket.status}</p>
+          <p><strong>Ticket Number:</strong> #${result.updatedTicket.ticketNumber}</p>
+          <p><strong>Title:</strong> ${result.updatedTicket.title}</p>
+          <p><strong>Priority:</strong> ${result.updatedTicket.priority}</p>
+          <p><strong>Status:</strong> ${result.updatedTicket.status}</p>
 
-    <p>Our team has successfully resolved your issue. Please review the resolution and let us know if you experience any further problems.</p>
+          <p>Our team has successfully resolved your issue. Please review the resolution and let us know if you experience any further problems.</p>
 
-    <p>Thank you,<br>
-    Support Desk</p>
-  `,
+          <p>Thank you,<br>
+          Support Desk</p>
+        `,
+        },
+        {
+          attempts: 3,
+          backoff: {
+            type: "exponential",
+            delay: 1000,
+          },
+        },
       );
     }
   } catch (error) {
@@ -775,10 +807,13 @@ export async function ticketCloseUpdate(
 
   await Promise.allSettled(
     emailRecipients.map((email) =>
-      emailService(
-        email,
-        subject,
-        `
+      ticketEmailQueue.add(
+        "send-ticket-email",
+        {
+          ticketId: notificationTicket.id,
+          recipient: email,
+          subject: subject,
+          html: `
           <h2>${heading}</h2>
 
           <p>Hello,</p>
@@ -798,6 +833,14 @@ export async function ticketCloseUpdate(
             Support Desk
           </p>
         `,
+        },
+        {
+          attempts: 3,
+          backoff: {
+            type: "exponential",
+            delay: 1000,
+          },
+        },
       ),
     ),
   );

@@ -6,10 +6,12 @@ export async function emailService(
   html: string,
 ) {
   const transporter = getTransporter();
-  const mail = transporter.sendMail({
+  const mail = await transporter.sendMail({
     from: `"Support Desk" <${process.env.SMTP_USER}>`, // sender address
     to: toEmail,
     subject: subject,
     html: html,
   });
+
+  return mail;
 }

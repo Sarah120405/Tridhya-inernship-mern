@@ -1,7 +1,7 @@
 import prisma from "../../config/db.config";
+import { ticketEmailQueue } from "../../socket/socket.email.queue";
 import { emitTicketUpdated } from "../../socket/ticket.events";
 import { invalidateDashboardCache } from "../../utils/dashboard-cache";
-import { emailService } from "../../utils/email.service";
 
 export async function assignTicketToAgent(
   ticketId: string,
@@ -65,10 +65,13 @@ export async function assignTicketToAgent(
   await invalidateDashboardCache();
 
   try {
-    await emailService(
-      result.agent.email,
-      "New Support Ticket Assigned to You",
-      `
+    await ticketEmailQueue.add(
+      "send-ticket-email",
+      {
+        ticketId: result.updatedTicket.id,
+        recipient: result.agent.email,
+        subject: "New Support Ticket Assigned to You",
+        html: `
       <h2>Ticket Assigned Successfully</h2>
       <p>Hello ${result.agent.name},</p>
   
@@ -84,6 +87,14 @@ export async function assignTicketToAgent(
       <p>Thank you,<br>
       Admin</p>
     `,
+      },
+      {
+        attempts: 3,
+        backoff: {
+          type: "exponential",
+          delay: 1000,
+        },
+      },
     );
   } catch (error) {
     console.log("Error in sending mail: ", error);
@@ -203,10 +214,13 @@ export async function assignTicketToDeveloper(
   await invalidateDashboardCache();
 
   try {
-    await emailService(
-      result.developer.email,
-      "New Technical Ticket Assigned to You",
-      `
+    await ticketEmailQueue.add(
+      "send-ticket-email",
+      {
+        ticketId: result.updatedTicket.id,
+        recipient: result.developer.email,
+        subject: "New Technical Ticket Assigned to You",
+        html: `
       <h2>Ticket Assigned Successfully</h2>
       <p>Hello ${result.developer.name},</p>
 
@@ -226,6 +240,14 @@ export async function assignTicketToDeveloper(
       <p>Thank you,<br>
       Support Desk</p>
       `,
+      },
+      {
+        attempts: 3,
+        backoff: {
+          type: "exponential",
+          delay: 1000,
+        },
+      },
     );
   } catch (error) {
     console.log("Error in sending mail: ", error);

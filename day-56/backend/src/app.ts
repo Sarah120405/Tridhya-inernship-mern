@@ -13,6 +13,10 @@ import { socketAuthMiddleware } from "./socket/socket.middleware";
 import { registerSocketHandlers } from "./socket/socket.handler";
 import { initSocket } from "./socket/socket.server";
 import { connectCacheRedis } from "./socket/socket.cache";
+import "./background-jobs/email.worker";
+import { ticketEmailWorker } from "./background-jobs/email.worker";
+import { queueRedis, ticketEmailQueue } from "./socket/socket.email.queue";
+import { workerRedis } from "./background-jobs/redis.connection";
 
 const PORT = process.env.PORT || 5000;
 
@@ -93,6 +97,47 @@ async function bootstrap() {
     console.log("Server running on port: ", PORT);
   });
 }
+
+let isShuttingDown = false;
+
+async function shutdown(signal: string) {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+
+  console.log(`[Shutdown] Received ${signal}. Starting graceful shutdown...`);
+
+  try {
+    // Stop accepting new HTTP requests.
+    await new Promise<void>((resolve, reject) => {
+      httpServer.close((err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+
+    // Stop accepting new jobs and wait for active jobs to finish.
+    await ticketEmailWorker.close();
+
+    // Close the queue before its Redis connection.
+    await ticketEmailQueue.close();
+
+    // Close the dedicated BullMQ Redis connections.
+    await Promise.all([workerRedis.quit(), queueRedis.quit()]);
+
+    console.log("[Shutdown] BullMQ resources closed successfully.");
+  } catch (error) {
+    console.error("[Shutdown] Error during shutdown:", error);
+    process.exitCode = 1;
+  }
+}
+
+process.on("SIGTERM", () => {
+  void shutdown("SIGTERM");
+});
+
+process.on("SIGINT", () => {
+  void shutdown("SIGINT");
+});
 
 bootstrap().catch((err) => {
   console.error("Failed to start server:", err);

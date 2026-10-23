@@ -55,6 +55,12 @@ export async function loginRateLimiter(
   }
 }
 function getAccountKey(email: string): string {
+  const secret = process.env.RATE_LIMIT_HMAC_SECRET;
+
+  if (!secret) {
+    throw new Error("RATE_LIMIT_HMAC_SECRET is not configured");
+  }
+
   const normalizedEmail = email.trim().toLowerCase();
 
   const accountHash = createHmac("sha256", process.env.RATE_LIMIT_HMAC_SECRET!)
