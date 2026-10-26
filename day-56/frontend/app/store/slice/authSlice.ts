@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { API_URL } from "../../lib/api";
+import { RootState } from "../store";
 
 export interface User {
   id: string;
@@ -15,6 +16,7 @@ interface AuthState {
   message: string | null;
   user: User | null;
   loading: boolean;
+  isFetchingUser: boolean;
   error: string | null;
 }
 
@@ -33,6 +35,7 @@ const initialState: AuthState = {
   message: null,
   user: null,
   loading: false,
+  isFetchingUser: false,
   error: null,
 };
 
@@ -91,24 +94,34 @@ export const login = createAsyncThunk<any, LoginData, { rejectValue: string }>(
 
 export const fetchCurrentUser = createAsyncThunk<
   User,
-  void,
+  { force?: boolean } | undefined,
   { rejectValue: string }
->("auth/me", async (_, { rejectWithValue }) => {
-  try {
-    const res = await fetch(`${API_URL}/auth/me`, {
-      credentials: "include",
-    });
+>(
+  "auth/me",
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await fetch(`${API_URL}/auth/me`, {
+        credentials: "include",
+      });
 
-    if (!res.ok) {
-      return rejectWithValue("Unable to fetch current user");
+      if (!res.ok) {
+        return rejectWithValue("Unable to fetch current user");
+      }
+
+      const data = await res.json();
+      return data.data;
+    } catch {
+      return rejectWithValue("Unable to connect to the server");
     }
-
-    const data = await res.json();
-    return data.data;
-  } catch {
-    return rejectWithValue("Unable to connect to the server");
-  }
-});
+  },
+  {
+    condition: (arg, { getState }) => {
+      if (arg?.force) return true;
+      const { auth } = getState() as RootState;
+      return !auth.user && !auth.isFetchingUser;
+    },
+  },
+);
 
 export const logOut = createAsyncThunk(
   "auth/logout",
@@ -182,11 +195,16 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = action.payload || "Login failed";
       })
+      .addCase(fetchCurrentUser.pending, (state) => {
+        state.isFetchingUser = true;
+      })
       .addCase(fetchCurrentUser.fulfilled, (state, action) => {
         state.user = action.payload;
+        state.isFetchingUser = false;
       })
       .addCase(fetchCurrentUser.rejected, (state) => {
         state.user = null;
+        state.isFetchingUser = false;
       })
       // LOGOUT
       .addCase(logOut.fulfilled, (state) => {

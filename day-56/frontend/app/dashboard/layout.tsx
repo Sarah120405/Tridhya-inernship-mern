@@ -103,7 +103,7 @@ export default function CommonLayout({ children }: CommonLayoutProps) {
   useOnClickOutside(notifRef, () => setNotifOpen(false));
   const dispatch = useDispatch<AppDispatch>();
   useEffect(() => {
-    dispatch(fetchCurrentUser());
+    dispatch(fetchCurrentUser(undefined));
   }, [dispatch]);
 
   useEffect(() => {

@@ -29,7 +29,9 @@ export default function DashboardComponent({ user }) {
   );
 
   useEffect(() => {
-    dispatch(fetchCurrentUser()).unwrap();
+    dispatch(fetchCurrentUser({ force: true }))
+      .unwrap()
+      .catch(() => {});
     dispatch(fetchDashboard());
   }, [dispatch]);
 

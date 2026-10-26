@@ -8,3 +8,13 @@ export const queueRedis = new IORedis(
 export const ticketEmailQueue = new Queue("ticket-emails", {
   connection: queueRedis,
 });
+
+export async function getTicketEmailQueueStats() {
+  return ticketEmailQueue.getJobCounts(
+    "waiting",
+    "active",
+    "completed",
+    "failed",
+    "delayed",
+  );
+}

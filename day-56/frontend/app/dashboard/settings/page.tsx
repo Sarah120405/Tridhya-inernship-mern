@@ -43,7 +43,7 @@ export default function SettingsPage() {
     updatePasswordError,
   } = useSelector((state: RootState) => state.user);
   useEffect(() => {
-    dispatch(fetchCurrentUser());
+    dispatch(fetchCurrentUser(undefined));
   }, [dispatch]);
 
   useEffect(() => {
@@ -75,7 +75,7 @@ export default function SettingsPage() {
 
     if (updateUserDetails.fulfilled.match(result)) {
       toast.success("Profile updated successfully!");
-      dispatch(fetchCurrentUser());
+      dispatch(fetchCurrentUser(undefined));
     }
   };
 
