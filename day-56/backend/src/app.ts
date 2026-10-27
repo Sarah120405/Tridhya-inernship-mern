@@ -17,6 +17,7 @@ import "./background-jobs/email.worker";
 import { ticketEmailWorker } from "./background-jobs/email.worker";
 import { queueRedis, ticketEmailQueue } from "./socket/socket.email.queue";
 import { workerRedis } from "./background-jobs/redis.connection";
+import prisma from "./config/db.config";
 
 const PORT = process.env.PORT || 5000;
 
@@ -41,6 +42,9 @@ app.use(errorHandler);
 const httpServer = http.createServer(app);
 
 async function bootstrap() {
+  await prisma.$connect();
+  console.log("Prisma Connected");
+
   await connectCacheRedis();
   const io = await initSocket(httpServer);
   io.use(socketAuthMiddleware);

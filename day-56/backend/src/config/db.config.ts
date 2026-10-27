@@ -10,8 +10,7 @@ const prisma = new PrismaClient({
 });
 
 prisma.$on("query", (event) => {
-  console.log("[Prisma Query]", {
-    durationMs: event.duration,
+  console.log("[Prisma Query Duration]: ", {
     query: event.query,
   });
 });

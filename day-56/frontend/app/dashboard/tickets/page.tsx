@@ -56,7 +56,9 @@ export default function TicketsPage() {
     statusUpdateError,
     isUpdatingStatus,
   } = useSelector((state: RootState) => state.ticket);
-  const user = useSelector((state: RootState) => state.auth.user);
+  const { user, isFetchingUser } = useSelector(
+    (state: RootState) => state.auth,
+  );
   const developers = useSelector((state: RootState) => state.user.developers);
   const agents = useSelector((state: RootState) => state.user.supportAgents);
   const {
@@ -77,10 +79,20 @@ export default function TicketsPage() {
   } = useSelector((state: RootState) => state.activity);
 
   useEffect(() => {
+    if (isFetchingUser) return;
+    if (!user?.role) return;
     dispatch(
       fetchTickets({ search: debouncedSearch, status, priority, category }),
     );
-  }, [dispatch, debouncedSearch, status, priority, category, user?.role]);
+  }, [
+    dispatch,
+    debouncedSearch,
+    status,
+    priority,
+    category,
+    isFetchingUser,
+    user?.role,
+  ]);
 
   useEffect(() => {
     if (user?.role === "Admin") {

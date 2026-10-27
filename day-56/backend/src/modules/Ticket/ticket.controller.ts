@@ -9,9 +9,6 @@ import {
   ticketResolvedUpdate,
 } from "./ticket.service";
 import { sendResponse } from "../../utils/response";
-import fs from "fs/promises";
-import path from "path";
-import { randomUUID } from "crypto";
 import { fileTypeFromBuffer } from "file-type";
 import { TicketCategory, TicketPriority, TicketStatus } from "@prisma/client";
 import { uploadToCloudinary } from "../../utils/cloudinaryUpload";
@@ -23,7 +20,6 @@ export async function createTicketController(
   next: express.NextFunction,
 ) {
   const files = (req.files ?? []) as Express.Multer.File[];
-  const savedFilePaths: string[] = [];
 
   const allowedMimeTypes = [
     "image/jpeg",
@@ -103,12 +99,6 @@ export async function getTicketsController(
     };
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
-
-    const priority =
-      typeof req.query.priority === "string" ? req.query.priority : undefined;
-
-    const search =
-      typeof req.query.search === "string" ? req.query.search : undefined;
 
     const tickets = await getTickets(
       req.user.id,

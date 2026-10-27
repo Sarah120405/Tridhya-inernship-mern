@@ -1,4 +1,4 @@
-import prisma from "./src/config/db.config";
+/* import prisma from "./src/config/db.config";
 
 async function testDatabaseLatency() {
   try {
@@ -22,3 +22,20 @@ async function testDatabaseLatency() {
 }
 
 testDatabaseLatency();
+ */
+
+import { cacheClient, connectCacheRedis } from "./src/socket/socket.cache";
+
+async function testRateLimitter() {
+  for (let i = 1; i <= 5; i++) {
+    const start = performance.now();
+
+    await connectCacheRedis();
+    await cacheClient.ping();
+
+    console.log(
+      `[Redis Ping ${i}] ${(performance.now() - start).toFixed(2)} ms`,
+    );
+  }
+}
+testRateLimitter();
